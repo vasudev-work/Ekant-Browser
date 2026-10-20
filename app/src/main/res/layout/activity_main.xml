@@ -23,7 +23,7 @@
             android:layout_height="38dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/cd_back"
-            android:src="@drawable/ic_arrow_back"
+            android:src="@drawable/ic_back"
             android:tint="@color/text_primary" />
 
         <ImageButton
@@ -32,7 +32,7 @@
             android:layout_height="38dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/cd_forward"
-            android:src="@drawable/ic_arrow_forward"
+            android:src="@drawable/ic_forward"
             android:tint="@color/text_primary" />
 
         <ImageView
@@ -51,7 +51,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@drawable/url_bg"
-            android:hint="@string/url_hint"
+            android:hint="@string/search_hint"
             android:imeOptions="actionGo"
             android:inputType="textUri"
             android:maxLines="1"
