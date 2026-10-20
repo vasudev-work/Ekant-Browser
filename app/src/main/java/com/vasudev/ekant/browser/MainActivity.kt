@@ -17,17 +17,20 @@ import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
+import android.webkit.PermissionRequest
 import android.webkit.DownloadListener
 import android.webkit.URLUtil
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebChromeClient
 import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -50,6 +53,7 @@ class MainActivity : AppCompatActivity() {
         const val UA_DESKTOP =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         const val REQ_UNLOCK = 42
+        const val FP_SCRIPT = "(function(){try{var g=CanvasRenderingContext2D.prototype.getImageData;CanvasRenderingContext2D.prototype.getImageData=function(){var d=g.apply(this,arguments);try{for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}}catch(e){}return d;};}catch(e){}try{var t=HTMLCanvasElement.prototype.toDataURL;HTMLCanvasElement.prototype.toDataURL=function(){try{var c=this.getContext('2d');if(c){var d=c.getImageData(0,0,this.width,this.height);for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}c.putImageData(d,0,0);}}catch(e){}return t.apply(this,arguments);};}catch(e){}try{if(window.AudioBuffer){var p=AudioBuffer.prototype.getChannelData;AudioBuffer.prototype.getChannelData=function(){var a=p.apply(this,arguments);try{for(var i=0;i<a.length;i+=1000){a[i]=a[i]+(Math.random()-0.5)*1e-6;}}catch(e){}return a;};}}catch(e){}try{Object.defineProperty(navigator,'hardwareConcurrency',{get:function(){return 4;}});}catch(e){}try{Object.defineProperty(navigator,'deviceMemory',{get:function(){return 4;}});}catch(e){}})();"
         val SE_NAMES = arrayOf("Google", "DuckDuckGo", "Bing")
         val SE_URLS = arrayOf(
             "https://www.google.com/search?q=",
@@ -86,6 +90,8 @@ class MainActivity : AppCompatActivity() {
     private var ntpBg = true
     private var textZoom = 100
     private var searchBase = SE_URLS[0]
+    private var memorySaver = true
+    private var httpsOnly = true
     private var pendingUnlock: Runnable? = null
 
     private lateinit var adBlocker: AdBlocker
@@ -118,6 +124,7 @@ class MainActivity : AppCompatActivity() {
         menuList = findViewById(R.id.menu_list)
         if (!dark) panel.setBackgroundResource(R.drawable.panel_bg_light)
 
+        WebView.setWebContentsDebuggingEnabled(prefs.getBoolean("remote_debug", false))
         adBlocker = AdBlocker(applicationContext)
         store = ContainerStore(this)
         extStore = ExtensionStore(this)
@@ -170,6 +177,8 @@ class MainActivity : AppCompatActivity() {
         ntpBg = prefs.getBoolean("ntp_bg", true)
         textZoom = prefs.getInt("zoom", 100)
         searchBase = prefs.getString("se", SE_URLS[0]) ?: SE_URLS[0]
+        memorySaver = prefs.getBoolean("memory_saver", true)
+        httpsOnly = prefs.getBoolean("https_only", true)
     }
 
     private fun attr(resid: Int): Int {
@@ -188,12 +197,14 @@ class MainActivity : AppCompatActivity() {
         adBlocker.blockTrackers = prefs.getBoolean("block_trackers", true)
         CookieManager.getInstance().setAcceptCookie(cookies)
         if (wasDark != dark) { recreate(); return }
+        try { cur()?.onResume() } catch (_: Exception) { }
         for (t in tabs) applyContent(t.settings)
         updateContainerUi()
     }
 
     override fun onPause() {
         saveTabs()
+        for (t in tabs) { try { t.onPause() } catch (_: Exception) { } }
         super.onPause()
     }
 
@@ -315,6 +326,7 @@ class MainActivity : AppCompatActivity() {
         val block3p = prefs.getBoolean("block_3p", true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(w, cookies && !block3p)
         w.webViewClient = BrowserClient()
+        w.webChromeClient = buildChromeClient()
         w.setDownloadListener(DownloadListener { url, _, cd, mime, _ ->
             try {
                 val name = URLUtil.guessFileName(url, cd, mime)
@@ -328,6 +340,7 @@ class MainActivity : AppCompatActivity() {
             }
         })
         w.setFindListener { _, count, done -> if (done) toast("" + count + " matches") }
+        attachSwipe(w)
         w.visibility = View.GONE
         container.addView(w)
         tabs.add(w)
@@ -337,7 +350,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyUa(s: WebSettings) {
-        s.userAgentString = if (desktop) UA_DESKTOP else null
+        val custom = prefs.getString("ua_custom", "") ?: ""
+        s.userAgentString = when {
+            custom.isNotBlank() -> custom
+            desktop -> UA_DESKTOP
+            else -> null
+        }
     }
 
     private fun cur(): WebView? {
@@ -346,8 +364,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showTab(i: Int) {
+        val prev = current
+        if (prev in tabs.indices && prev != i) {
+            try { tabs[prev].onPause() } catch (_: Exception) { }
+        }
         for (k in tabs.indices) tabs[k].visibility = if (k == i) View.VISIBLE else View.GONE
         current = i
+        if (prefs.getBoolean("memory_saver", true)) {
+            try { tabs[i].onResume() } catch (_: Exception) { }
+        }
         updateUrl()
     }
 
@@ -388,12 +413,78 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Best-effort canvas / audio fingerprint noise, injected on page load. */
+    private fun injectProtection(wv: WebView?) {
+        if (!prefs.getBoolean("fingerprint", true)) return
+        val w = wv ?: return
+        try { w.evaluateJavascript(FP_SCRIPT, null) } catch (_: Exception) { }
+    }
+
+    /** Edge-style horizontal swipe to go back / forward (opt-in). */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun attachSwipe(w: WebView) {
+        if (!prefs.getBoolean("swipe", true)) return
+        var x0 = 0f; var y0 = 0f; var t0 = 0L
+        w.setOnTouchListener { _, e ->
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> { x0 = e.x; y0 = e.y; t0 = System.currentTimeMillis() }
+                MotionEvent.ACTION_UP -> {
+                    val dx = e.x - x0
+                    val dy = e.y - y0
+                    val dt = System.currentTimeMillis() - t0
+                    if (dt < 400 && Math.abs(dx) > dp(90) && Math.abs(dx) > 2 * Math.abs(dy)) {
+                        if (dx > 0) { if (w.canGoBack()) w.goBack() }
+                        else { if (w.canGoForward()) w.goForward() }
+                    }
+                }
+            }
+            false
+        }
+    }
+
+    /** Save the current page through the Android print framework (Save as PDF). */
+    private fun savePageAsPdf() {
+        val w = cur() ?: return
+        try {
+            val pm = getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
+            pm.print("Aekant page", w.createPrintDocumentAdapter("Aekant page"),
+                android.print.PrintAttributes.Builder().build())
+            toast(getString(R.string.t_pdf))
+        } catch (_: Exception) {
+            toast(getString(R.string.t_pdf_failed))
+        }
+    }
+
+    /** Save the current page's HTML into the app's private files (offline copy). */
+    private fun savePageOffline() {
+        val w = cur() ?: return
+        w.evaluateJavascript(
+            "(function(){try{return document.documentElement.outerHTML;}catch(e){return '';}})()"
+        ) { html ->
+            try {
+                val decoded = if (html == null) "" else
+                    (org.json.JSONTokener(html).nextValue() as? String ?: "")
+                if (decoded.isBlank()) { toast(getString(R.string.t_save_failed)); return@evaluateJavascript }
+                val dir = java.io.File(filesDir, "saved")
+                dir.mkdirs()
+                val name = "page-" + System.currentTimeMillis() + ".html"
+                java.io.File(dir, name).writeText(decoded)
+                toast(getString(R.string.t_saved) + ": " + name)
+            } catch (_: Exception) {
+                toast(getString(R.string.t_save_failed))
+            }
+        }
+    }
+
     private fun go(input: String?) {
         var u = input?.trim() ?: ""
         if (u.isEmpty()) return
         if (u.startsWith("aekant://")) { handleScheme(u); return }
         if (!u.startsWith("http://") && !u.startsWith("https://") && !u.startsWith("file:")) {
             u = if (u.contains(" ") || !u.contains(".")) searchBase + Uri.encode(u) else "https://$u"
+        }
+        if (prefs.getBoolean("https_only", true) && u.startsWith("http://")) {
+            u = "https://" + u.substring(7)
         }
         cur()?.loadUrl(u)
         val im = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
@@ -405,6 +496,20 @@ class MainActivity : AppCompatActivity() {
         when (uri.host) {
             "search" -> go(searchBase + Uri.encode(uri.getQueryParameter("q")))
             "open" -> go(uri.getQueryParameter("u"))
+        }
+    }
+
+    private fun buildChromeClient(): WebChromeClient = object : WebChromeClient() {
+
+        override fun onPermissionRequest(request: PermissionRequest?) {
+            val r = request ?: return
+            if (prefs.getBoolean("block_perms", true)) r.deny() else r.grant(r.resources)
+        }
+
+        override fun onProgressChanged(view: WebView?, newProgress: Int) {
+            if (view == cur()) {
+                progress.visibility = if (newProgress in 1..99) View.VISIBLE else View.GONE
+            }
         }
     }
 
@@ -421,12 +526,18 @@ class MainActivity : AppCompatActivity() {
             if (!incognito && url != null && url.startsWith("http")) {
                 addEntry("history", v?.title, url, 300, false)
             }
-            if (url != null) injectExtensions(v, url)
+            if (url != null) {
+                injectProtection(v)
+                injectExtensions(v, url)
+            }
         }
 
         override fun shouldOverrideUrlLoading(v: WebView?, request: WebResourceRequest?): Boolean {
             val url = request?.url?.toString() ?: return false
             if (url.startsWith("aekant://")) { handleScheme(url); return true }
+            if (prefs.getBoolean("https_only", true) && url.startsWith("http://")) {
+                v?.loadUrl("https://" + url.substring(7)); return true
+            }
             return false
         }
 
@@ -572,15 +683,17 @@ class MainActivity : AppCompatActivity() {
         b.iconRow(c3, R.drawable.ic_translate, getString(R.string.m_translate), null, act(9)); b.divider(c3)
         b.iconValueRow(c3, R.drawable.ic_desktop, getString(R.string.m_desktop),
             if (desktop) "On" else "Off", act(10)); b.divider(c3)
-        b.iconValueRow(c3, R.drawable.ic_zoom, getString(R.string.m_zoom), "$textZoom%", act(11))
+        b.iconValueRow(c3, R.drawable.ic_zoom, getString(R.string.m_zoom), "$textZoom%", act(11)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_save_pdf), null, act(12)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_folder, getString(R.string.m_save_page), null, act(13))
 
         b.section(getString(R.string.sec_more))
         val c4 = b.card()
-        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(12)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(13)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(14)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(15)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(16))
+        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(14)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(15)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(16)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(17)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(18))
     }
 
     private fun act(which: Int): View.OnClickListener = View.OnClickListener { onMenuAction(which) }
@@ -599,11 +712,13 @@ class MainActivity : AppCompatActivity() {
             9 -> { translatePage(); hideMenuPanel() }
             10 -> toggleDesktop()
             11 -> showZoom()
-            12 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
-            13 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
-            14 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
-            15 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
-            16 -> finishAffinity()
+            12 -> { savePageAsPdf(); hideMenuPanel() }
+            13 -> { savePageOffline(); hideMenuPanel() }
+            14 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
+            15 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
+            16 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
+            17 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
+            18 -> finishAffinity()
         }
     }
 

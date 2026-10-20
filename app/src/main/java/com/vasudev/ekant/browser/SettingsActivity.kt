@@ -76,6 +76,12 @@ class SettingsActivity : BaseSettingsActivity() {
             startActivity(Intent(this, com.vasudev.Appstore.SettingsUIActivity::class.java))
         }
 
+        b.section(getString(R.string.sec_power))
+        val pw = b.card()
+        b.navRow(pw, getString(R.string.r_power), getString(R.string.r_power_sum)) {
+            go(AdvancedActivity::class.java)
+        }
+
         b.section(getString(R.string.sec_about))
         val ab = b.card()
         b.navRow(ab, getString(R.string.r_about), null) { go(AboutActivity::class.java) }
