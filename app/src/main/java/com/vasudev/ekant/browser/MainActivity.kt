@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         const val HOME_ASSET = "file:///android_asset/ntp.html"
         const val UA_DESKTOP =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-        const val READER_JS = "(function(){try{var el=document.querySelector('article')||document.querySelector('main')||document.body;var txt=el.innerText||'';var title=document.title||'';function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}var h='<!doctype html><html><head><meta name=viewport content=\'width=device-width,initial-scale=1\'><style>body{background:#0B0E12;color:#F2F4F7;font-family:Georgia,serif;line-height:1.75;padding:20px;max-width:760px;margin:0 auto}h1{font-size:24px;color:#F26A1B;font-family:sans-serif}p{font-size:17px;margin:0 0 16px}</style></head><body><h1>'+esc(title)+'</h1>';var ps=txt.split(/\\n{2,}/);for(var i=0;i<ps.length;i++){var p=ps[i].trim();if(p.length>0){h+='<p>'+esc(p)+'</p>';}}h+='</body></html>';document.open();document.write(h);document.close();}catch(e){}})();"
+        const val READER_JS = "(function(){try{var el=document.querySelector('article')||document.querySelector('main')||document.body;var txt=el.innerText||'';var title=document.title||'';function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}var h='<!doctype html><html><head><meta name=viewport content=\'width=device-width,initial-scale=1\'><style>body{background:__BG__;color:__FG__;font-family:Georgia,serif;line-height:1.75;padding:20px;max-width:760px;margin:0 auto}h1{font-size:24px;color:__BR__;font-family:sans-serif}p{font-size:17px;margin:0 0 16px}</style></head><body><h1>'+esc(title)+'</h1>';var ps=txt.split(/\\n{2,}/);for(var i=0;i<ps.length;i++){var p=ps[i].trim();if(p.length>0){h+='<p>'+esc(p)+'</p>';}}h+='</body></html>';document.open();document.write(h);document.close();}catch(e){}})();"
         const val REQ_UNLOCK = 42
         const val FP_SCRIPT = "(function(){try{var g=CanvasRenderingContext2D.prototype.getImageData;CanvasRenderingContext2D.prototype.getImageData=function(){var d=g.apply(this,arguments);try{for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}}catch(e){}return d;};}catch(e){}try{var t=HTMLCanvasElement.prototype.toDataURL;HTMLCanvasElement.prototype.toDataURL=function(){try{var c=this.getContext('2d');if(c){var d=c.getImageData(0,0,this.width,this.height);for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}c.putImageData(d,0,0);}}catch(e){}return t.apply(this,arguments);};}catch(e){}try{if(window.AudioBuffer){var p=AudioBuffer.prototype.getChannelData;AudioBuffer.prototype.getChannelData=function(){var a=p.apply(this,arguments);try{for(var i=0;i<a.length;i+=1000){a[i]=a[i]+(Math.random()-0.5)*1e-6;}}catch(e){}return a;};}}catch(e){}try{Object.defineProperty(navigator,'hardwareConcurrency',{get:function(){return 4;}});}catch(e){}try{Object.defineProperty(navigator,'deviceMemory',{get:function(){return 4;}});}catch(e){}})();"
         val SE_NAMES = arrayOf("Google", "DuckDuckGo", "Bing")
@@ -116,7 +116,7 @@ class MainActivity : AppCompatActivity() {
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         engineStore = SearchEngineStore(this)
         readPrefs()
-        setTheme(if (dark) R.style.Theme_Aekant else R.style.Theme_Aekant_Light)
+        setTheme(ThemeHelper.res(this))
         super.onCreate(saved)
         setContentView(R.layout.activity_main)
 
@@ -315,7 +315,12 @@ class MainActivity : AppCompatActivity() {
             "&style=" + (if (prefs.getBoolean("focus_mode", false)) "minimal"
                 else (prefs.getString("start_style", "personal") ?: "personal")) +
             (if (sc.isNotBlank()) "&shortcuts=" + Uri.encode(sc) else "") +
-            (if (rec.isNotBlank()) "&recent=" + Uri.encode(rec) else "")
+            (if (rec.isNotBlank()) "&recent=" + Uri.encode(rec) else "") +
+            "&tbg=" + Uri.encode(hex(attr(R.attr.bgColor))) +
+            "&tsurf=" + Uri.encode(hex(attr(R.attr.surfaceColor))) +
+            "&tfg=" + Uri.encode(hex(attr(R.attr.textPrimaryColor))) +
+            "&tmut=" + Uri.encode(hex(attr(R.attr.textSecondaryColor))) +
+            "&tbrand=" + Uri.encode(hex(attr(R.attr.brandColor)))
     }
 
     private fun recentForNtp(): String {
@@ -438,7 +443,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateLock(url: String?) {
         val secure = url != null && url.startsWith("https")
         lock.setColorFilter(
-            if (secure) resources.getColor(R.color.brand_green) else attr(R.attr.mutedColor))
+            if (secure) attr(R.attr.brand2Color) else attr(R.attr.mutedColor))
     }
 
     /** Run every enabled extension whose pattern matches this URL. */
@@ -577,8 +582,10 @@ class MainActivity : AppCompatActivity() {
         override fun onReceivedError(v: WebView?, request: WebResourceRequest?, error: android.webkit.WebResourceError?) {
             if (request?.isForMainFrame == true) {
                 val html = "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'>" +
-                    "<style>body{background:#0B0E12;color:#F2F4F7;font-family:sans-serif;text-align:center;padding:56px 24px}" +
-                    "h2{color:#F26A1B}p{color:#9BA3AE;font-size:14px}</style></head><body>" +
+                    "<style>body{background:" + hex(attr(R.attr.bgColor)) + ";color:" + hex(attr(R.attr.textPrimaryColor)) +
+                    ";font-family:sans-serif;text-align:center;padding:56px 24px}" +
+                    "h2{color:" + hex(attr(R.attr.brandColor)) + "}p{color:" + hex(attr(R.attr.textSecondaryColor)) +
+                    ";font-size:14px}</style></head><body>" +
                     "<h2>Page not available</h2><p>" + (error?.description ?: "Could not load this page.") + "</p>" +
                     "<p>" + (request.url?.toString() ?: "") + "</p></body></html>"
                 v?.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
@@ -926,13 +933,13 @@ class MainActivity : AppCompatActivity() {
             cell.setPadding(dp(8), dp(10), dp(8), dp(10))
             val bg = GradientDrawable()
             bg.cornerRadius = dp(14).toFloat()
-            bg.setColor(if (i == current) 0xFF2A2118.toInt() else 0xFF1E242C.toInt())
+            bg.setColor(if (i == current) attr(R.attr.surface2Color) else attr(R.attr.surfaceColor))
             cell.background = bg
 
             val iv = ImageView(this)
             val fav = favicons[wv]
             if (fav != null) iv.setImageBitmap(fav) else iv.setImageResource(R.drawable.ic_tabs)
-            iv.setColorFilter(0xFF9BA3AE.toInt())
+            iv.setColorFilter(attr(R.attr.textSecondaryColor))
             iv.layoutParams = LinearLayout.LayoutParams(dp(30), dp(30))
             cell.addView(iv)
 
@@ -942,7 +949,7 @@ class MainActivity : AppCompatActivity() {
             tv.ellipsize = TextUtils.TruncateAt.END
             tv.gravity = Gravity.CENTER
             tv.textSize = 11f
-            tv.setTextColor(0xFFF2F4F7.toInt())
+            tv.setTextColor(attr(R.attr.textPrimaryColor))
             tv.setPadding(0, dp(6), 0, dp(2))
             cell.addView(tv)
 
@@ -950,7 +957,7 @@ class MainActivity : AppCompatActivity() {
             close.text = "\u2715"
             close.textSize = 12f
             close.gravity = Gravity.CENTER
-            close.setTextColor(0xFFF26A1B.toInt())
+            close.setTextColor(attr(R.attr.brandColor))
             close.setPadding(dp(10), dp(2), dp(10), dp(2))
             close.setOnClickListener { closeTab(i); dialog.dismiss(); showTabs() }
             cell.addView(close)
@@ -992,7 +999,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun readerMode() {
-        cur()?.evaluateJavascript(READER_JS, null)
+        cur()?.evaluateJavascript(readerJs(), null)
     }
 
     private fun addToHomeScreen() {
@@ -1086,6 +1093,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun searchFor(q: String): String = engineStore.urlFor(q)
+
+    private fun hex(c: Int): String = String.format("#%06X", 0xFFFFFF and c)
+
+    private fun readerJs(): String = READER_JS
+        .replace("__BG__", hex(attr(R.attr.bgColor)))
+        .replace("__FG__", hex(attr(R.attr.textPrimaryColor)))
+        .replace("__BR__", hex(attr(R.attr.brandColor)))
 
     private fun onOff(v: Boolean) = if (v) "On" else "Off"
 

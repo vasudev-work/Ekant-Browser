@@ -321,6 +321,11 @@
     <string name="hs_style_personal_sum">Search bar and your shortcuts</string>
     <string name="hs_style_dashboard">Dashboard</string>
     <string name="hs_style_dashboard_sum">Shortcuts, stats and recently visited</string>
+    <string name="ap_brand">Brand</string>
+    <string name="brand_aekant">Aekant</string>
+    <string name="brand_aekant_sum">Orange and green</string>
+    <string name="brand_quiet">Quiet Nature</string>
+    <string name="brand_quiet_sum">Forest green and sage, ivory or charcoal</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>

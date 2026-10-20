@@ -29,8 +29,7 @@ class AIActivity : AppCompatActivity() {
     private val prefs by lazy { getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE) }
 
     override fun onCreate(saved: Bundle?) {
-        val dark = prefs.getBoolean("dark", true)
-        setTheme(if (dark) R.style.Theme_Aekant else R.style.Theme_Aekant_Light)
+        setTheme(ThemeHelper.res(this))
         super.onCreate(saved)
         setContentView(R.layout.activity_ai)
 
@@ -62,7 +61,7 @@ class AIActivity : AppCompatActivity() {
         val t = TextView(this)
         t.text = text
         t.textSize = 14f
-        t.setTextColor(if (user) 0xFF0B0E12.toInt() else attr(R.attr.textPrimaryColor))
+        t.setTextColor(if (user) attr(R.attr.bgColor) else attr(R.attr.textPrimaryColor))
         t.setBackgroundResource(if (user) R.drawable.bubble_user else R.drawable.bubble_bot)
         val p = dp(12)
         t.setPadding(p, p, p, p)

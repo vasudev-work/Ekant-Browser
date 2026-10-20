@@ -47,7 +47,7 @@ class Sheet private constructor(private val a: AppCompatActivity) {
         t.setOnClickListener { dismiss(); cb?.onItem(index) }
         items.addView(t)
         val div = View(a)
-        div.setBackgroundColor(0x22FFFFFF)
+        div.setBackgroundColor(attr(R.attr.dividerColor))
         val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1))
         lp.leftMargin = dp(20)
         lp.rightMargin = dp(20)
@@ -61,7 +61,7 @@ class Sheet private constructor(private val a: AppCompatActivity) {
     fun action(label: String, r: Runnable?): Sheet {
         val t = TextView(a)
         t.text = label
-        t.setTextColor(a.resources.getColor(R.color.brand_orange))
+        t.setTextColor(attr(R.attr.brandColor))
         t.textSize = 14f
         t.setTypeface(null, android.graphics.Typeface.BOLD)
         t.setPadding(dp(22), dp(16), dp(22), dp(16))

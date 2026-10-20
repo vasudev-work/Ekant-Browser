@@ -16,7 +16,7 @@ class SettingsBuilder(private val a: Context, private val root: LinearLayout) {
 
     private val textColor: Int = attr(R.attr.textPrimaryColor)
     private val mutedColor: Int = attr(R.attr.textSecondaryColor)
-    private val accentColor: Int = a.resources.getColor(R.color.brand_orange)
+    private val accentColor: Int = attr(R.attr.brandColor)
 
     private fun attr(resid: Int): Int {
         val tv = TypedValue()

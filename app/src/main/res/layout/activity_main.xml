@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg">
+    android:background="?attr/bgColor">
 
     <LinearLayout
         android:id="@+id/column"
@@ -15,7 +15,7 @@
             android:id="@+id/topbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/surface"
+            android:background="?attr/surfaceColor"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="4dp"
@@ -30,7 +30,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/cd_back"
                 android:src="@drawable/ic_back"
-                android:tint="@color/text_primary" />
+                android:tint="?attr/textPrimaryColor" />
 
             <ImageButton
                 android:id="@+id/btn_fwd"
@@ -39,7 +39,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/cd_forward"
                 android:src="@drawable/ic_forward"
-                android:tint="@color/text_primary" />
+                android:tint="?attr/textPrimaryColor" />
 
             <ImageView
                 android:id="@+id/lock"
@@ -49,7 +49,7 @@
                 android:layout_marginEnd="4dp"
                 android:contentDescription="@string/cd_secure"
                 android:src="@drawable/ic_lock"
-                android:tint="@color/text_secondary" />
+                android:tint="?attr/textSecondaryColor" />
 
             <EditText
                 android:id="@+id/url"
@@ -62,8 +62,8 @@
                 android:inputType="textUri"
                 android:maxLines="1"
                 android:selectAllOnFocus="true"
-                android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_secondary"
+                android:textColor="?attr/textPrimaryColor"
+                android:textColorHint="?attr/textSecondaryColor"
                 android:textSize="14sp" />
 
             <ImageButton
@@ -73,7 +73,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/cd_refresh"
                 android:src="@drawable/ic_refresh"
-                android:tint="@color/text_primary" />
+                android:tint="?attr/textPrimaryColor" />
 
             <ImageButton
                 android:id="@+id/btn_menu"
@@ -82,14 +82,14 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/cd_menu"
                 android:src="@drawable/ic_more"
-                android:tint="@color/text_primary" />
+                android:tint="?attr/textPrimaryColor" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/container_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/surface"
+            android:background="?attr/surfaceColor"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="14dp"
@@ -111,7 +111,7 @@
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
                 android:text="@string/containers"
-                android:textColor="@color/text_secondary"
+                android:textColor="?attr/textSecondaryColor"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -121,7 +121,7 @@
             android:layout_width="match_parent"
             android:layout_height="3dp"
             android:max="100"
-            android:progressTint="@color/brand_orange"
+            android:progressTint="?attr/brandColor"
             android:visibility="gone" />
 
         <FrameLayout
@@ -134,7 +134,7 @@
             android:id="@+id/bottom_nav"
             android:layout_width="match_parent"
             android:layout_height="58dp"
-            android:background="@color/surface"
+            android:background="?attr/surfaceColor"
             android:orientation="horizontal">
 
             <LinearLayout
@@ -151,13 +151,13 @@
                     android:layout_height="22dp"
                     android:contentDescription="@string/nav_home"
                     android:src="@drawable/ic_home"
-                    android:tint="@color/text_primary" />
+                    android:tint="?attr/textPrimaryColor" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/nav_home"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="?attr/textSecondaryColor"
                     android:textSize="10sp" />
             </LinearLayout>
 
@@ -175,13 +175,13 @@
                     android:layout_height="22dp"
                     android:contentDescription="@string/nav_bookmarks"
                     android:src="@drawable/ic_bookmark"
-                    android:tint="@color/text_primary" />
+                    android:tint="?attr/textPrimaryColor" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/nav_bookmarks"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="?attr/textSecondaryColor"
                     android:textSize="10sp" />
             </LinearLayout>
 
@@ -199,13 +199,13 @@
                     android:layout_height="22dp"
                     android:contentDescription="@string/nav_downloads"
                     android:src="@drawable/ic_download"
-                    android:tint="@color/text_primary" />
+                    android:tint="?attr/textPrimaryColor" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/nav_downloads"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="?attr/textSecondaryColor"
                     android:textSize="10sp" />
             </LinearLayout>
 
@@ -223,13 +223,13 @@
                     android:layout_height="22dp"
                     android:contentDescription="@string/nav_tabs"
                     android:src="@drawable/ic_tabs"
-                    android:tint="@color/text_primary" />
+                    android:tint="?attr/textPrimaryColor" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/nav_tabs"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="?attr/textSecondaryColor"
                     android:textSize="10sp" />
             </LinearLayout>
         </LinearLayout>
@@ -281,7 +281,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/containers"
-                    android:textColor="@color/brand_orange"
+                    android:textColor="?attr/brandColor"
                     android:textSize="13sp"
                     android:textStyle="bold" />
             </LinearLayout>

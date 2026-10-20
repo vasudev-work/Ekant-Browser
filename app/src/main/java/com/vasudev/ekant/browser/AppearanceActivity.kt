@@ -6,6 +6,11 @@ class AppearanceActivity : BaseSettingsActivity() {
 
     override val titleRes = R.string.r_appearance
 
+    private fun setBrand(b: String) {
+        prefs.edit().putString("theme_brand", b).apply()
+        recreate()
+    }
+
     private fun setThemeMode(m: String) {
         prefs.edit().putString("theme_mode", m).apply()
         recreate()
@@ -17,6 +22,13 @@ class AppearanceActivity : BaseSettingsActivity() {
     )
 
     override fun build(b: SettingsBuilder, content: LinearLayout) {
+        b.section(getString(R.string.ap_brand))
+        val cb = b.card()
+        val brand = prefs.getString("theme_brand", "aekant")
+        b.radioRow(cb, getString(R.string.brand_aekant), getString(R.string.brand_aekant_sum), brand == "aekant") { setBrand("aekant") }
+        b.divider(cb)
+        b.radioRow(cb, getString(R.string.brand_quiet), getString(R.string.brand_quiet_sum), brand == "quiet") { setBrand("quiet") }
+
         b.section(getString(R.string.ap_theme))
         val c0 = b.card()
         val mode = prefs.getString("theme_mode", "dark")

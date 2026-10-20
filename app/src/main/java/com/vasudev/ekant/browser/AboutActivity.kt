@@ -13,8 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 class AboutActivity : AppCompatActivity() {
 
     override fun onCreate(saved: Bundle?) {
-        val dark = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE).getBoolean("dark", true)
-        setTheme(if (dark) R.style.Theme_Aekant else R.style.Theme_Aekant_Light)
+        setTheme(ThemeHelper.res(this))
         super.onCreate(saved)
         setContentView(R.layout.activity_about)
 

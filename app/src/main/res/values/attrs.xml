@@ -5,4 +5,9 @@
     <attr name="textPrimaryColor" format="color" />
     <attr name="textSecondaryColor" format="color" />
     <attr name="bgColor" format="color" />
+    <attr name="surfaceColor" format="color" />
+    <attr name="surface2Color" format="color" />
+    <attr name="dividerColor" format="color" />
+    <attr name="brandColor" format="color" />
+    <attr name="brand2Color" format="color" />
 </resources>

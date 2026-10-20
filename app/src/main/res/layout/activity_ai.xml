@@ -45,6 +45,6 @@
             android:layout_marginStart="6dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/ai_send"
-            android:src="@drawable/ic_send" android:tint="@color/brand_orange" />
+            android:src="@drawable/ic_send" android:tint="?attr/brandColor" />
     </LinearLayout>
 </LinearLayout>
