@@ -355,7 +355,7 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun newTab(u: String, select: Boolean = true): WebView {
-        val w = WebView(this)
+        val w = AekantWebView(this)
         w.layoutParams = FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         val s = w.settings
@@ -386,6 +386,8 @@ class MainActivity : AppCompatActivity() {
             }
         })
         w.setFindListener { _, count, done -> if (done) toast("" + count + " matches") }
+        w.onTextAction = { action, text -> handleTextAction(action, text) }
+        w.onLinkLongPress = { url, isImage -> showLinkMenu(url, isImage) }
         attachSwipe(w)
         w.visibility = View.GONE
         container.addView(w)
@@ -760,16 +762,17 @@ class MainActivity : AppCompatActivity() {
         b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_save_pdf), null, act(12)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_folder, getString(R.string.m_save_page), null, act(13)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_find, getString(R.string.m_reader), null, act(14)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_summary), null, act(15))
+        b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_summary), null, act(15)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_star, getString(R.string.m_save_later), null, act(16))
 
         b.section(getString(R.string.sec_more))
         val c4 = b.card()
-        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(16)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(17)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(18)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(19)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(20)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(21))
+        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(17)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(18)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(19)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(20)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(21)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(22))
     }
 
     private fun act(which: Int): View.OnClickListener = View.OnClickListener { onMenuAction(which) }
@@ -792,12 +795,13 @@ class MainActivity : AppCompatActivity() {
             13 -> { savePageOffline(); hideMenuPanel() }
             14 -> { readerMode(); hideMenuPanel() }
             15 -> { aiSummary(); hideMenuPanel() }
-            16 -> { addToHomeScreen(); hideMenuPanel() }
-            17 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
-            18 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
-            19 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
-            20 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
-            21 -> finishAffinity()
+            16 -> { saveForLater(); hideMenuPanel() }
+            17 -> { addToHomeScreen(); hideMenuPanel() }
+            18 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
+            19 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
+            20 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
+            21 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
+            22 -> finishAffinity()
         }
     }
 
@@ -1031,6 +1035,91 @@ class MainActivity : AppCompatActivity() {
         addAction(getString(R.string.d_close_all_tabs)) { dialog.dismiss(); closeAllTabs() }
 
         dialog.show()
+    }
+
+    /** Save the current page into the reading list. */
+    private fun saveForLater() {
+        val w = cur() ?: return
+        val url = w.url ?: return
+        if (!url.startsWith("http")) { toast(getString(R.string.rl_none)); return }
+        val title = (w.title ?: url).replace("|", " ")
+        val line = title + '\u0001' + url + '\u0001' + "0"
+        val cur0 = (prefs.getString("reading", "") ?: "")
+        val lines = cur0.split("\n").filter { it.isNotBlank() && !it.endsWith('\u0001' + url + '\u0001' + "0") }
+        val next = (lines + line).joinToString("\n")
+        prefs.edit().putString("reading", next).apply()
+        toast(getString(R.string.rl_saved))
+    }
+
+    private fun handleTextAction(action: String, text: String) {
+        when (action) {
+            "search" -> newTab(searchFor(text))
+            "share" -> shareText(text)
+            "translate" -> newTab("https://translate.google.com/?sl=auto&tl=en&text=" + Uri.encode(text))
+            "ai" -> askAiAbout(text)
+        }
+    }
+
+    private fun shareText(text: String) {
+        val i = Intent(Intent.ACTION_SEND)
+        i.type = "text/plain"
+        i.putExtra(Intent.EXTRA_TEXT, text)
+        try { startActivity(Intent.createChooser(i, getString(R.string.ctx_share))) } catch (_: Exception) { }
+    }
+
+    private fun askAiAbout(text: String) {
+        val endpoint = prefs.getString("ai_endpoint", "") ?: ""
+        if (endpoint.isBlank()) { toast(getString(R.string.ai_setup)); return }
+        toast(getString(R.string.sum_working))
+        Thread {
+            val answer = callAi(endpoint, prefs.getString("ai_key", "") ?: "",
+                prefs.getString("ai_model", "gpt-4o-mini") ?: "", text)
+            runOnUiThread {
+                AlertDialog.Builder(this).setTitle(R.string.ctx_ask_ai).setMessage(answer)
+                    .setPositiveButton(android.R.string.ok, null).show()
+            }
+        }.start()
+    }
+
+    /** Long-press menu for links and images. */
+    private fun showLinkMenu(url: String, isImage: Boolean) {
+        val actions = if (isImage)
+            arrayOf(getString(R.string.ctx_open_new), getString(R.string.ctx_open_private),
+                getString(R.string.ctx_copy), getString(R.string.ctx_share), getString(R.string.ctx_save_image))
+        else
+            arrayOf(getString(R.string.ctx_open_new), getString(R.string.ctx_open_private),
+                getString(R.string.ctx_copy), getString(R.string.ctx_share))
+        AlertDialog.Builder(this)
+            .setTitle(url.take(60))
+            .setItems(actions) { _, which ->
+                when (which) {
+                    0 -> newTab(url)
+                    1 -> { incognito = true; newTab(url) }
+                    2 -> copyToClipboard(url)
+                    3 -> shareText(url)
+                    4 -> downloadUrl(url)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun copyToClipboard(text: String) {
+        try {
+            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            cm.setPrimaryClip(android.content.ClipData.newPlainText("Aekant", text))
+            toast(getString(R.string.ctx_copied))
+        } catch (_: Exception) { }
+    }
+
+    private fun downloadUrl(url: String) {
+        try {
+            val r = DownloadManager.Request(Uri.parse(url))
+            r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, URLUtil.guessFileName(url, null, null))
+            (getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(r)
+            toast(getString(R.string.ctx_downloading))
+        } catch (_: Exception) { toast(getString(R.string.ctx_failed)) }
     }
 
     private fun reopenClosed() {

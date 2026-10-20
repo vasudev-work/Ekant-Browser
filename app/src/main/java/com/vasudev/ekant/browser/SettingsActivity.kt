@@ -26,6 +26,7 @@ class SettingsActivity : BaseSettingsActivity() {
         b.navRow(br, getString(R.string.s_tabs), null) { go(TabsActivity::class.java) }; b.divider(br)
         b.navRow(br, getString(R.string.s_bookmarks), null) { go(BookmarksActivity::class.java) }; b.divider(br)
         b.navRow(br, getString(R.string.s_history), null) { go(HistoryActivity::class.java) }; b.divider(br)
+        b.navRow(br, getString(R.string.rl_title), null) { go(ReadingListActivity::class.java) }; b.divider(br)
         b.navRow(br, getString(R.string.s_downloads), null) {
             try { startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)) } catch (_: Exception) { }
         }; b.divider(br)
