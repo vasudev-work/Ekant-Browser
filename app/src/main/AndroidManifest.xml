@@ -44,6 +44,11 @@
         <activity android:name=".PrivacyActivity" android:exported="false" android:label="@string/r_privacy_dashboard" />
         <activity android:name=".HomeShortcutsActivity" android:exported="false" android:label="@string/r_home_shortcuts" />
         <activity android:name=".BackupActivity" android:exported="false" android:label="@string/r_backup" />
+        <activity android:name=".SearchEngineActivity" android:exported="false" android:label="@string/s_search_engine" />
+        <activity android:name=".ToolbarActivity" android:exported="false" android:label="@string/s_toolbar_nav" />
+        <activity android:name=".TabsActivity" android:exported="false" android:label="@string/s_tabs" />
+        <activity android:name=".HistoryActivity" android:exported="false" android:label="@string/s_history" />
+        <activity android:name=".BookmarksActivity" android:exported="false" android:label="@string/s_bookmarks" />
     </application>
 
 </manifest>

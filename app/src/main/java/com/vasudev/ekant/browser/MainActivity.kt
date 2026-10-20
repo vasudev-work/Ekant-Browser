@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adBlocker: AdBlocker
     private lateinit var store: ContainerStore
     private lateinit var extStore: ExtensionStore
+    private lateinit var engineStore: SearchEngineStore
     private var containers: MutableList<Container> = mutableListOf()
     private var active: Container? = null
 
@@ -113,6 +114,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(saved: Bundle?) {
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        engineStore = SearchEngineStore(this)
         readPrefs()
         setTheme(if (dark) R.style.Theme_Aekant else R.style.Theme_Aekant_Light)
         super.onCreate(saved)
@@ -160,6 +162,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.nav_bookmarks).setOnClickListener { showBookmarks() }
         findViewById<View>(R.id.nav_downloads).setOnClickListener { openDownloads() }
         findViewById<View>(R.id.nav_tabs).setOnClickListener { showTabs() }
+        applyLayoutPrefs()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -185,7 +188,7 @@ class MainActivity : AppCompatActivity() {
         ntpStats = prefs.getBoolean("ntp_stats", true)
         ntpBg = prefs.getBoolean("ntp_bg", true)
         textZoom = prefs.getInt("zoom", 100)
-        searchBase = prefs.getString("se", SE_URLS[0]) ?: SE_URLS[0]
+        searchBase = engineStore.default().template
         memorySaver = prefs.getBoolean("memory_saver", true)
         httpsOnly = prefs.getBoolean("https_only", true)
     }
@@ -230,7 +233,7 @@ class MainActivity : AppCompatActivity() {
         for (t in tabs) { container.removeView(t); t.destroy() }
         tabs.clear()
         current = -1
-        val saved = store.getTabs(c.id)
+        val saved = if (prefs.getBoolean("restore_tabs", true)) store.getTabs(c.id) else emptyList()
         if (saved.isEmpty()) {
             newTab(ntpUrl())
         } else {
@@ -512,7 +515,7 @@ class MainActivity : AppCompatActivity() {
         if (u.isEmpty()) return
         if (u.startsWith("aekant://")) { handleScheme(u); return }
         if (!u.startsWith("http://") && !u.startsWith("https://") && !u.startsWith("file:")) {
-            u = if (u.contains(" ") || !u.contains(".")) searchBase + Uri.encode(u) else "https://$u"
+            u = if (u.contains(" ") || !u.contains(".")) searchFor(u) else "https://$u"
         }
         if (prefs.getBoolean("https_only", true) && u.startsWith("http://")) {
             u = "https://" + u.substring(7)
@@ -525,7 +528,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleScheme(u: String) {
         val uri = Uri.parse(u)
         when (uri.host) {
-            "search" -> go(searchBase + Uri.encode(uri.getQueryParameter("q")))
+            "search" -> go(searchFor(uri.getQueryParameter("q") ?: ""))
             "open" -> go(uri.getQueryParameter("u"))
         }
     }
@@ -1076,6 +1079,34 @@ class MainActivity : AppCompatActivity() {
         } finally {
             c?.disconnect()
         }
+    }
+
+    private fun searchFor(q: String): String = engineStore.urlFor(q)
+
+    /** Applies address-bar / navigation placement and compact mode. */
+    private fun applyLayoutPrefs() {
+        val col = findViewById<LinearLayout>(R.id.column)
+        val topBar = findViewById<View>(R.id.topbar)
+        val nav = findViewById<View>(R.id.bottom_nav)
+        val containerRow = findViewById<View>(R.id.container_row)
+        val prog = findViewById<View>(R.id.progress)
+        val web = findViewById<View>(R.id.container)
+
+        val addrBottom = prefs.getString("address_bar", "top") == "bottom"
+        val navTop = prefs.getString("toolbar_pos", "bottom") == "top"
+
+        nav.layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            dp(if (prefs.getBoolean("compact", false)) 46 else 58))
+
+        col.removeAllViews()
+        if (navTop) col.addView(nav)
+        if (!addrBottom) col.addView(topBar)
+        col.addView(containerRow)
+        col.addView(prog)
+        col.addView(web)
+        if (addrBottom) col.addView(topBar)
+        if (!navTop) col.addView(nav)
     }
 
     private fun sharePage() {
