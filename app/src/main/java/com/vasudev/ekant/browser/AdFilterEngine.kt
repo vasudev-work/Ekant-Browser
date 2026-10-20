@@ -41,9 +41,15 @@ object AdFilterEngine {
         }.start()
     }
 
+    private fun openAsset(context: Context, name: String): java.io.InputStream? = try {
+        GZIPInputStream(context.assets.open(name))
+    } catch (_: Exception) {
+        try { context.assets.open(name.removeSuffix(".gz")) } catch (_: Exception) { null }
+    }
+
     private fun loadCosmetic(context: Context) {
         try {
-            GZIPInputStream(context.assets.open("easylist_cosmetic.txt.gz")).bufferedReader().use { r ->
+            openAsset(context, "easylist_cosmetic.txt.gz")?.bufferedReader()?.use { r ->
                 r.forEachLine { raw ->
                     val line = raw.trim()
                     if (line.isEmpty()) return@forEachLine
@@ -73,7 +79,7 @@ object AdFilterEngine {
 
     private fun loadNetwork(context: Context) {
         try {
-            GZIPInputStream(context.assets.open("easylist_net.txt.gz")).bufferedReader().use { r ->
+            openAsset(context, "easylist_net.txt.gz")?.bufferedReader()?.use { r ->
                 r.forEachLine { raw ->
                     val line = raw.trim()
                     if (line.isEmpty()) return@forEachLine
