@@ -40,6 +40,23 @@ jobs:
           echo "GeckoView version: $VER"
           echo "GECKOVIEW_VERSION=$VER" >> "$GITHUB_ENV"
 
+      - name: Inspect GeckoView API
+        run: |
+          V="$GECKOVIEW_VERSION"
+          BASE="https://maven.mozilla.org/maven2/org/mozilla/geckoview/geckoview-omni/$V/geckoview-omni-$V.aar"
+          echo "downloading $BASE"
+          curl -s -o gv.aar "$BASE"
+          ls -la gv.aar
+          unzip -o -q gv.aar classes.jar -d gvx || true
+          echo "=== NavigationDelegate ==="
+          javap -classpath gvx/classes.jar 'org.mozilla.geckoview.GeckoSession$NavigationDelegate' || true
+          echo "=== ProgressDelegate ==="
+          javap -classpath gvx/classes.jar 'org.mozilla.geckoview.GeckoSession$ProgressDelegate' || true
+          echo "=== ContentDelegate (title only) ==="
+          javap -classpath gvx/classes.jar 'org.mozilla.geckoview.GeckoSession$ContentDelegate' | grep -i title || true
+          echo "=== GeckoResult statics ==="
+          javap -classpath gvx/classes.jar 'org.mozilla.geckoview.GeckoResult' | grep -i "fromValue\|allowOrDeny\|public static" || true
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
