@@ -28,13 +28,13 @@ jobs:
           yes | "$SDKMGR" --licenses > /dev/null 2>&1 || true
           "$SDKMGR" "platform-tools" "platforms;android-34" "build-tools;34.0.0" > /dev/null 2>&1 || true
 
-      - name: Resolve latest GeckoView release
+      - name: Resolve a GeckoView release compatible with AGP 8.5 / compileSdk 34
         run: |
           META=$(curl -s https://maven.mozilla.org/maven2/org/mozilla/geckoview/geckoview-omni/maven-metadata.xml)
-          VER=$(printf '%s' "$META" | sed -n 's:.*<release>\([^<]*\)</release>.*:\1:p')
-          if [ -z "$VER" ]; then
-            VER=$(printf '%s' "$META" | sed -n 's:.*<version>\([^<]*\)</version>.*:\1:p' | tail -1)
-          fi
+          VERS=$(printf '%s' "$META" | sed -n 's:.*<version>\([^<]*\)</version>.*:\1:p')
+          echo "versions found: $(printf '%s\n' "$VERS" | wc -l)"
+          VER=$(printf '%s\n' "$VERS" | awk -F. '$1+0<=126' | tail -1)
+          if [ -z "$VER" ]; then VER=$(printf '%s\n' "$VERS" | head -1); fi
           echo "GeckoView version: $VER"
           echo "GECKOVIEW_VERSION=$VER" >> "$GITHUB_ENV"
 
