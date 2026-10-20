@@ -25,6 +25,11 @@ class ShieldsActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("block_trackers", on).apply()
         }
         b.divider(c)
+        b.switchRow(c, getString(R.string.sh_fonts), getString(R.string.sh_fonts_sum),
+            prefs.getBoolean("block_fonts", false)) { _, on ->
+            prefs.edit().putBoolean("block_fonts", on).apply()
+        }
+        b.divider(c)
         b.switchRow(c, getString(R.string.sh_popups), getString(R.string.sh_popups_sum),
             prefs.getBoolean("popups", true)) { _, on ->
             prefs.edit().putBoolean("popups", on).apply()

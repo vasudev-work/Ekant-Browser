@@ -24,5 +24,15 @@ class AekantApp : Application() {
         c.lightSurface = 0xFFFFFFFF.toInt()
         c.cornerRadiusDp = 20
         SettingsConfig.install(c)
+
+        val prev = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            try {
+                java.io.File(filesDir, "crash.log")
+                    .appendText("\n--- " + java.util.Date().toString() + " ---\n" +
+                        android.util.Log.getStackTraceString(e) + "\n")
+            } catch (_: Exception) { }
+            prev?.uncaughtException(t, e)
+        }
     }
 }

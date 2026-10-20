@@ -68,6 +68,19 @@ class ExtensionStore(context: Context) {
             false, true
         ),
         Extension(
+            "builtin-cookie", "Cookie banner remover", "*",
+            "(function(){try{if(window.__aekantCookies)return;window.__aekantCookies=1;" +
+                "var sel=['#onetrust-accept-btn-handler','.cc-allow','.cc-btn.cc-allow','#accept-cookies'," +
+                "'.cookie-accept','#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll','.js-accept-cookies'];" +
+                "function go(){try{for(var i=0;i<sel.length;i++){var e=document.querySelector(sel[i]);if(e){e.click();return;}}" +
+                "var bs=document.querySelectorAll('button,a');" +
+                "for(var j=0;j<bs.length;j++){var t=(bs[j].innerText||'').trim().toLowerCase();" +
+                "if(/^(accept|accept all|agree|i agree|ok|got it|allow all|accept cookies)$/.test(t)){bs[j].click();return;}}}" +
+                "catch(e){}}" +
+                "go();setTimeout(go,1500);setTimeout(go,4000);}catch(e){}})();",
+            true, true
+        ),
+        Extension(
             "builtin-json", "JSON viewer", "*",
             "(function(){try{" +
                 "var ct=(document.contentType||'').toLowerCase();" +

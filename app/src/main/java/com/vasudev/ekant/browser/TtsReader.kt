@@ -27,6 +27,9 @@ object TtsReader {
     private var index = 0
     private var speaking = false
     private var rate = 1.0f
+    private var pitch = 1.0f
+    private var sleepMin = 0
+    private var sleepHandler: android.os.Handler? = null
     private var ctx: Context? = null
     private var am: android.media.AudioManager? = null
     private var focusPaused = false
@@ -44,6 +47,73 @@ object TtsReader {
                 if (focusPaused) { focusPaused = false; resume() }
             }
         }
+    }
+
+    private fun prefFloat(key: String, def: Float): Float = try {
+        ctx?.getSharedPreferences(MainActivity.PREFS, Context.MODE_PRIVATE)?.getFloat(key, def) ?: def
+    } catch (_: Exception) { def }
+
+    /** User pronunciation map: "Li Xun" -> "Lee Shurn". */
+    private fun applyDict(s: String): String {
+        val raw = try {
+            ctx?.getSharedPreferences(MainActivity.PREFS, Context.MODE_PRIVATE)?.getString("tts_dict", "") ?: ""
+        } catch (_: Exception) { "" }
+        if (raw.isBlank()) return s
+        var out = s
+        for (line in raw.split("\n")) {
+            val i = line.indexOf('\u0001')
+            if (i <= 0) continue
+            val from = line.substring(0, i).trim()
+            val to = line.substring(i + 1)
+            if (from.isBlank()) continue
+            out = try {
+                out.replace(Regex("\\b" + Regex.escape(from) + "\\b", RegexOption.IGNORE_CASE), to)
+            } catch (_: Exception) { out }
+        }
+        return out
+    }
+
+    fun setPitch(v: Float) {
+        pitch = v
+        try { tts?.setPitch(v) } catch (_: Exception) { }
+        if (speaking) speakCurrent() else notifyState()
+    }
+
+    fun pitch(): Float = pitch
+
+    /** Sleep timer in minutes; 0 turns it off. */
+    fun setSleep(minutes: Int) {
+        sleepMin = minutes
+        sleepHandler?.removeCallbacksAndMessages(null)
+        if (minutes <= 0) return
+        val h = android.os.Handler(android.os.Looper.getMainLooper())
+        sleepHandler = h
+        h.postDelayed({ fadeAndPause() }, minutes * 60_000L)
+    }
+
+    fun sleepMinutes(): Int = sleepMin
+
+    private fun fadeAndPause() {
+        val a = am
+        if (a == null) { pause(); return }
+        val orig = try { a.getStreamVolume(android.media.AudioManager.STREAM_MUSIC) } catch (_: Exception) { 0 }
+        var step = 0
+        val h = android.os.Handler(android.os.Looper.getMainLooper())
+        val run = object : Runnable {
+            override fun run() {
+                step++
+                try {
+                    a.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, orig * (10 - step) / 10, 0)
+                } catch (_: Exception) { }
+                if (step < 10) {
+                    h.postDelayed(this, 300)
+                } else {
+                    pause()
+                    try { a.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, orig, 0) } catch (_: Exception) { }
+                }
+            }
+        }
+        h.postDelayed(run, 300)
     }
 
     private fun pref(key: String): Boolean = try {
@@ -98,6 +168,7 @@ object TtsReader {
                     try {
                         tts?.language = Locale.getDefault()
                         tts?.setSpeechRate(rate)
+                        tts?.setPitch(prefFloat("tts_pitch", 1.0f))
                     } catch (_: Exception) { }
                     tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                         override fun onStart(id: String?) { }
@@ -129,7 +200,8 @@ object TtsReader {
         val s = queue.getOrNull(index) ?: return
         try {
             tts?.setSpeechRate(rate)
-            tts?.speak(s, TextToSpeech.QUEUE_FLUSH, Bundle(), "aekant-" + index)
+            tts?.setPitch(pitch)
+            tts?.speak(applyDict(s), TextToSpeech.QUEUE_FLUSH, Bundle(), "aekant-" + index)
         } catch (_: Exception) { }
         listener?.onState(index, queue.size, s, speaking)
     }

@@ -26,6 +26,9 @@ class DiagnosticsActivity : BaseSettingsActivity() {
         b.divider(c)
         b.valueRow(c, getString(R.string.dg_rules), "" + AdFilterEngine.ruleCount(), null)
 
+        b.divider(c)
+        b.valueRow(c, getString(R.string.dg_crash), crashInfo(), null)
+
         b.section(getString(R.string.dg_data))
         val d = b.card()
         b.valueRow(d, getString(R.string.dg_history), "" + count("history"), null)
@@ -39,6 +42,13 @@ class DiagnosticsActivity : BaseSettingsActivity() {
         b.valueRow(d, getString(R.string.us_title), "" + UserStyleStore.all(this).size, null)
         b.note(getString(R.string.dg_note))
     }
+
+    private fun crashInfo(): String = try {
+        val f = java.io.File(filesDir, "crash.log")
+        if (!f.exists() || f.length() == 0L) getString(R.string.dg_none)
+        else java.text.SimpleDateFormat("d MMM HH:mm", java.util.Locale.getDefault())
+            .format(java.util.Date(f.lastModified()))
+    } catch (_: Exception) { getString(R.string.dg_none) }
 
     private fun count(key: String): Int {
         val s = prefs.getString(key, "") ?: ""

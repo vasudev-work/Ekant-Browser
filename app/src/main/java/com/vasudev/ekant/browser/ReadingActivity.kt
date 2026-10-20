@@ -7,6 +7,32 @@ class ReadingActivity : BaseSettingsActivity() {
 
     override val titleRes = R.string.rd_title
 
+    private fun dictDialog() {
+        val col = android.widget.LinearLayout(this)
+        col.orientation = android.widget.LinearLayout.VERTICAL
+        col.setPadding(48, 24, 48, 8)
+        val w = android.widget.EditText(this)
+        w.hint = getString(R.string.rd_word)
+        col.addView(w)
+        val say = android.widget.EditText(this)
+        say.hint = getString(R.string.rd_say)
+        col.addView(say)
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.rd_dict_add)
+            .setView(col)
+            .setPositiveButton(R.string.ext_save) { _, _ ->
+                val from = w.text.toString().trim()
+                val to = say.text.toString().trim()
+                if (from.isNotEmpty() && to.isNotEmpty()) {
+                    val cur = (prefs.getString("tts_dict", "") ?: "").split("\n").filter { it.isNotBlank() }
+                    prefs.edit().putString("tts_dict", (cur + (from + '\u0001' + to)).joinToString("\n")).apply()
+                    rebuild()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     override fun build(b: SettingsBuilder, content: LinearLayout) {
         b.section(getString(R.string.rd_title))
         val c = b.card()
@@ -29,6 +55,65 @@ class ReadingActivity : BaseSettingsActivity() {
             prefs.getBoolean("auto_retry", true)) { _, on ->
             prefs.edit().putBoolean("auto_retry", on).apply()
         }
+        b.section(getString(R.string.rd_visual))
+        val v = b.card()
+        b.switchRow(v, getString(R.string.rd_eink), getString(R.string.rd_eink_sum),
+            prefs.getBoolean("eink", false)) { _, on ->
+            prefs.edit().putBoolean("eink", on).apply()
+        }
+        b.divider(v)
+        b.switchRow(v, getString(R.string.rd_autoscroll), getString(R.string.rd_autoscroll_sum),
+            prefs.getBoolean("autoscroll", false)) { _, on ->
+            prefs.edit().putBoolean("autoscroll", on).apply()
+        }
+        b.divider(v)
+        val spd = prefs.getInt("autoscroll_px", 2)
+        val speeds = intArrayOf(1, 2, 4)
+        val speedNames = intArrayOf(R.string.rd_slow, R.string.rd_normal, R.string.rd_fast)
+        for (i in speeds.indices) {
+            if (i > 0) b.divider(v)
+            b.radioRow(v, getString(speedNames[i]), null, spd == speeds[i]) {
+                prefs.edit().putInt("autoscroll_px", speeds[i]).apply(); rebuild()
+            }
+        }
+
+        b.section(getString(R.string.rd_voice))
+        val vo = b.card()
+        val pit = prefs.getFloat("tts_pitch", 1.0f)
+        val pitches = floatArrayOf(0.85f, 1.0f, 1.15f, 1.3f)
+        val pitchNames = intArrayOf(R.string.rd_low, R.string.rd_default, R.string.rd_high, R.string.rd_veryhigh)
+        for (i in pitches.indices) {
+            if (i > 0) b.divider(vo)
+            b.radioRow(vo, getString(pitchNames[i]), null, Math.abs(pit - pitches[i]) < 0.01f) {
+                prefs.edit().putFloat("tts_pitch", pitches[i]).apply()
+                TtsReader.setPitch(pitches[i])
+                rebuild()
+            }
+        }
+
+        b.section(getString(R.string.rd_dict))
+        val dict = (prefs.getString("tts_dict", "") ?: "").split("\n").filter { it.contains('\u0001') }
+        if (dict.isEmpty()) {
+            b.note(getString(R.string.rd_dict_empty))
+        } else {
+            for (line in dict) {
+                val i = line.indexOf('\u0001')
+                val from = line.substring(0, i)
+                val to = line.substring(i + 1)
+                val card = b.card()
+                b.valueRow(card, from, to, null)
+                b.divider(card)
+                b.navRow(card, getString(R.string.ext_delete), null) {
+                    val keep = dict.filter { it != line }
+                    prefs.edit().putString("tts_dict", keep.joinToString("\n")).apply()
+                    rebuild()
+                }
+            }
+        }
+        b.section(getString(R.string.ext_add))
+        val add = b.card()
+        b.navRow(add, getString(R.string.rd_dict_add), getString(R.string.rd_dict_add_sum)) { dictDialog() }
+
         b.note(getString(R.string.rd_note))
     }
 }

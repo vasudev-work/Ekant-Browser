@@ -145,6 +145,7 @@ document.open();document.write(h);document.close();
     private var listenBar: LinearLayout? = null
     private var listenText: TextView? = null
     private var listenPlay: TextView? = null
+    private var sleepBtn: TextView? = null
     private var mediaSession: android.media.session.MediaSession? = null
     private var customView: View? = null
     private var customCallback: WebChromeClient.CustomViewCallback? = null
@@ -622,6 +623,8 @@ document.open();document.write(h);document.close();
             bar.addView(listenPlay)
             bar.addView(barButton("\u23ED") { TtsReader.next() })
             bar.addView(barButton("1.0x") { cycleRate() })
+            sleepBtn = barButton("\u23F1") { cycleSleep() }
+            bar.addView(sleepBtn)
             val lp = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             lp.gravity = Gravity.BOTTOM
@@ -630,6 +633,14 @@ document.open();document.write(h);document.close();
             try { findViewById<ViewGroup>(android.R.id.content).addView(bar, lp) } catch (_: Exception) { }
         }
         listenBar?.visibility = View.VISIBLE
+    }
+
+    private fun cycleSleep() {
+        val cur = TtsReader.sleepMinutes()
+        val next = when (cur) { 0 -> 15; 15 -> 30; 30 -> 60; else -> 0 }
+        TtsReader.setSleep(next)
+        sleepBtn?.text = if (next == 0) "\u23F1" else next.toString() + "m"
+        toast(if (next == 0) getString(R.string.rd_sleep_off) else getString(R.string.rd_sleep_on, next))
     }
 
     private fun cycleRate() {
@@ -678,6 +689,25 @@ document.open();document.write(h);document.close();
         customView = null
         customCallback?.onCustomViewHidden()
         customCallback = null
+    }
+
+    /** Auto-scroll and e-ink paper mode, when switched on. */
+    private fun injectReadingHelpers(wv: WebView?) {
+        val w = wv ?: return
+        try {
+            if (prefs.getBoolean("autoscroll", false)) {
+                val px = prefs.getInt("autoscroll_px", 2)
+                w.evaluateJavascript(
+                    "(function(){if(window.__aekantScroll)return;window.__aekantScroll=1;" +
+                        "setInterval(function(){window.scrollBy(0," + px + ");},80);})();", null)
+            }
+            if (prefs.getBoolean("eink", false)) {
+                w.evaluateJavascript(
+                    "try{var s=document.getElementById('aekant-eink');" +
+                        "if(!s){s=document.createElement('style');s.id='aekant-eink';document.documentElement.appendChild(s);}" +
+                        "s.textContent='html{filter:grayscale(1) contrast(1.15) !important}';}catch(e){}", null)
+            }
+        } catch (_: Exception) { }
     }
 
     /** Stylus-like user CSS, applied per site pattern. */
@@ -883,6 +913,7 @@ document.open();document.write(h);document.close();
                 injectCosmetic(v, url)
                 injectMediaListener(v)
                 injectUserStyles(v, url)
+                injectReadingHelpers(v)
             }
         }
 
@@ -937,6 +968,12 @@ document.open();document.write(h);document.close();
                 if (request.isForMainFrame) MediaSniffer.reset(request.url.host ?: "")
                 MediaSniffer.add(url, "")
             } catch (_: Exception) { }
+            if (prefs.getBoolean("block_fonts", false)) {
+                val path = url.substringBefore('?').lowercase()
+                if (path.endsWith(".woff") || path.endsWith(".woff2") || path.endsWith(".ttf") || path.endsWith(".otf")) {
+                    return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
+                }
+            }
             if (AdFilterEngine.isBlocked(url) || adBlocker.isBlocked(url)) {
                 return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
             }
