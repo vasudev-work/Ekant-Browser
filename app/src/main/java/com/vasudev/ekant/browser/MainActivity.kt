@@ -241,7 +241,10 @@ document.open();document.write(h);document.close();
 
     override fun onPause() {
         saveTabs()
-        for (t in tabs) { try { t.onPause() } catch (_: Exception) { } }
+        // With background playback on, do not pause the WebViews: that would stop the audio.
+        if (!prefs.getBoolean("bg_media", false)) {
+            for (t in tabs) { try { t.onPause() } catch (_: Exception) { } }
+        }
         super.onPause()
     }
 
@@ -376,6 +379,7 @@ document.open();document.write(h);document.close();
     @SuppressLint("SetJavaScriptEnabled")
     private fun newTab(u: String, select: Boolean = true): WebView {
         val w = AekantWebView(this)
+        try { w.addJavascriptInterface(MediaBridge(), "AekantMedia") } catch (_: Exception) { }
         w.layoutParams = FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         val s = w.settings
@@ -486,6 +490,31 @@ document.open();document.write(h);document.close();
                 try { w.evaluateJavascript(e.code, null) } catch (_: Exception) { }
             }
         }
+    }
+
+    private var mediaPlaying = false
+
+    /** Bridge the injected media listener calls into. */
+    private inner class MediaBridge {
+        @android.webkit.JavascriptInterface
+        fun playing(on: Boolean) { runOnUiThread { onMediaState(on) } }
+    }
+
+    private fun onMediaState(on: Boolean) {
+        if (!prefs.getBoolean("bg_media", false)) return
+        if (on == mediaPlaying) return
+        mediaPlaying = on
+        if (on) MediaPlaybackService.start(this) else MediaPlaybackService.stop(this)
+    }
+
+    /** Learn when a page starts or stops playing media. */
+    private fun injectMediaListener(wv: WebView?) {
+        val w = wv ?: return
+        val js = "(function(){if(window.__aekantMedia){return;}window.__aekantMedia=1;" +
+            "function n(p){try{window.AekantMedia&&window.AekantMedia.playing(p);}catch(e){}}" +
+            "['play','playing'].forEach(function(e){document.addEventListener(e,function(){n(true);},true);});" +
+            "['pause','ended','emptied','abort'].forEach(function(e){document.addEventListener(e,function(){n(false);},true);});})();"
+        try { w.evaluateJavascript(js, null) } catch (_: Exception) { }
     }
 
     /** EasyList cosmetic rules: hide ad containers on the page. */
@@ -624,6 +653,7 @@ document.open();document.write(h);document.close();
                 injectProtection(v)
                 injectExtensions(v, url)
                 injectCosmetic(v, url)
+                injectMediaListener(v)
             }
         }
 

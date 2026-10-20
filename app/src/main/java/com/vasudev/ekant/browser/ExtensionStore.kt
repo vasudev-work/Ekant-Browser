@@ -24,6 +24,11 @@ class ExtensionStore(context: Context) {
         if (list.isEmpty()) {
             list.addAll(defaults())
             save(list)
+        } else {
+            val have = list.map { it.id }.toHashSet()
+            var added = false
+            for (d in defaults()) if (!have.contains(d.id)) { list.add(d); added = true }
+            if (added) save(list)
         }
         return list
     }
@@ -61,6 +66,16 @@ class ExtensionStore(context: Context) {
             "builtin-font", "Bigger text", "*",
             "try{document.body.style.fontSize='18px';}catch(e){}",
             false, true
+        ),
+        Extension(
+            "builtin-bgplay", "Background playback (YouTube)", "*youtube.com*,*youtu.be*",
+            "try{['hidden','webkitHidden'].forEach(function(k){try{Object.defineProperty(document,k,{get:function(){return false;},configurable:true});}catch(e){}});" +
+                "['visibilityState','webkitVisibilityState'].forEach(function(k){try{Object.defineProperty(document,k,{get:function(){return 'visible';},configurable:true});}catch(e){}});" +
+                "document.hasFocus=function(){return true;};" +
+                "['visibilitychange','webkitvisibilitychange','blur','pagehide'].forEach(function(ev){" +
+                "window.addEventListener(ev,function(e){e.stopImmediatePropagation();},true);" +
+                "document.addEventListener(ev,function(e){e.stopImmediatePropagation();},true);});}catch(e){}",
+            true, true
         ),
         Extension(
             "builtin-target", "Open links in same tab", "*",

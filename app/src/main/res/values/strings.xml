@@ -370,6 +370,10 @@
     <string name="hist_note">Clearing history removes the list only \u2014 cookies, cache and site data stay until you clear them from the Privacy dashboard.</string>
     <string name="sh_easylist">Filter lists (EasyList, uBlock, AdGuard)</string>
     <string name="sh_easylist_sum">EasyList, EasyPrivacy, uBlock filters, AdGuard Base + Tracking, StevenBlack, 1Hosts and AdGuard CNAME trackers</string>
+    <string name="bg_playing">Aekant is playing audio</string>
+    <string name="bg_playing_sum">Background playback is on</string>
+    <string name="bg_stop">Stop</string>
+    <string name="bg_channel">Media playback</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>
