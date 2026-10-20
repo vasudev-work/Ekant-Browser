@@ -390,6 +390,12 @@
     <string name="us_add_sum">Pattern and CSS, applied on matching pages</string>
     <string name="us_pattern">Pattern, e.g. *example.com*</string>
     <string name="us_css">CSS, e.g. .banner { display: none }</string>
+    <string name="sh_popups">Allow pop-ups</string>
+    <string name="sh_popups_sum">Open pop-up windows in a new tab</string>
+    <string name="ssl_title">Connection not secure</string>
+    <string name="ssl_msg">The certificate for %1$s could not be verified. Continuing may expose your data to a third party.</string>
+    <string name="ssl_back">Go back</string>
+    <string name="ssl_proceed">Continue anyway</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>

@@ -12,7 +12,11 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
+import android.net.http.SslError
 import android.os.Build
+import android.os.Message
+import android.webkit.GeolocationPermissions
+import android.webkit.SslErrorHandler
 import android.os.Bundle
 import android.os.CancellationSignal
 import android.os.Environment
@@ -136,6 +140,13 @@ document.open();document.write(h);document.close();
     private val pinned = HashSet<WebView>()
     private val closedStack = ArrayDeque<String>()
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    private var customView: View? = null
+    private var customCallback: WebChromeClient.CustomViewCallback? = null
+
+    private val EXTERNAL_SCHEMES = setOf(
+        "tel", "mailto", "sms", "smsto", "whatsapp", "geo", "market", "intent", "upi", "maps", "tg")
+    private val INTERNAL_SCHEMES = setOf(
+        "http", "https", "about", "data", "blob", "file", "javascript", "chrome", "aekant", "ws", "wss", "content")
 
     private val fileChooser = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
         val cb = filePathCallback
@@ -201,6 +212,7 @@ document.open();document.write(h);document.close();
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (customView != null) { exitFullscreen(); return }
                 if (menuOpen) { hideMenuPanel(); return }
                 val v = cur()
                 if (v != null && v.canGoBack()) v.goBack()
@@ -416,6 +428,13 @@ document.open();document.write(h);document.close();
         s.useWideViewPort = true
         s.textZoom = textZoom
         s.mediaPlaybackRequiresUserGesture = !prefs.getBoolean("bg_media", false)
+        s.databaseEnabled = true
+        s.allowFileAccess = false
+        s.allowContentAccess = false
+        s.allowFileAccessFromFileURLs = false
+        s.allowUniversalAccessFromFileURLs = false
+        s.setSupportMultipleWindows(true)
+        s.javaScriptCanOpenWindowsAutomatically = prefs.getBoolean("popups", true)
         applyContent(s)
         applyUa(s)
         val block3p = prefs.getBoolean("block_3p", true)
@@ -547,6 +566,29 @@ document.open();document.write(h);document.close();
         try { w.evaluateJavascript(js, null) } catch (_: Exception) { }
     }
 
+    /** HTML5 full-screen video: show the custom view over the whole window. */
+    private fun enterFullscreen(view: View?, cb: WebChromeClient.CustomViewCallback?) {
+        if (customView != null) { cb?.onCustomViewHidden(); return }
+        customView = view
+        customCallback = cb
+        try {
+            findViewById<ViewGroup>(android.R.id.content).addView(view, ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            findViewById<View>(R.id.column)?.visibility = View.GONE
+        } catch (_: Exception) { }
+    }
+
+    private fun exitFullscreen() {
+        val v = customView ?: return
+        try {
+            findViewById<ViewGroup>(android.R.id.content).removeView(v)
+            findViewById<View>(R.id.column)?.visibility = View.VISIBLE
+        } catch (_: Exception) { }
+        customView = null
+        customCallback?.onCustomViewHidden()
+        customCallback = null
+    }
+
     /** Stylus-like user CSS, applied per site pattern. */
     private fun injectUserStyles(wv: WebView?, url: String) {
         val w = wv ?: return
@@ -658,6 +700,46 @@ document.open();document.write(h);document.close();
 
     private fun buildChromeClient(): WebChromeClient = object : WebChromeClient() {
 
+        override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message?): Boolean {
+            return try {
+                val transport = resultMsg?.obj as? WebView.WebViewTransport ?: return false
+                val tmp = AekantWebView(this@MainActivity)
+                tmp.webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(v: WebView?, r: WebResourceRequest?): Boolean {
+                        val u = r?.url?.toString() ?: return false
+                        newTab(u)
+                        return true
+                    }
+                }
+                transport.webView = tmp
+                resultMsg.sendToTarget()
+                true
+            } catch (_: Exception) { false }
+        }
+
+        override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+            enterFullscreen(view, callback)
+        }
+
+        override fun onHideCustomView() {
+            exitFullscreen()
+        }
+
+        override fun onGeolocationPermissionsShowPrompt(origin: String?, callback: GeolocationPermissions.Callback?) {
+            callback?.invoke(origin, !prefs.getBoolean("block_perms", true), false)
+        }
+
+        override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+            if (handler == null) return
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle(R.string.ssl_title)
+                .setMessage(getString(R.string.ssl_msg, error?.url ?: ""))
+                .setCancelable(false)
+                .setPositiveButton(R.string.ssl_back) { _, _ -> handler.cancel() }
+                .setNegativeButton(R.string.ssl_proceed) { _, _ -> handler.proceed() }
+                .show()
+        }
+
         override fun onShowFileChooser(view: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
             filePathCallback?.onReceiveValue(null)
             filePathCallback = cb
@@ -728,6 +810,13 @@ document.open();document.write(h);document.close();
         override fun shouldOverrideUrlLoading(v: WebView?, request: WebResourceRequest?): Boolean {
             val url = request?.url?.toString() ?: return false
             if (url.startsWith("aekant://")) { handleScheme(url); return true }
+            val scheme = Uri.parse(url).scheme?.lowercase() ?: ""
+            if (EXTERNAL_SCHEMES.contains(scheme)) {
+                return try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))); true
+                } catch (_: Exception) { true }
+            }
+            if (scheme.isNotEmpty() && !INTERNAL_SCHEMES.contains(scheme)) return true
             if (prefs.getBoolean("https_only", true) && url.startsWith("http://")) {
                 v?.loadUrl("https://" + url.substring(7)); return true
             }
