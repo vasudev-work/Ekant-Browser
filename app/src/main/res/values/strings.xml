@@ -374,6 +374,11 @@
     <string name="bg_playing_sum">Background playback is on</string>
     <string name="bg_stop">Stop</string>
     <string name="bg_channel">Media playback</string>
+    <string name="m_media">Media on this page</string>
+    <string name="media_empty">No media found yet. Play the video or audio, then reopen this list.</string>
+    <string name="media_download">Download</string>
+    <string name="media_copy">Copy link</string>
+    <string name="media_note">Direct video/audio files download fully. HLS and DASH playlists download the manifest only \u2014 merging the segments needs a separate tool.</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>

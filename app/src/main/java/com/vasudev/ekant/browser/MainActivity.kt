@@ -498,6 +498,11 @@ document.open();document.write(h);document.close();
     private inner class MediaBridge {
         @android.webkit.JavascriptInterface
         fun playing(on: Boolean) { runOnUiThread { onMediaState(on) } }
+
+        @android.webkit.JavascriptInterface
+        fun found(url: String, type: String) {
+            try { MediaSniffer.add(url, type) } catch (_: Exception) { }
+        }
     }
 
     private fun onMediaState(on: Boolean) {
@@ -681,6 +686,10 @@ document.open();document.write(h);document.close();
 
         override fun shouldInterceptRequest(v: WebView?, request: WebResourceRequest?): WebResourceResponse? {
             val url = request?.url?.toString() ?: return null
+            try {
+                if (request.isForMainFrame) MediaSniffer.reset(request.url.host ?: "")
+                MediaSniffer.add(url, "")
+            } catch (_: Exception) { }
             if (AdFilterEngine.isBlocked(url) || adBlocker.isBlocked(url)) {
                 return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
             }
@@ -826,16 +835,17 @@ document.open();document.write(h);document.close();
         b.iconRow(c3, R.drawable.ic_folder, getString(R.string.m_save_page), null, act(13)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_find, getString(R.string.m_reader), null, act(14)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_summary), null, act(15)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_star, getString(R.string.m_save_later), null, act(16))
+        b.iconRow(c3, R.drawable.ic_star, getString(R.string.m_save_later), null, act(16)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_media), null, act(17))
 
         b.section(getString(R.string.sec_more))
         val c4 = b.card()
-        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(17)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(18)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(19)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(20)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(21)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(22))
+        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(18)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(19)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(20)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(21)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(22)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(23))
     }
 
     private fun act(which: Int): View.OnClickListener = View.OnClickListener { onMenuAction(which) }
@@ -859,12 +869,13 @@ document.open();document.write(h);document.close();
             14 -> { readerMode(); hideMenuPanel() }
             15 -> { aiSummary(); hideMenuPanel() }
             16 -> { saveForLater(); hideMenuPanel() }
-            17 -> { addToHomeScreen(); hideMenuPanel() }
-            18 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
-            19 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
-            20 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
-            21 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
-            22 -> finishAffinity()
+            17 -> { startActivity(Intent(this, MediaActivity::class.java)); hideMenuPanel() }
+            18 -> { addToHomeScreen(); hideMenuPanel() }
+            19 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
+            20 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
+            21 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
+            22 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
+            23 -> finishAffinity()
         }
     }
 

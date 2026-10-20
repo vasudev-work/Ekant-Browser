@@ -68,6 +68,18 @@ class ExtensionStore(context: Context) {
             false, true
         ),
         Extension(
+            "builtin-media", "Media sniffer", "*",
+            "(function(){if(window.__aekantSniff){return;}window.__aekantSniff=1;" +
+                "function r(u,t){try{if(u&&u.indexOf('blob:')!==0)window.AekantMedia&&window.AekantMedia.found(u,t);}catch(e){}}" +
+                "function s(){try{" +
+                "document.querySelectorAll('video,audio,source').forEach(function(el){r(el.currentSrc||el.src||el.getAttribute('src'),el.tagName.toLowerCase());});" +
+                "document.querySelectorAll('a[href]').forEach(function(a){var h=a.getAttribute('href')||'';" +
+                "if(/\.(mp4|webm|m4a|mp3|ogg|m3u8|mpd|mov)(\?|$)/i.test(h)){try{r(new URL(h,location.href).href,'link');}catch(e){}}});" +
+                "}catch(e){}}" +
+                "s();document.addEventListener('loadeddata',s,true);setInterval(s,5000);})();",
+            true, true
+        ),
+        Extension(
             "builtin-bgplay", "Background playback (YouTube)", "*youtube.com*,*youtu.be*",
             "try{['hidden','webkitHidden'].forEach(function(k){try{Object.defineProperty(document,k,{get:function(){return false;},configurable:true});}catch(e){}});" +
                 "['visibilityState','webkitVisibilityState'].forEach(function(k){try{Object.defineProperty(document,k,{get:function(){return 'visible';},configurable:true});}catch(e){}});" +
