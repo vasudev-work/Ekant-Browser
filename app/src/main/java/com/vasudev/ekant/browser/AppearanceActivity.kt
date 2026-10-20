@@ -6,18 +6,25 @@ class AppearanceActivity : BaseSettingsActivity() {
 
     override val titleRes = R.string.r_appearance
 
+    private fun setThemeMode(m: String) {
+        prefs.edit().putString("theme_mode", m).apply()
+        recreate()
+    }
+
     private val zooms = intArrayOf(85, 100, 115, 130)
     private val zoomNames = intArrayOf(
         R.string.ap_small, R.string.ap_normal, R.string.ap_large, R.string.ap_huge
     )
 
     override fun build(b: SettingsBuilder, content: LinearLayout) {
-        val c1 = b.card()
-        b.switchRow(c1, getString(R.string.ap_dark), getString(R.string.ap_dark_sum),
-            prefs.getBoolean("dark", true)) { _, on ->
-            prefs.edit().putBoolean("dark", on).apply()
-            recreate()
-        }
+        b.section(getString(R.string.ap_theme))
+        val c0 = b.card()
+        val mode = prefs.getString("theme_mode", "dark")
+        b.radioRow(c0, getString(R.string.theme_dark), null, mode == "dark") { setThemeMode("dark") }
+        b.divider(c0)
+        b.radioRow(c0, getString(R.string.theme_light), null, mode == "light") { setThemeMode("light") }
+        b.divider(c0)
+        b.radioRow(c0, getString(R.string.theme_system), null, mode == "system") { setThemeMode("system") }
 
         b.section(getString(R.string.ap_text))
         val c2 = b.card()

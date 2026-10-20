@@ -1,6 +1,7 @@
 package com.vasudev.ekant.browser
 
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import android.graphics.Typeface
 import android.os.Bundle
 import android.util.TypedValue
@@ -21,7 +22,11 @@ abstract class BaseSettingsActivity : AppCompatActivity() {
 
     override fun onCreate(saved: Bundle?) {
         prefs = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE)
-        val dark = prefs.getBoolean("dark", true)
+        val dark = when (prefs.getString("theme_mode", "dark")) {
+            "light" -> false
+            "system" -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+            else -> true
+        }
         setTheme(if (dark) R.style.Theme_Aekant else R.style.Theme_Aekant_Light)
         super.onCreate(saved)
 

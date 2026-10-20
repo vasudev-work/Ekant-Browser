@@ -6,6 +6,9 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.DialogInterface
+import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
@@ -34,9 +37,11 @@ import android.webkit.WebChromeClient
 import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -68,6 +73,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var lock: ImageView
     private lateinit var containerDot: View
     private lateinit var containerName: TextView
+    private lateinit var panelContainerName: TextView
     private lateinit var prefs: SharedPreferences
 
     private lateinit var overlay: View
@@ -101,6 +107,7 @@ class MainActivity : AppCompatActivity() {
     private var active: Container? = null
 
     private val tabs = mutableListOf<WebView>()
+    private val favicons = HashMap<WebView, Bitmap>()
     private var current = -1
 
     override fun onCreate(saved: Bundle?) {
@@ -116,6 +123,7 @@ class MainActivity : AppCompatActivity() {
         lock = findViewById(R.id.lock)
         containerDot = findViewById(R.id.container_dot)
         containerName = findViewById(R.id.container_name)
+        panelContainerName = findViewById(R.id.panel_container_name)
 
         overlay = findViewById(R.id.overlay)
         scrim = findViewById(R.id.scrim)
@@ -143,14 +151,14 @@ class MainActivity : AppCompatActivity() {
             } else false
         }
 
-        val homeClick = View.OnClickListener { goHome() }
-        findViewById<View>(R.id.btn_top_home).setOnClickListener(homeClick)
-        findViewById<View>(R.id.btn_home).setOnClickListener(homeClick)
         findViewById<View>(R.id.btn_refresh).setOnClickListener { cur()?.reload() }
         findViewById<View>(R.id.btn_back).setOnClickListener { cur()?.let { if (it.canGoBack()) it.goBack() } }
         findViewById<View>(R.id.btn_fwd).setOnClickListener { cur()?.let { if (it.canGoForward()) it.goForward() } }
-        findViewById<View>(R.id.btn_tabs).setOnClickListener { showTabs() }
         findViewById<View>(R.id.btn_menu).setOnClickListener { toggleMenu() }
+        findViewById<View>(R.id.nav_home).setOnClickListener { goHome() }
+        findViewById<View>(R.id.nav_bookmarks).setOnClickListener { showBookmarks() }
+        findViewById<View>(R.id.nav_downloads).setOnClickListener { openDownloads() }
+        findViewById<View>(R.id.nav_tabs).setOnClickListener { showTabs() }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -166,7 +174,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun readPrefs() {
-        dark = prefs.getBoolean("dark", true)
+        dark = resolveDark()
         desktop = prefs.getBoolean("desktop", false)
         js = prefs.getBoolean("js", true)
         cookies = prefs.getBoolean("cookies", true)
@@ -239,6 +247,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateContainerUi() {
         val c = active ?: return
         containerName.text = c.name
+        panelContainerName.text = c.name
         val d = GradientDrawable()
         d.shape = GradientDrawable.OVAL
         try { d.setColor(Color.parseColor(c.color)) } catch (_: Exception) { }
@@ -506,6 +515,10 @@ class MainActivity : AppCompatActivity() {
             if (prefs.getBoolean("block_perms", true)) r.deny() else r.grant(r.resources)
         }
 
+        override fun onReceivedIcon(view: WebView?, icon: Bitmap?) {
+            if (view != null && icon != null) favicons[view] = icon
+        }
+
         override fun onProgressChanged(view: WebView?, newProgress: Int) {
             if (view == cur()) {
                 progress.visibility = if (newProgress in 1..99) View.VISIBLE else View.GONE
@@ -529,6 +542,17 @@ class MainActivity : AppCompatActivity() {
             if (url != null) {
                 injectProtection(v)
                 injectExtensions(v, url)
+            }
+        }
+
+        override fun onReceivedError(v: WebView?, request: WebResourceRequest?, error: android.webkit.WebResourceError?) {
+            if (request?.isForMainFrame == true) {
+                val html = "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'>" +
+                    "<style>body{background:#0B0E12;color:#F2F4F7;font-family:sans-serif;text-align:center;padding:56px 24px}" +
+                    "h2{color:#F26A1B}p{color:#9BA3AE;font-size:14px}</style></head><body>" +
+                    "<h2>Page not available</h2><p>" + (error?.description ?: "Could not load this page.") + "</p>" +
+                    "<p>" + (request.url?.toString() ?: "") + "</p></body></html>"
+                v?.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
             }
         }
 
@@ -831,15 +855,96 @@ class MainActivity : AppCompatActivity() {
         s.show()
     }
 
+    private fun resolveDark(): Boolean = when (prefs.getString("theme_mode", "dark")) {
+        "light" -> false
+        "system" -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        else -> true
+    }
+
+    /** Grid tab switcher: favicon + title + close, with New tab / Close all. */
     private fun showTabs() {
-        val s = Sheet.build(this, getString(R.string.d_recent))
+        val scroll = ScrollView(this)
+        val grid = GridLayout(this)
+        grid.columnCount = 3
+        val pad = dp(10)
+        grid.setPadding(pad, pad, pad, pad)
+        scroll.addView(grid)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(scroll)
+            .setPositiveButton(R.string.d_new_tab, null)
+            .setNeutralButton(R.string.d_close_all_tabs, null)
+            .setNegativeButton(R.string.d_close, null)
+            .create()
+
         for (i in tabs.indices) {
-            val t = tabs[i].title
-            s.item(getString(R.string.d_tab) + " " + (i + 1) + ": " + (t ?: "New tab"), i) { showTab(it) }
+            val wv = tabs[i]
+            val cell = LinearLayout(this)
+            cell.orientation = LinearLayout.VERTICAL
+            cell.gravity = Gravity.CENTER_HORIZONTAL
+            val lp = GridLayout.LayoutParams()
+            lp.width = 0
+            lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+            lp.setMargins(dp(4), dp(4), dp(4), dp(4))
+            cell.layoutParams = lp
+            cell.setPadding(dp(8), dp(10), dp(8), dp(10))
+            val bg = GradientDrawable()
+            bg.cornerRadius = dp(14).toFloat()
+            bg.setColor(if (i == current) 0xFF2A2118.toInt() else 0xFF1E242C.toInt())
+            cell.background = bg
+
+            val iv = ImageView(this)
+            val fav = favicons[wv]
+            if (fav != null) iv.setImageBitmap(fav) else iv.setImageResource(R.drawable.ic_tabs)
+            iv.setColorFilter(0xFF9BA3AE.toInt())
+            iv.layoutParams = LinearLayout.LayoutParams(dp(30), dp(30))
+            cell.addView(iv)
+
+            val tv = TextView(this)
+            tv.text = wv.title ?: "New tab"
+            tv.maxLines = 2
+            tv.ellipsize = TextUtils.TruncateAt.END
+            tv.gravity = Gravity.CENTER
+            tv.textSize = 11f
+            tv.setTextColor(0xFFF2F4F7.toInt())
+            tv.setPadding(0, dp(6), 0, dp(2))
+            cell.addView(tv)
+
+            val close = TextView(this)
+            close.text = "\u2715"
+            close.textSize = 12f
+            close.gravity = Gravity.CENTER
+            close.setTextColor(0xFFF26A1B.toInt())
+            close.setPadding(dp(10), dp(2), dp(10), dp(2))
+            close.setOnClickListener { closeTab(i); dialog.dismiss(); showTabs() }
+            cell.addView(close)
+
+            cell.setOnClickListener { showTab(i); dialog.dismiss() }
+            grid.addView(cell)
         }
-        s.action(getString(R.string.d_new_tab)) { newTab(ntpUrl()) }
-        s.action(getString(R.string.d_close_tab)) { closeTab(current) }
-        s.show()
+
+        dialog.setOnShowListener {
+            dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+                dialog.dismiss(); newTab(ntpUrl())
+            }
+            dialog.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener {
+                dialog.dismiss(); closeAllTabs()
+            }
+        }
+        dialog.show()
+    }
+
+    private fun closeAllTabs() {
+        AlertDialog.Builder(this)
+            .setMessage(R.string.confirm_close_all)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                for (t in tabs) { container.removeView(t); t.destroy() }
+                tabs.clear(); favicons.clear(); current = -1
+                newTab(ntpUrl())
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun showFind() {
