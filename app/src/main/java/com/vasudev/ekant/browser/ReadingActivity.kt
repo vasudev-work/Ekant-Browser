@@ -67,6 +67,16 @@ class ReadingActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("autoscroll", on).apply()
         }
         b.divider(v)
+        b.switchRow(v, getString(R.string.rd_paginate), getString(R.string.rd_paginate_sum),
+            prefs.getBoolean("paginate", false)) { _, on ->
+            prefs.edit().putBoolean("paginate", on).apply()
+        }
+        b.divider(v)
+        b.switchRow(v, getString(R.string.rd_live), getString(R.string.rd_live_sum),
+            prefs.getBoolean("tts_live", true)) { _, on ->
+            prefs.edit().putBoolean("tts_live", on).apply()
+        }
+        b.divider(v)
         val spd = prefs.getInt("autoscroll_px", 2)
         val speeds = intArrayOf(1, 2, 4)
         val speedNames = intArrayOf(R.string.rd_slow, R.string.rd_normal, R.string.rd_fast)

@@ -447,6 +447,12 @@
     <string name="sh_fonts_sum">Stop sites from downloading custom fonts (saves data)</string>
     <string name="dg_crash">Last crash log</string>
     <string name="dg_none">None</string>
+    <string name="rd_paginate">Auto-paginate articles</string>
+    <string name="rd_paginate_sum">Load the next page automatically and append it, up to five pages</string>
+    <string name="rd_live">Add new text to read-aloud</string>
+    <string name="rd_live_sum">When a page loads more text while scrolling, queue it for reading</string>
+    <string name="sh_clear_close">Clear site data when a tab closes</string>
+    <string name="sh_clear_close_sum">Delete that site\u2019s cookies when you close its tab</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>

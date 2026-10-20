@@ -206,6 +206,15 @@ object TtsReader {
         listener?.onState(index, queue.size, s, speaking)
     }
 
+    /** Live page text: append new paragraphs while reading. */
+    fun append(text: String) {
+        if (queue.isEmpty()) return
+        val t = text.trim()
+        if (t.length < 40) return
+        queue = queue + t
+        listener?.onState(index, queue.size, queue.getOrNull(index) ?: "", speaking)
+    }
+
     fun toggle() { if (speaking) pause() else resume() }
 
     fun pause() {

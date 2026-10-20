@@ -68,7 +68,9 @@ class MainActivity : AppCompatActivity() {
         const val EXTRACT_JS = "(function(){try{var el=document.querySelector('article')||document.querySelector('main')||document.body;var t=(el&&el.innerText)||'';t=t.replace(/\\s+/g,' ').trim();return t.slice(0,200000);}catch(e){return '';}})()"
 
         const val READER_JS = """(function(){try{
-var el=document.querySelector('article')||document.querySelector('main')||document.body;
+function best(){try{var a=document.querySelector('article');if(a&&(a.innerText||'').length>400)return a;var m=document.querySelector('main');if(m&&(m.innerText||'').length>400)return m;var cands=[],ds=document.getElementsByTagName('div');for(var i=0;i<ds.length;i++){var tx=ds[i].innerText||'';if(tx.length<500)continue;var links=ds[i].getElementsByTagName('a').length;var score=tx.length/(1+links*40);cands.push([score,ds[i]]);}cands.sort(function(x,y){return y[0]-x[0];});return cands.length?cands[0][1]:(document.body||document.documentElement);}catch(e){return document.body;}}
+var el=best();
+try{var junk=el.querySelectorAll('nav,aside,footer,header,script,style,form,iframe,button,[role=navigation]');for(var i=0;i<junk.length;i++){if(junk[i].parentNode)junk[i].parentNode.removeChild(junk[i]);}}catch(e){}
 var txt=el.innerText||'';var title=document.title||'';
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 var css=':root{--bg:__BG__;--fg:__FG__;--br:__BR__}'
@@ -86,8 +88,31 @@ var BI=__BIONIC__;function bw(w){var n=Math.max(1,Math.ceil(w.length*0.4));retur
 h=h.replace('<div id="c"></div>','<div id="c">'+body+'</div>');
 document.open();document.write(h);document.close();
 }catch(e){}})();"""
+        const val PAGINATE_JS = "(function(){try{if(window.__aekantPaginate)return;window.__aekantPaginate=1;var n=0;" +
+            "function nl(){var a=document.querySelector('a[rel=next]');if(a&&a.href)return a.href;" +
+            "var as=document.querySelectorAll('a');for(var i=0;i<as.length;i++){var t=(as[i].innerText||'').trim().toLowerCase();" +
+            "if(/^(next|next page|older|continue|next chapter|\u00bb|\u2192)$/.test(t))return as[i].href;}return null;}" +
+            "function more(){if(n>=5)return;var u=nl();if(!u)return;n++;" +
+            "fetch(u).then(function(r){return r.text();}).then(function(h){try{" +
+            "var d=new DOMParser().parseFromString(h,'text/html');" +
+            "var el=d.querySelector('article')||d.querySelector('main')||d.body;if(!el)return;" +
+            "var holder=document.querySelector('article')||document.querySelector('main')||document.body;" +
+            "var div=document.createElement('div');div.innerHTML=el.innerHTML;holder.appendChild(div);" +
+            "setTimeout(more,600);}catch(e){}}).catch(function(){});}" +
+            "window.addEventListener('scroll',function(){if(window.innerHeight+window.scrollY>document.body.scrollHeight-1200)more();},{passive:true});" +
+            "}catch(e){}})()"
+
+        const val LIVE_TEXT_JS = "(function(){try{if(window.__aekantMo)return;window.__aekantMo=1;var seen=new WeakSet();" +
+            "function send(el){try{var t=(el.innerText||'').trim();if(t.length>40&&window.AekantMedia)window.AekantMedia.text(t);}catch(e){}}" +
+            "var mo=new MutationObserver(function(ms){for(var i=0;i<ms.length;i++){var a=ms[i].addedNodes;" +
+            "for(var j=0;j<a.length;j++){var n=a[j];if(n.nodeType!==1)continue;" +
+            "if(n.tagName==='P'&&!seen.has(n)){seen.add(n);send(n);}" +
+            "var ps=n.querySelectorAll?n.querySelectorAll('p'):[];" +
+            "for(var k=0;k<ps.length;k++){if(!seen.has(ps[k])){seen.add(ps[k]);send(ps[k]);}}}}});" +
+            "mo.observe(document.body,{childList:true,subtree:true});}catch(e){}})()"
+
         const val REQ_UNLOCK = 42
-        const val FP_SCRIPT = "(function(){try{var g=CanvasRenderingContext2D.prototype.getImageData;CanvasRenderingContext2D.prototype.getImageData=function(){var d=g.apply(this,arguments);try{for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}}catch(e){}return d;};}catch(e){}try{var t=HTMLCanvasElement.prototype.toDataURL;HTMLCanvasElement.prototype.toDataURL=function(){try{var c=this.getContext('2d');if(c){var d=c.getImageData(0,0,this.width,this.height);for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}c.putImageData(d,0,0);}}catch(e){}return t.apply(this,arguments);};}catch(e){}try{if(window.AudioBuffer){var p=AudioBuffer.prototype.getChannelData;AudioBuffer.prototype.getChannelData=function(){var a=p.apply(this,arguments);try{for(var i=0;i<a.length;i+=1000){a[i]=a[i]+(Math.random()-0.5)*1e-6;}}catch(e){}return a;};}}catch(e){}try{Object.defineProperty(navigator,'hardwareConcurrency',{get:function(){return 4;}});}catch(e){}try{Object.defineProperty(navigator,'deviceMemory',{get:function(){return 4;}});}catch(e){}})();"
+        const val FP_SCRIPT = "(function(){try{var g=CanvasRenderingContext2D.prototype.getImageData;CanvasRenderingContext2D.prototype.getImageData=function(){var d=g.apply(this,arguments);try{for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}}catch(e){}return d;};}catch(e){}try{var t=HTMLCanvasElement.prototype.toDataURL;HTMLCanvasElement.prototype.toDataURL=function(){try{var c=this.getContext('2d');if(c){var d=c.getImageData(0,0,this.width,this.height);for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}c.putImageData(d,0,0);}}catch(e){}return t.apply(this,arguments);};}catch(e){}try{if(window.AudioBuffer){var p=AudioBuffer.prototype.getChannelData;AudioBuffer.prototype.getChannelData=function(){var a=p.apply(this,arguments);try{for(var i=0;i<a.length;i+=1000){a[i]=a[i]+(Math.random()-0.5)*1e-6;}}catch(e){}return a;};}}catch(e){}try{Object.defineProperty(navigator,'hardwareConcurrency',{get:function(){return 2+Math.floor(Math.random()*7);}});}catch(e){}try{Object.defineProperty(navigator,'deviceMemory',{get:function(){return [4,8][Math.floor(Math.random()*2)];}});}catch(e){}})();"
         val SE_NAMES = arrayOf("Google", "DuckDuckGo", "Bing")
         val SE_URLS = arrayOf(
             "https://www.google.com/search?q=",
@@ -516,6 +541,7 @@ document.open();document.write(h);document.close();
             closedStack.addLast(u)
             if (closedStack.size > 10) closedStack.removeFirst()
         }
+        if (prefs.getBoolean("clear_on_close", false) && u != null) clearSiteData(u)
         pinned.remove(w)
         favicons.remove(w)
         container.removeView(w)
@@ -562,6 +588,11 @@ document.open();document.write(h);document.close();
         @android.webkit.JavascriptInterface
         fun found(url: String, type: String) {
             try { MediaSniffer.add(url, type) } catch (_: Exception) { }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun text(t: String) {
+            try { if (prefs.getBoolean("tts_live", true)) TtsReader.append(t) } catch (_: Exception) { }
         }
     }
 
@@ -691,6 +722,20 @@ document.open();document.write(h);document.close();
         customCallback = null
     }
 
+    /** Drop cookies for the site a closed tab was showing. */
+    private fun clearSiteData(url: String) {
+        try {
+            val cm = CookieManager.getInstance()
+            val cookie = cm.getCookie(url) ?: return
+            for (part in cookie.split(";")) {
+                val name = part.substringBefore("=").trim()
+                if (name.isEmpty()) continue
+                cm.setCookie(url, name + "=; Max-Age=0; path=/")
+            }
+            cm.flush()
+        } catch (_: Exception) { }
+    }
+
     /** Auto-scroll and e-ink paper mode, when switched on. */
     private fun injectReadingHelpers(wv: WebView?) {
         val w = wv ?: return
@@ -700,6 +745,12 @@ document.open();document.write(h);document.close();
                 w.evaluateJavascript(
                     "(function(){if(window.__aekantScroll)return;window.__aekantScroll=1;" +
                         "setInterval(function(){window.scrollBy(0," + px + ");},80);})();", null)
+            }
+            if (prefs.getBoolean("paginate", false)) {
+                w.evaluateJavascript(PAGINATE_JS, null)
+            }
+            if (prefs.getBoolean("tts_live", true)) {
+                w.evaluateJavascript(LIVE_TEXT_JS, null)
             }
             if (prefs.getBoolean("eink", false)) {
                 w.evaluateJavascript(
