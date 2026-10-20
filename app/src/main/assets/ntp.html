@@ -31,10 +31,16 @@
   .sc{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px;
     width:100%;max-width:520px;margin:24px 0 10px}
   .sc a{display:flex;flex-direction:column;align-items:center;gap:8px;
-    text-decoration:none;color:#9BA3AE;font-size:11px}
+    text-decoration:none;color:#9BA3AE;font-size:11px;overflow:hidden}
   .dot{width:48px;height:48px;border-radius:15px;background:#1E242C;
     display:flex;align-items:center;justify-content:center;
     color:#F2F4F7;font-weight:700;font-size:17px}
+  .rec-title{width:100%;max-width:520px;text-align:left;color:#9BA3AE;font-size:12px;
+    margin:26px 0 8px}
+  .rec{width:100%;max-width:520px;display:flex;flex-direction:column;gap:6px}
+  .rec a{display:block;text-align:left;text-decoration:none;color:#F2F4F7;font-size:13px;
+    background:#161B21;border:1px solid #262C34;border-radius:12px;padding:10px 14px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .foot{margin-top:22px;font-size:11px;color:#6B7382;line-height:1.6}
   .foot b{color:#8CC63F}
 </style></head>
@@ -72,14 +78,60 @@
     <a href="aekant://open?u=https%3A%2F%2Fwww.instagram.com"><span class="dot">I</span>Instagram</a>
   </div>
 
-  <div class="foot">Aekant &middot; Made in Bharat<br/>Developed by Vasudev Dangaya</div>
+  <div id="recent-wrap" style="display:none;width:100%;max-width:520px">
+    <div class="rec-title">Recently visited</div>
+    <div class="rec" id="recent"></div>
+  </div>
+
+  <div class="foot">Aekant &middot; Made in Bharat<br/>Developed by Vasudev Danganya</div>
 
 <script>
   (function () {
     var p = new URLSearchParams(location.search);
     if (p.get('bg') === '0') document.body.classList.add('nobg');
-    if (p.get('topsites') === '0') document.getElementById('topsites').style.display = 'none';
     if (p.get('stats') === '0') document.getElementById('stats').style.display = 'none';
+
+    var ts = document.getElementById('topsites');
+    var sc = p.get('shortcuts');
+    if (p.get('topsites') === '0') {
+      ts.style.display = 'none';
+    } else if (sc) {
+      var items = sc.split(';;').filter(function (x) { return x.trim().length > 0; });
+      ts.innerHTML = '';
+      items.forEach(function (it) {
+        var parts = it.split('|');
+        var n = (parts[0] || '').trim();
+        var u = parts.slice(1).join('|');
+        if (!u) return;
+        var a = document.createElement('a');
+        a.href = 'aekant://open?u=' + encodeURIComponent(u);
+        var d = document.createElement('span');
+        d.className = 'dot';
+        d.textContent = (n.charAt(0) || '#').toUpperCase();
+        a.appendChild(d);
+        a.appendChild(document.createTextNode(n));
+        ts.appendChild(a);
+      });
+    }
+
+    var rec = p.get('recent');
+    if (rec && p.get('show_recent') === '1') {
+      var r = rec.split(';;').filter(function (x) { return x.trim().length > 0; });
+      if (r.length) {
+        document.getElementById('recent-wrap').style.display = 'block';
+        var box = document.getElementById('recent');
+        r.forEach(function (it) {
+          var parts = it.split('|');
+          var n = (parts[0] || '').trim();
+          var u = parts.slice(1).join('|');
+          if (!u) return;
+          var a = document.createElement('a');
+          a.href = 'aekant://open?u=' + encodeURIComponent(u);
+          a.textContent = n || u;
+          box.appendChild(a);
+        });
+      }
+    }
   })();
 </script>
 </body></html>

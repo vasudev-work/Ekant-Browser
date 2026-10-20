@@ -41,6 +41,9 @@
         <activity android:name="com.vasudev.Appstore.SettingsUIActivity" android:exported="false" android:label="@string/advanced_settings" />
         <activity android:name=".ExtensionsActivity" android:exported="false" android:label="@string/r_extensions" />
         <activity android:name=".AdvancedActivity" android:exported="false" android:label="@string/r_power" />
+        <activity android:name=".PrivacyActivity" android:exported="false" android:label="@string/r_privacy_dashboard" />
+        <activity android:name=".HomeShortcutsActivity" android:exported="false" android:label="@string/r_home_shortcuts" />
+        <activity android:name=".BackupActivity" android:exported="false" android:label="@string/r_backup" />
     </application>
 
 </manifest>

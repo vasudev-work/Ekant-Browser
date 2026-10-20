@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity() {
         const val HOME_ASSET = "file:///android_asset/ntp.html"
         const val UA_DESKTOP =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        const val READER_JS = "(function(){try{var el=document.querySelector('article')||document.querySelector('main')||document.body;var txt=el.innerText||'';var title=document.title||'';function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}var h='<!doctype html><html><head><meta name=viewport content=\'width=device-width,initial-scale=1\'><style>body{background:#0B0E12;color:#F2F4F7;font-family:Georgia,serif;line-height:1.75;padding:20px;max-width:760px;margin:0 auto}h1{font-size:24px;color:#F26A1B;font-family:sans-serif}p{font-size:17px;margin:0 0 16px}</style></head><body><h1>'+esc(title)+'</h1>';var ps=txt.split(/\\n{2,}/);for(var i=0;i<ps.length;i++){var p=ps[i].trim();if(p.length>0){h+='<p>'+esc(p)+'</p>';}}h+='</body></html>';document.open();document.write(h);document.close();}catch(e){}})();"
         const val REQ_UNLOCK = 42
         const val FP_SCRIPT = "(function(){try{var g=CanvasRenderingContext2D.prototype.getImageData;CanvasRenderingContext2D.prototype.getImageData=function(){var d=g.apply(this,arguments);try{for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}}catch(e){}return d;};}catch(e){}try{var t=HTMLCanvasElement.prototype.toDataURL;HTMLCanvasElement.prototype.toDataURL=function(){try{var c=this.getContext('2d');if(c){var d=c.getImageData(0,0,this.width,this.height);for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}c.putImageData(d,0,0);}}catch(e){}return t.apply(this,arguments);};}catch(e){}try{if(window.AudioBuffer){var p=AudioBuffer.prototype.getChannelData;AudioBuffer.prototype.getChannelData=function(){var a=p.apply(this,arguments);try{for(var i=0;i<a.length;i+=1000){a[i]=a[i]+(Math.random()-0.5)*1e-6;}}catch(e){}return a;};}}catch(e){}try{Object.defineProperty(navigator,'hardwareConcurrency',{get:function(){return 4;}});}catch(e){}try{Object.defineProperty(navigator,'deviceMemory',{get:function(){return 4;}});}catch(e){}})();"
         val SE_NAMES = arrayOf("Google", "DuckDuckGo", "Bing")
@@ -298,10 +299,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ---------- urls / content ----------
-    private fun ntpUrl(): String =
-        HOME_ASSET + "?topsites=" + (if (ntpTopSites) "1" else "0") +
+    private fun ntpUrl(): String {
+        val sc = prefs.getString("shortcuts", "") ?: ""
+        val showRecent = prefs.getBoolean("show_recent", true)
+        val rec = if (showRecent) recentForNtp() else ""
+        return HOME_ASSET + "?topsites=" + (if (ntpTopSites) "1" else "0") +
             "&stats=" + (if (ntpStats) "1" else "0") +
-            "&bg=" + (if (ntpBg) "1" else "0")
+            "&bg=" + (if (ntpBg) "1" else "0") +
+            "&show_recent=" + (if (showRecent) "1" else "0") +
+            (if (sc.isNotBlank()) "&shortcuts=" + Uri.encode(sc) else "") +
+            (if (rec.isNotBlank()) "&recent=" + Uri.encode(rec) else "")
+    }
+
+    private fun recentForNtp(): String {
+        val a = entries("history")
+        val out = ArrayList<String>()
+        for (e in a) {
+            if (out.size >= 6) break
+            val i = e.indexOf('\u0001')
+            if (i < 0) continue
+            val title = e.substring(0, i).replace("|", " ")
+            val url = e.substring(i + 1)
+            if (url.startsWith("http")) out.add(title + "|" + url)
+        }
+        return out.joinToString(";;")
+    }
 
     private fun goHome() {
         val home = prefs.getString("home", "") ?: ""
@@ -709,15 +731,18 @@ class MainActivity : AppCompatActivity() {
             if (desktop) "On" else "Off", act(10)); b.divider(c3)
         b.iconValueRow(c3, R.drawable.ic_zoom, getString(R.string.m_zoom), "$textZoom%", act(11)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_save_pdf), null, act(12)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_folder, getString(R.string.m_save_page), null, act(13))
+        b.iconRow(c3, R.drawable.ic_folder, getString(R.string.m_save_page), null, act(13)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_find, getString(R.string.m_reader), null, act(14)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_summary), null, act(15))
 
         b.section(getString(R.string.sec_more))
         val c4 = b.card()
-        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(14)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(15)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(16)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(17)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(18))
+        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(16)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(17)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(18)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(19)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(20)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(21))
     }
 
     private fun act(which: Int): View.OnClickListener = View.OnClickListener { onMenuAction(which) }
@@ -738,11 +763,14 @@ class MainActivity : AppCompatActivity() {
             11 -> showZoom()
             12 -> { savePageAsPdf(); hideMenuPanel() }
             13 -> { savePageOffline(); hideMenuPanel() }
-            14 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
-            15 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
-            16 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
-            17 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
-            18 -> finishAffinity()
+            14 -> { readerMode(); hideMenuPanel() }
+            15 -> { aiSummary(); hideMenuPanel() }
+            16 -> { addToHomeScreen(); hideMenuPanel() }
+            17 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
+            18 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
+            19 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
+            20 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
+            21 -> finishAffinity()
         }
     }
 
@@ -954,6 +982,100 @@ class MainActivity : AppCompatActivity() {
         Sheet.build(this, getString(R.string.m_find)).content(inEdit)
             .action(getString(R.string.d_find)) { cur()?.findAllAsync(inEdit.text.toString()) }
             .show()
+    }
+
+    private fun readerMode() {
+        cur()?.evaluateJavascript(READER_JS, null)
+    }
+
+    private fun addToHomeScreen() {
+        val w = cur() ?: return
+        val url = w.url ?: return
+        val title = (w.title ?: url)
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            try {
+                val sm = getSystemService(android.content.Context.SHORTCUT_SERVICE)
+                    as android.content.pm.ShortcutManager
+                if (sm.isRequestPinShortcutSupported) {
+                    val sc = android.content.pm.ShortcutInfo.Builder(this, "pin-" + System.currentTimeMillis())
+                        .setShortLabel(if (title.length > 20) title.substring(0, 20) else title)
+                        .setIntent(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        .build()
+                    sm.requestPinShortcut(sc, null)
+                    toast(getString(R.string.t_pin_requested))
+                } else {
+                    toast(getString(R.string.t_pin_unsupported))
+                }
+            } catch (_: Exception) {
+                toast(getString(R.string.t_pin_unsupported))
+            }
+        } else {
+            toast(getString(R.string.t_pin_unsupported))
+        }
+    }
+
+    private fun aiSummary() {
+        val w = cur() ?: return
+        val endpoint = prefs.getString("ai_endpoint", "") ?: ""
+        if (endpoint.isBlank()) { toast(getString(R.string.ai_setup)); return }
+        w.evaluateJavascript("(function(){try{return document.body.innerText.slice(0,6000);}catch(e){return '';}})()") { js ->
+            val text = try { org.json.JSONTokener(js).nextValue() as? String ?: "" } catch (_: Exception) { "" }
+            if (text.isBlank()) { toast(getString(R.string.sum_none)); return@evaluateJavascript }
+            toast(getString(R.string.sum_working))
+            Thread {
+                val summary = callAi(
+                    endpoint,
+                    prefs.getString("ai_key", "") ?: "",
+                    prefs.getString("ai_model", "gpt-4o-mini") ?: "",
+                    "Summarise this web page in 5 short bullet points:\n\n" + text
+                )
+                runOnUiThread {
+                    AlertDialog.Builder(this)
+                        .setTitle(R.string.m_summary)
+                        .setMessage(summary)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show()
+                }
+            }.start()
+        }
+    }
+
+    private fun callAi(endpoint: String, key: String, model: String, prompt: String): String {
+        var c: java.net.HttpURLConnection? = null
+        return try {
+            c = java.net.URL(endpoint).openConnection() as java.net.HttpURLConnection
+            c.requestMethod = "POST"
+            c.connectTimeout = 15000
+            c.readTimeout = 30000
+            c.doOutput = true
+            c.setRequestProperty("Content-Type", "application/json")
+            if (key.isNotBlank()) c.setRequestProperty("Authorization", "Bearer " + key)
+            val body = org.json.JSONObject()
+            body.put("model", model)
+            val msgs = org.json.JSONArray()
+            val m = org.json.JSONObject()
+            m.put("role", "user"); m.put("content", prompt); msgs.put(m)
+            body.put("messages", msgs)
+            c.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
+            val code = c.responseCode
+            val r = java.io.BufferedReader(java.io.InputStreamReader(
+                if (code >= 400) c.errorStream else c.inputStream, "UTF-8"))
+            val sb = StringBuilder()
+            var line = r.readLine()
+            while (line != null) { sb.append(line); line = r.readLine() }
+            r.close()
+            if (code >= 400) getString(R.string.ai_error)
+            else {
+                val j = org.json.JSONObject(sb.toString())
+                if (j.has("choices")) j.getJSONArray("choices").getJSONObject(0)
+                    .getJSONObject("message").getString("content")
+                else sb.toString()
+            }
+        } catch (_: Exception) {
+            getString(R.string.ai_error)
+        } finally {
+            c?.disconnect()
+        }
     }
 
     private fun sharePage() {

@@ -76,6 +76,20 @@ class SettingsActivity : BaseSettingsActivity() {
             startActivity(Intent(this, com.vasudev.Appstore.SettingsUIActivity::class.java))
         }
 
+        b.section(getString(R.string.sec_privacy_data))
+        val pd = b.card()
+        b.navRow(pd, getString(R.string.r_privacy_dashboard), getString(R.string.r_privacy_dashboard_sum)) {
+            go(PrivacyActivity::class.java)
+        }
+        b.divider(pd)
+        b.navRow(pd, getString(R.string.r_home_shortcuts), getString(R.string.r_home_shortcuts_sum)) {
+            go(HomeShortcutsActivity::class.java)
+        }
+        b.divider(pd)
+        b.navRow(pd, getString(R.string.r_backup), getString(R.string.r_backup_sum)) {
+            go(BackupActivity::class.java)
+        }
+
         b.section(getString(R.string.sec_power))
         val pw = b.card()
         b.navRow(pw, getString(R.string.r_power), getString(R.string.r_power_sum)) {
