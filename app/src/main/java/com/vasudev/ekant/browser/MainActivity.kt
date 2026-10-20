@@ -729,16 +729,6 @@ document.open();document.write(h);document.close();
             callback?.invoke(origin, !prefs.getBoolean("block_perms", true), false)
         }
 
-        override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
-            if (handler == null) return
-            AlertDialog.Builder(this@MainActivity)
-                .setTitle(R.string.ssl_title)
-                .setMessage(getString(R.string.ssl_msg, error?.url ?: ""))
-                .setCancelable(false)
-                .setPositiveButton(R.string.ssl_back) { _, _ -> handler.cancel() }
-                .setNegativeButton(R.string.ssl_proceed) { _, _ -> handler.proceed() }
-                .show()
-        }
 
         override fun onShowFileChooser(view: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
             filePathCallback?.onReceiveValue(null)
@@ -775,6 +765,17 @@ document.open();document.write(h);document.close();
     private inner class BrowserClient : WebViewClient() {
         override fun onPageStarted(v: WebView?, url: String?, fav: android.graphics.Bitmap?) {
             if (v == cur()) progress.visibility = View.VISIBLE
+        }
+
+        override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+            if (handler == null) return
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle(R.string.ssl_title)
+                .setMessage(getString(R.string.ssl_msg, error?.url ?: ""))
+                .setCancelable(false)
+                .setPositiveButton(R.string.ssl_back) { _, _ -> handler.cancel() }
+                .setNegativeButton(R.string.ssl_proceed) { _, _ -> handler.proceed() }
+                .show()
         }
 
         override fun onPageFinished(v: WebView?, url: String?) {
