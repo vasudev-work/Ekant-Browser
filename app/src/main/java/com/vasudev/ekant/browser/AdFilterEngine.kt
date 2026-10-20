@@ -2,6 +2,7 @@ package com.vasudev.ekant.browser
 
 import android.content.Context
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.zip.GZIPInputStream
 
 /**
  * EasyList / uBlock-syntax filter engine.
@@ -22,8 +23,8 @@ object AdFilterEngine {
     private val cosmeticGlobal = StringBuilder()
     private val cosmeticByDomain = HashMap<String, StringBuilder>()
 
-    private const val MAX_HOSTS = 90000
-    private const val MAX_ALLOW_HOSTS = 25000
+    private const val MAX_HOSTS = 200000
+    private const val MAX_ALLOW_HOSTS = 40000
     private const val MAX_SUBS = 6000
     private const val MAX_ALLOW_SUBS = 2000
     private const val MAX_GLOBAL_CSS = 200000
@@ -42,7 +43,7 @@ object AdFilterEngine {
 
     private fun loadCosmetic(context: Context) {
         try {
-            context.assets.open("easylist_cosmetic.txt").bufferedReader().use { r ->
+            GZIPInputStream(context.assets.open("easylist_cosmetic.txt.gz")).bufferedReader().use { r ->
                 r.forEachLine { raw ->
                     val line = raw.trim()
                     if (line.isEmpty()) return@forEachLine
@@ -72,7 +73,7 @@ object AdFilterEngine {
 
     private fun loadNetwork(context: Context) {
         try {
-            context.assets.open("easylist_net.txt").bufferedReader().use { r ->
+            GZIPInputStream(context.assets.open("easylist_net.txt.gz")).bufferedReader().use { r ->
                 r.forEachLine { raw ->
                     val line = raw.trim()
                     if (line.isEmpty()) return@forEachLine
