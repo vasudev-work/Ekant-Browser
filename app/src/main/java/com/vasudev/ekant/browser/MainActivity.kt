@@ -157,6 +157,8 @@ document.open();document.write(h);document.close();
         if (!dark) panel.setBackgroundResource(R.drawable.panel_bg_light)
 
         WebView.setWebContentsDebuggingEnabled(prefs.getBoolean("remote_debug", false))
+        AdFilterEngine.enabled = prefs.getBoolean("easylist", true)
+        AdFilterEngine.ensureLoaded(applicationContext)
         adBlocker = AdBlocker(applicationContext)
         store = ContainerStore(this)
         extStore = ExtensionStore(this)
@@ -486,6 +488,18 @@ document.open();document.write(h);document.close();
         }
     }
 
+    /** EasyList cosmetic rules: hide ad containers on the page. */
+    private fun injectCosmetic(wv: WebView?, url: String) {
+        val w = wv ?: return
+        val host = try { Uri.parse(url).host ?: return } catch (_: Exception) { return }
+        val css = AdFilterEngine.cosmeticCss(host)
+        if (css.isEmpty()) return
+        val js = "try{var s=document.getElementById('aekant-cosmetic');" +
+            "if(!s){s=document.createElement('style');s.id='aekant-cosmetic';document.documentElement.appendChild(s);}" +
+            "s.textContent=" + org.json.JSONObject.quote(css) + ";}catch(e){}"
+        try { w.evaluateJavascript(js, null) } catch (_: Exception) { }
+    }
+
     /** Best-effort canvas / audio fingerprint noise, injected on page load. */
     private fun injectProtection(wv: WebView?) {
         if (!prefs.getBoolean("fingerprint", true)) return
@@ -609,6 +623,7 @@ document.open();document.write(h);document.close();
             if (url != null) {
                 injectProtection(v)
                 injectExtensions(v, url)
+                injectCosmetic(v, url)
             }
         }
 
@@ -636,7 +651,7 @@ document.open();document.write(h);document.close();
 
         override fun shouldInterceptRequest(v: WebView?, request: WebResourceRequest?): WebResourceResponse? {
             val url = request?.url?.toString() ?: return null
-            if (adBlocker.isBlocked(url)) {
+            if (AdFilterEngine.isBlocked(url) || adBlocker.isBlocked(url)) {
                 return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
             }
             return null

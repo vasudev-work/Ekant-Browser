@@ -9,6 +9,12 @@ class ShieldsActivity : BaseSettingsActivity() {
     override fun build(b: SettingsBuilder, content: LinearLayout) {
         val c = b.card()
 
+        b.switchRow(c, getString(R.string.sh_easylist), getString(R.string.sh_easylist_sum),
+            prefs.getBoolean("easylist", true)) { _, on ->
+            prefs.edit().putBoolean("easylist", on).apply()
+            AdFilterEngine.enabled = on
+        }
+        b.divider(c)
         b.switchRow(c, getString(R.string.sh_ads), getString(R.string.sh_ads_sum),
             prefs.getBoolean("block_ads", true)) { _, on ->
             prefs.edit().putBoolean("block_ads", on).apply()
