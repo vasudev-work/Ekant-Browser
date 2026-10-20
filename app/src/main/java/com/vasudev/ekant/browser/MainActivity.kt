@@ -190,7 +190,7 @@ document.open();document.write(h);document.close();
         TtsReader.init(this)
         TtsReader.listener = object : TtsReader.Listener {
             override fun onState(index: Int, total: Int, sentence: String, speaking: Boolean) {
-                listenText?.text = if (total == 0) "" else (index + 1) + "/" + total + "  " + sentence
+                listenText?.text = if (total == 0) "" else "" + (index + 1) + "/" + total + "  " + sentence
                 listenPlay?.text = if (speaking) "\u23F8" else "\u25B6"
                 if (total == 0) listenBar?.visibility = View.GONE
             }
