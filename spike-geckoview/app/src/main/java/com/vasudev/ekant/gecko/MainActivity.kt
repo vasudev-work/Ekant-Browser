@@ -11,6 +11,7 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
@@ -113,25 +114,21 @@ class MainActivity : Activity() {
     }
 
     private val navDelegate = object : GeckoSession.NavigationDelegate {
-        override fun onLocationChange(session: GeckoSession, url: String?) {
-            if (session === cur()) urlBar.setText(url ?: "")
-        }
-
         override fun onLoadRequest(
             session: GeckoSession,
             request: GeckoSession.NavigationDelegate.LoadRequest
-        ): GeckoResult<GeckoSession.NavigationDelegate.AllowOrDeny> {
-            return if (adBlocker.isBlocked(request.uri)) {
-                GeckoResult.fromValue(GeckoSession.NavigationDelegate.AllowOrDeny.DENY)
-            } else {
-                GeckoResult.fromValue(GeckoSession.NavigationDelegate.AllowOrDeny.ALLOW)
-            }
+        ): GeckoResult<AllowOrDeny> {
+            return if (adBlocker.isBlocked(request.uri)) GeckoResult.deny() else GeckoResult.allow()
         }
     }
 
     private val progressDelegate = object : GeckoSession.ProgressDelegate {
         override fun onProgressChange(session: GeckoSession, p: Int) {
             if (session === cur()) progress.progress = p
+        }
+
+        override fun onPageStart(session: GeckoSession, url: String?) {
+            if (session === cur()) urlBar.setText(url ?: "")
         }
     }
 
@@ -151,6 +148,6 @@ class MainActivity : Activity() {
 
     companion object {
         const val HOME = "https://duckduckgo.com/"
-        const val SEARCH = "https://duckduckgo.com/?q="
+        const val SEARCH = "https://duckduckgo.com/"
     }
 }
