@@ -381,6 +381,15 @@
     <string name="media_note">Direct video/audio files download fully. HLS and DASH playlists download the manifest only \u2014 merging the segments needs a separate tool.</string>
     <string name="sh_clean_urls">Strip tracking from links</string>
     <string name="sh_clean_urls_sum">Remove utm, fbclid, gclid and similar tracking parameters</string>
+    <string name="ap_sites">Websites</string>
+    <string name="ap_force_dark">Darken websites</string>
+    <string name="ap_force_dark_sum">Apply the engine\u2019s automatic dark mode to sites without one</string>
+    <string name="us_title">User styles (CSS)</string>
+    <string name="us_empty">No user styles yet. Add one to restyle any site.</string>
+    <string name="us_add">Add a style</string>
+    <string name="us_add_sum">Pattern and CSS, applied on matching pages</string>
+    <string name="us_pattern">Pattern, e.g. *example.com*</string>
+    <string name="us_css">CSS, e.g. .banner { display: none }</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>

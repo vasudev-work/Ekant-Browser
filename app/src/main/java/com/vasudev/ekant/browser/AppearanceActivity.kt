@@ -38,6 +38,18 @@ class AppearanceActivity : BaseSettingsActivity() {
         b.divider(c0)
         b.radioRow(c0, getString(R.string.theme_system), null, mode == "system") { setThemeMode("system") }
 
+        b.section(getString(R.string.ap_sites))
+        val c3 = b.card()
+        b.switchRow(c3, getString(R.string.ap_force_dark), getString(R.string.ap_force_dark_sum),
+            prefs.getBoolean("force_dark", false)) { _, on ->
+            prefs.edit().putBoolean("force_dark", on).apply()
+            recreate()
+        }
+        b.divider(c3)
+        b.navRow(c3, getString(R.string.us_title), null) {
+            startActivity(android.content.Intent(this, UserStylesActivity::class.java))
+        }
+
         b.section(getString(R.string.ap_text))
         val c2 = b.card()
         val cur = prefs.getInt("zoom", 100)

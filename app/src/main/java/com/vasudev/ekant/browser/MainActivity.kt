@@ -26,6 +26,10 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
+import android.webkit.ValueCallback
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
 import android.webkit.PermissionRequest
 import android.webkit.DownloadListener
 import android.webkit.URLUtil
@@ -131,6 +135,13 @@ document.open();document.write(h);document.close();
     private val favicons = HashMap<WebView, Bitmap>()
     private val pinned = HashSet<WebView>()
     private val closedStack = ArrayDeque<String>()
+    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+
+    private val fileChooser = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+        val cb = filePathCallback
+        filePathCallback = null
+        try { cb?.onReceiveValue(android.webkit.WebChromeClient.FileChooserParams.parseResult(res.resultCode, res.data)) } catch (_: Exception) { }
+    }
     private var current = -1
 
     override fun onCreate(saved: Bundle?) {
@@ -374,6 +385,20 @@ document.open();document.write(h);document.close();
         s.javaScriptEnabled = js
         s.blockNetworkImage = !images
         s.textZoom = textZoom
+        applyDarkMode(s)
+    }
+
+    /** Dark Reader style: let the engine darken sites that have no dark theme. */
+    private fun applyDarkMode(s: WebSettings) {
+        val on = prefs.getBoolean("force_dark", false)
+        try {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+                WebSettingsCompat.setAlgorithmicDarkeningAllowed(s, on)
+            } else if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                WebSettingsCompat.setForceDark(
+                    s, if (on) WebSettingsCompat.FORCE_DARK_ON else WebSettingsCompat.FORCE_DARK_OFF)
+            }
+        } catch (_: Exception) { }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -522,6 +547,17 @@ document.open();document.write(h);document.close();
         try { w.evaluateJavascript(js, null) } catch (_: Exception) { }
     }
 
+    /** Stylus-like user CSS, applied per site pattern. */
+    private fun injectUserStyles(wv: WebView?, url: String) {
+        val w = wv ?: return
+        val css = UserStyleStore.cssFor(this, url)
+        if (css.isBlank()) return
+        val js = "try{var s=document.getElementById('aekant-userstyle');" +
+            "if(!s){s=document.createElement('style');s.id='aekant-userstyle';document.documentElement.appendChild(s);}" +
+            "s.textContent=" + org.json.JSONObject.quote(css) + ";}catch(e){}"
+        try { w.evaluateJavascript(js, null) } catch (_: Exception) { }
+    }
+
     /** EasyList cosmetic rules: hide ad containers on the page. */
     private fun injectCosmetic(wv: WebView?, url: String) {
         val w = wv ?: return
@@ -622,6 +658,19 @@ document.open();document.write(h);document.close();
 
     private fun buildChromeClient(): WebChromeClient = object : WebChromeClient() {
 
+        override fun onShowFileChooser(view: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
+            filePathCallback?.onReceiveValue(null)
+            filePathCallback = cb
+            return try {
+                val i = params?.createIntent() ?: return false
+                fileChooser.launch(i)
+                true
+            } catch (_: Exception) {
+                filePathCallback = null
+                false
+            }
+        }
+
         override fun onPermissionRequest(request: PermissionRequest?) {
             val r = request ?: return
             val host = try { Uri.parse(r.origin.toString()).host ?: "" } catch (_: Exception) { "" }
@@ -659,6 +708,7 @@ document.open();document.write(h);document.close();
                 injectExtensions(v, url)
                 injectCosmetic(v, url)
                 injectMediaListener(v)
+                injectUserStyles(v, url)
             }
         }
 
