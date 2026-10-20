@@ -39,6 +39,7 @@
         <activity android:name=".AIActivity" android:exported="false" android:label="@string/ai_title" />
         <activity android:name=".AboutActivity" android:exported="false" android:label="@string/about_title" />
         <activity android:name="com.vasudev.Appstore.SettingsUIActivity" android:exported="false" android:label="@string/advanced_settings" />
+        <activity android:name=".ExtensionsActivity" android:exported="false" android:label="@string/r_extensions" />
     </application>
 
 </manifest>

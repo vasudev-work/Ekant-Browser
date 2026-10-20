@@ -90,6 +90,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var adBlocker: AdBlocker
     private lateinit var store: ContainerStore
+    private lateinit var extStore: ExtensionStore
     private var containers: MutableList<Container> = mutableListOf()
     private var active: Container? = null
 
@@ -119,6 +120,7 @@ class MainActivity : AppCompatActivity() {
 
         adBlocker = AdBlocker(applicationContext)
         store = ContainerStore(this)
+        extStore = ExtensionStore(this)
         containers = store.getContainers().toMutableList()
         val aid = store.activeContainerId ?: containers.first().id
         active = containers.firstOrNull { it.id == aid } ?: containers.first()
@@ -376,6 +378,16 @@ class MainActivity : AppCompatActivity() {
             if (secure) resources.getColor(R.color.brand_green) else attr(R.attr.mutedColor))
     }
 
+    /** Run every enabled extension whose pattern matches this URL. */
+    private fun injectExtensions(wv: WebView?, url: String) {
+        val w = wv ?: return
+        for (e in extStore.getEnabled()) {
+            if (e.matches(url)) {
+                try { w.evaluateJavascript(e.code, null) } catch (_: Exception) { }
+            }
+        }
+    }
+
     private fun go(input: String?) {
         var u = input?.trim() ?: ""
         if (u.isEmpty()) return
@@ -409,6 +421,7 @@ class MainActivity : AppCompatActivity() {
             if (!incognito && url != null && url.startsWith("http")) {
                 addEntry("history", v?.title, url, 300, false)
             }
+            if (url != null) injectExtensions(v, url)
         }
 
         override fun shouldOverrideUrlLoading(v: WebView?, request: WebResourceRequest?): Boolean {
@@ -587,7 +600,7 @@ class MainActivity : AppCompatActivity() {
             10 -> toggleDesktop()
             11 -> showZoom()
             12 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
-            13 -> { hideMenuPanel(); showExtensions() }
+            13 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
             14 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
             15 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
             16 -> finishAffinity()
@@ -720,24 +733,6 @@ class MainActivity : AppCompatActivity() {
         inEdit.setPadding(dp(20), dp(10), dp(20), dp(10))
         Sheet.build(this, getString(R.string.m_find)).content(inEdit)
             .action(getString(R.string.d_find)) { cur()?.findAllAsync(inEdit.text.toString()) }
-            .show()
-    }
-
-    private fun showExtensions() {
-        val t = TextView(this)
-        t.text = getString(R.string.d_ext_msg)
-        t.setTextColor(attr(R.attr.textSecondaryColor))
-        t.textSize = 14f
-        t.setPadding(dp(20), dp(4), dp(20), dp(12))
-        Sheet.build(this, getString(R.string.d_ext_title)).content(t)
-            .action(getString(R.string.d_ext_open)) {
-                val was = desktop
-                desktop = true
-                for (tt in tabs) applyUa(tt.settings)
-                newTab("https://chromewebstore.google.com/")
-                desktop = was
-            }
-            .action(getString(R.string.d_close), null)
             .show()
     }
 

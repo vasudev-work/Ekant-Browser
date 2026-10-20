@@ -68,6 +68,12 @@ abstract class BaseSettingsActivity : AppCompatActivity() {
 
     protected abstract fun build(b: SettingsBuilder, content: LinearLayout)
 
+    /** Re-render the content (used after the extension list changes). */
+    protected fun rebuild() {
+        content.removeAllViews()
+        build(SettingsBuilder(this, content), content)
+    }
+
     protected fun attr(resid: Int): Int {
         val tv = TypedValue()
         theme.resolveAttribute(resid, tv, true)
