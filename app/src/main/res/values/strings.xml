@@ -368,8 +368,8 @@
     <string name="hist_yesterday">Yesterday</string>
     <string name="hist_older">Earlier</string>
     <string name="hist_note">Clearing history removes the list only \u2014 cookies, cache and site data stay until you clear them from the Privacy dashboard.</string>
-    <string name="sh_easylist">EasyList filters</string>
-    <string name="sh_easylist_sum">Use the full EasyList + EasyPrivacy rule sets (network and cosmetic)</string>
+    <string name="sh_easylist">EasyList + AdGuard filters</string>
+    <string name="sh_easylist_sum">Use the bundled EasyList, EasyPrivacy and AdGuard rule sets (network + cosmetic)</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>

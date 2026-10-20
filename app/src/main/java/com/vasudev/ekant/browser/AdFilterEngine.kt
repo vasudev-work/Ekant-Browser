@@ -22,6 +22,8 @@ object AdFilterEngine {
     private val cosmeticGlobal = StringBuilder()
     private val cosmeticByDomain = HashMap<String, StringBuilder>()
 
+    private const val MAX_HOSTS = 90000
+    private const val MAX_ALLOW_HOSTS = 25000
     private const val MAX_SUBS = 6000
     private const val MAX_ALLOW_SUBS = 2000
     private const val MAX_GLOBAL_CSS = 200000
@@ -84,7 +86,8 @@ object AdFilterEngine {
                             .substringBefore('*').substringBefore('?').trim('.')
                         d = d.lowercase()
                         if (d.isEmpty() || !d.contains('.')) return@forEachLine
-                        if (isAllow) allowHosts.add(d) else blockHosts.add(d)
+                        if (isAllow) { if (allowHosts.size < MAX_ALLOW_HOSTS) allowHosts.add(d) }
+                        else { if (blockHosts.size < MAX_HOSTS) blockHosts.add(d) }
                     } else {
                         if (body.startsWith("/") && body.endsWith("/")) return@forEachLine
                         if (body.contains('*') || body.contains('^')) return@forEachLine
