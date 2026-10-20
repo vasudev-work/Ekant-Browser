@@ -34,6 +34,13 @@ class HomeShortcutsActivity : BaseSettingsActivity() {
             prefs.edit().remove("shortcuts").apply(); rebuild()
         }
 
+        b.section(getString(R.string.hs_greeting))
+        val gr = b.card()
+        b.switchRow(gr, getString(R.string.hs_greeting), getString(R.string.hs_greeting_sum),
+            prefs.getBoolean("greeting", true)) { _, on ->
+            prefs.edit().putBoolean("greeting", on).apply()
+        }
+
         b.section(getString(R.string.hs_start_style))
         val st = b.card()
         val style = prefs.getString("start_style", "personal")

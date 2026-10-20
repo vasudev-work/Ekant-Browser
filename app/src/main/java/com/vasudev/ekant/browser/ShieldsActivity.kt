@@ -38,5 +38,10 @@ class ShieldsActivity : BaseSettingsActivity() {
             !prefs.getBoolean("images", true)) { _, checked ->
             prefs.edit().putBoolean("images", !checked).apply()
         }
+        b.divider(c)
+        b.switchRow(c, getString(R.string.sh_bg_media), getString(R.string.sh_bg_media_sum),
+            prefs.getBoolean("bg_media", false)) { _, on ->
+            prefs.edit().putBoolean("bg_media", on).apply()
+        }
     }
 }

@@ -49,6 +49,7 @@
         <activity android:name=".TabsActivity" android:exported="false" android:label="@string/s_tabs" />
         <activity android:name=".HistoryActivity" android:exported="false" android:label="@string/s_history" />
         <activity android:name=".BookmarksActivity" android:exported="false" android:label="@string/s_bookmarks" />
+        <activity android:name=".SitePermissionsActivity" android:exported="false" android:label="@string/s_permissions" />
     </application>
 
 </manifest>

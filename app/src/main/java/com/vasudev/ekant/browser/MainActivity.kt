@@ -110,6 +110,8 @@ class MainActivity : AppCompatActivity() {
 
     private val tabs = mutableListOf<WebView>()
     private val favicons = HashMap<WebView, Bitmap>()
+    private val pinned = HashSet<WebView>()
+    private val closedStack = ArrayDeque<String>()
     private var current = -1
 
     override fun onCreate(saved: Bundle?) {
@@ -316,6 +318,7 @@ class MainActivity : AppCompatActivity() {
                 else (prefs.getString("start_style", "personal") ?: "personal")) +
             (if (sc.isNotBlank()) "&shortcuts=" + Uri.encode(sc) else "") +
             (if (rec.isNotBlank()) "&recent=" + Uri.encode(rec) else "") +
+            "&greet=" + (if (prefs.getBoolean("greeting", true)) "1" else "0") +
             "&tbg=" + Uri.encode(hex(attr(R.attr.bgColor))) +
             "&tsurf=" + Uri.encode(hex(attr(R.attr.surfaceColor))) +
             "&tfg=" + Uri.encode(hex(attr(R.attr.textPrimaryColor))) +
@@ -363,7 +366,7 @@ class MainActivity : AppCompatActivity() {
         s.loadWithOverviewMode = true
         s.useWideViewPort = true
         s.textZoom = textZoom
-        s.mediaPlaybackRequiresUserGesture = true
+        s.mediaPlaybackRequiresUserGesture = !prefs.getBoolean("bg_media", false)
         applyContent(s)
         applyUa(s)
         val block3p = prefs.getBoolean("block_3p", true)
@@ -422,6 +425,13 @@ class MainActivity : AppCompatActivity() {
     private fun closeTab(i: Int) {
         if (i < 0 || i >= tabs.size) return
         val w = tabs.removeAt(i)
+        val u = w.url
+        if (u != null && u.startsWith("http")) {
+            closedStack.addLast(u)
+            if (closedStack.size > 10) closedStack.removeFirst()
+        }
+        pinned.remove(w)
+        favicons.remove(w)
         container.removeView(w)
         w.destroy()
         if (tabs.isEmpty()) {
@@ -546,7 +556,10 @@ class MainActivity : AppCompatActivity() {
 
         override fun onPermissionRequest(request: PermissionRequest?) {
             val r = request ?: return
-            if (prefs.getBoolean("block_perms", true)) r.deny() else r.grant(r.resources)
+            val host = try { Uri.parse(r.origin.toString()).host ?: "" } catch (_: Exception) { "" }
+            val allowed = (prefs.getString("site_allow", "") ?: "")
+                .split("\n").any { it.equals(host, true) }
+            if (prefs.getBoolean("block_perms", true) && !allowed) r.deny() else r.grant(r.resources)
         }
 
         override fun onReceivedIcon(view: WebView?, icon: Bitmap?) {
@@ -905,85 +918,149 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Grid tab switcher: favicon + title + close, with New tab / Close all. */
+    /** Tab switcher: search field, grid with favicons, and quick actions. */
     private fun showTabs() {
-        val scroll = ScrollView(this)
+        val root = LinearLayout(this)
+        root.orientation = LinearLayout.VERTICAL
+        val pad = dp(12)
+        root.setPadding(pad, pad, pad, pad)
+
+        val search = EditText(this)
+        search.hint = getString(R.string.tabs_search)
+        search.isSingleLine = true
+        search.setTextColor(attr(R.attr.textPrimaryColor))
+        search.setHintTextColor(attr(R.attr.textSecondaryColor))
+        val sbg = GradientDrawable()
+        sbg.cornerRadius = dp(18).toFloat()
+        sbg.setColor(attr(R.attr.surface2Color))
+        search.background = sbg
+        search.setPadding(dp(14), dp(10), dp(14), dp(10))
+        root.addView(search)
+
         val grid = GridLayout(this)
         grid.columnCount = 3
-        val pad = dp(10)
-        grid.setPadding(pad, pad, pad, pad)
+        val scroll = ScrollView(this)
         scroll.addView(grid)
+        root.addView(scroll, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+
+        val actions = LinearLayout(this)
+        actions.orientation = LinearLayout.HORIZONTAL
+        root.addView(actions)
 
         val dialog = AlertDialog.Builder(this)
-            .setView(scroll)
-            .setPositiveButton(R.string.d_new_tab, null)
-            .setNeutralButton(R.string.d_close_all_tabs, null)
+            .setView(root)
             .setNegativeButton(R.string.d_close, null)
             .create()
 
-        for (i in tabs.indices) {
-            val wv = tabs[i]
-            val cell = LinearLayout(this)
-            cell.orientation = LinearLayout.VERTICAL
-            cell.gravity = Gravity.CENTER_HORIZONTAL
-            val lp = GridLayout.LayoutParams()
-            lp.width = 0
-            lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-            lp.setMargins(dp(4), dp(4), dp(4), dp(4))
-            cell.layoutParams = lp
-            cell.setPadding(dp(8), dp(10), dp(8), dp(10))
-            val bg = GradientDrawable()
-            bg.cornerRadius = dp(14).toFloat()
-            bg.setColor(if (i == current) attr(R.attr.surface2Color) else attr(R.attr.surfaceColor))
-            cell.background = bg
-
-            val iv = ImageView(this)
-            val fav = favicons[wv]
-            if (fav != null) iv.setImageBitmap(fav) else iv.setImageResource(R.drawable.ic_tabs)
-            iv.setColorFilter(attr(R.attr.textSecondaryColor))
-            iv.layoutParams = LinearLayout.LayoutParams(dp(30), dp(30))
-            cell.addView(iv)
-
-            val tv = TextView(this)
-            tv.text = wv.title ?: "New tab"
-            tv.maxLines = 2
-            tv.ellipsize = TextUtils.TruncateAt.END
-            tv.gravity = Gravity.CENTER
-            tv.textSize = 11f
-            tv.setTextColor(attr(R.attr.textPrimaryColor))
-            tv.setPadding(0, dp(6), 0, dp(2))
-            cell.addView(tv)
-
-            val close = TextView(this)
-            close.text = "\u2715"
-            close.textSize = 12f
-            close.gravity = Gravity.CENTER
-            close.setTextColor(attr(R.attr.brandColor))
-            close.setPadding(dp(10), dp(2), dp(10), dp(2))
-            close.setOnClickListener { closeTab(i); dialog.dismiss(); showTabs() }
-            cell.addView(close)
-
-            cell.setOnClickListener { showTab(i); dialog.dismiss() }
-            grid.addView(cell)
+        fun addAction(label: String, cb: () -> Unit) {
+            val t = TextView(this)
+            t.text = label
+            t.textSize = 12f
+            t.setTextColor(attr(R.attr.brandColor))
+            t.setPadding(dp(12), dp(14), dp(12), dp(4))
+            t.setOnClickListener { cb() }
+            actions.addView(t)
         }
 
-        dialog.setOnShowListener {
-            dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
-                dialog.dismiss(); newTab(ntpUrl())
-            }
-            dialog.getButton(DialogInterface.BUTTON_NEUTRAL).setOnClickListener {
-                dialog.dismiss(); closeAllTabs()
+        fun buildGrid(filter: String) {
+            grid.removeAllViews()
+            for (i in tabs.indices) {
+                val wv = tabs[i]
+                val title = wv.title ?: "New tab"
+                if (filter.isNotBlank() &&
+                    !title.contains(filter, true) &&
+                    !(wv.url ?: "").contains(filter, true)) continue
+
+                val cell = LinearLayout(this)
+                cell.orientation = LinearLayout.VERTICAL
+                cell.gravity = Gravity.CENTER_HORIZONTAL
+                val lp = GridLayout.LayoutParams()
+                lp.width = 0
+                lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                lp.setMargins(dp(4), dp(4), dp(4), dp(4))
+                cell.layoutParams = lp
+                cell.setPadding(dp(8), dp(10), dp(8), dp(10))
+                val bg = GradientDrawable()
+                bg.cornerRadius = dp(14).toFloat()
+                bg.setColor(if (i == current) attr(R.attr.surface2Color) else attr(R.attr.surfaceColor))
+                cell.background = bg
+
+                val iv = ImageView(this)
+                val fav = favicons[wv]
+                if (fav != null) iv.setImageBitmap(fav) else iv.setImageResource(R.drawable.ic_tabs)
+                iv.setColorFilter(attr(R.attr.textSecondaryColor))
+                iv.layoutParams = LinearLayout.LayoutParams(dp(30), dp(30))
+                cell.addView(iv)
+
+                val tv = TextView(this)
+                tv.text = if (pinned.contains(wv)) "\uD83D\uDCCC " + title else title
+                tv.maxLines = 2
+                tv.ellipsize = TextUtils.TruncateAt.END
+                tv.gravity = Gravity.CENTER
+                tv.textSize = 11f
+                tv.setTextColor(attr(R.attr.textPrimaryColor))
+                tv.setPadding(0, dp(6), 0, dp(2))
+                cell.addView(tv)
+
+                val close = TextView(this)
+                close.text = "\u2715"
+                close.textSize = 12f
+                close.gravity = Gravity.CENTER
+                close.setTextColor(attr(R.attr.brandColor))
+                close.setPadding(dp(10), dp(2), dp(10), dp(2))
+                close.setOnClickListener { closeTab(i); dialog.dismiss(); showTabs() }
+                cell.addView(close)
+
+                cell.setOnClickListener { showTab(i); dialog.dismiss() }
+                grid.addView(cell)
             }
         }
+
+        buildGrid("")
+        search.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) { buildGrid(s?.toString() ?: "") }
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) { }
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) { }
+        })
+
+        addAction(getString(R.string.d_new_tab)) { dialog.dismiss(); newTab(ntpUrl()) }
+        addAction(getString(R.string.tabs_reopen)) { dialog.dismiss(); reopenClosed() }
+        addAction(getString(R.string.tabs_duplicate)) { dialog.dismiss(); duplicateTab(current) }
+        addAction(getString(R.string.tabs_pin)) { dialog.dismiss(); togglePin(current); showTabs() }
+        addAction(getString(R.string.d_close_all_tabs)) { dialog.dismiss(); closeAllTabs() }
+
         dialog.show()
+    }
+
+    private fun reopenClosed() {
+        val u = closedStack.removeLastOrNull()
+        if (u == null) { toast(getString(R.string.tabs_none_closed)); return }
+        newTab(u)
+    }
+
+    private fun duplicateTab(i: Int) {
+        val u = tabs.getOrNull(i)?.url
+        newTab(if (u.isNullOrBlank()) ntpUrl() else u)
+    }
+
+    private fun togglePin(i: Int) {
+        val w = tabs.getOrNull(i) ?: return
+        if (pinned.contains(w)) { pinned.remove(w); toast(getString(R.string.tabs_unpinned)) }
+        else { pinned.add(w); toast(getString(R.string.tabs_pinned)) }
     }
 
     private fun closeAllTabs() {
         AlertDialog.Builder(this)
             .setMessage(R.string.confirm_close_all)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                for (t in tabs) { container.removeView(t); t.destroy() }
-                tabs.clear(); favicons.clear(); current = -1
-                newTab(ntpUrl())
+                val keep = ArrayList<WebView>()
+                for (t in ArrayList(tabs)) {
+                    if (pinned.contains(t)) { keep.add(t); continue }
+                    container.removeView(t); t.destroy(); favicons.remove(t)
+                }
+                tabs.clear(); tabs.addAll(keep); current = -1
+                if (tabs.isEmpty()) newTab(ntpUrl()) else showTab(0)
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()

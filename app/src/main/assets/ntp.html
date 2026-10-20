@@ -21,6 +21,9 @@
   .flag{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--brand);
     font-weight:700;margin-bottom:14px}
   .sub{margin:12px 0 22px;font-size:13px;color:var(--mut)}
+  .greet{margin:0 0 20px}
+  .g1{font-size:21px;font-weight:700;color:var(--fg);margin-bottom:4px}
+  .g2{font-size:13px;color:var(--mut)}
   form{width:100%;max-width:520px}
   input{width:100%;height:56px;border-radius:22px;border:1px solid var(--line);
     background:var(--surf);color:var(--fg);padding:0 22px;font-size:15px;outline:none}
@@ -57,6 +60,11 @@
     <span class="wordmark">Aekant</span>
   </div>
   <div class="sub">Private, fast and secure browsing &middot; local-only data</div>
+
+  <div class="greet" id="greet" style="display:none">
+    <div class="g1" id="g1"></div>
+    <div class="g2">Browse at your pace</div>
+  </div>
 
   <form action="aekant://search" method="get" autocomplete="off">
     <input name="q" placeholder="Search or type a URL" autofocus>
@@ -102,6 +110,13 @@
     setv('--line', 'tmut');
 
     if (p.get('bg') === '0') document.body.classList.add('nobg');
+
+    if (p.get('greet') !== '0') {
+      var hr = new Date().getHours();
+      var msg = hr < 12 ? 'Good morning' : (hr < 17 ? 'Good afternoon' : 'Good evening');
+      document.getElementById('g1').textContent = msg;
+      document.getElementById('greet').style.display = 'block';
+    }
 
     var style = p.get('style') || 'personal';
     var showStats = (p.get('stats') !== '0') && (style === 'dashboard');
