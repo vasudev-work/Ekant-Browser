@@ -29,6 +29,9 @@ class ToolbarActivity : BaseSettingsActivity() {
         b.divider(c3)
         b.switchRow(c3, getString(R.string.tb_compact), getString(R.string.tb_compact_sum),
             prefs.getBoolean("compact", false)) { _, on -> prefs.edit().putBoolean("compact", on).apply() }
+        b.divider(c3)
+        b.switchRow(c3, getString(R.string.tb_focus), getString(R.string.tb_focus_sum),
+            prefs.getBoolean("focus_mode", false)) { _, on -> prefs.edit().putBoolean("focus_mode", on).apply() }
     }
 
     private fun set(key: String, value: String) {

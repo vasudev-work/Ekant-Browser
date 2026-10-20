@@ -311,6 +311,16 @@
     <string name="se_url_hint">https://example.com/search?q=%s</string>
     <string name="se_set_default">Set as default</string>
     <string name="se_note">Qmuma, iBharat, Indus AI and Sarvam AI are added as editable entries. Their search endpoints could not be verified from the build environment, so please check the URL and edit it if needed.</string>
+    <string name="pulse_title">Privacy pulse</string>
+    <string name="tb_focus">Focus mode</string>
+    <string name="tb_focus_sum">Hide the container chip and keep the start page minimal</string>
+    <string name="hs_start_style">Start page style</string>
+    <string name="hs_style_minimal">Minimal</string>
+    <string name="hs_style_minimal_sum">Just the search bar</string>
+    <string name="hs_style_personal">Personal</string>
+    <string name="hs_style_personal_sum">Search bar and your shortcuts</string>
+    <string name="hs_style_dashboard">Dashboard</string>
+    <string name="hs_style_dashboard_sum">Shortcuts, stats and recently visited</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>

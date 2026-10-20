@@ -158,6 +158,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_back).setOnClickListener { cur()?.let { if (it.canGoBack()) it.goBack() } }
         findViewById<View>(R.id.btn_fwd).setOnClickListener { cur()?.let { if (it.canGoForward()) it.goForward() } }
         findViewById<View>(R.id.btn_menu).setOnClickListener { toggleMenu() }
+        findViewById<View>(R.id.lock).setOnClickListener { showPrivacyPulse() }
         findViewById<View>(R.id.nav_home).setOnClickListener { goHome() }
         findViewById<View>(R.id.nav_bookmarks).setOnClickListener { showBookmarks() }
         findViewById<View>(R.id.nav_downloads).setOnClickListener { openDownloads() }
@@ -210,6 +211,7 @@ class MainActivity : AppCompatActivity() {
         CookieManager.getInstance().setAcceptCookie(cookies)
         if (wasDark != dark) { recreate(); return }
         try { cur()?.onResume() } catch (_: Exception) { }
+        applyLayoutPrefs()
         for (t in tabs) applyContent(t.settings)
         updateContainerUi()
     }
@@ -310,6 +312,8 @@ class MainActivity : AppCompatActivity() {
             "&stats=" + (if (ntpStats) "1" else "0") +
             "&bg=" + (if (ntpBg) "1" else "0") +
             "&show_recent=" + (if (showRecent) "1" else "0") +
+            "&style=" + (if (prefs.getBoolean("focus_mode", false)) "minimal"
+                else (prefs.getString("start_style", "personal") ?: "personal")) +
             (if (sc.isNotBlank()) "&shortcuts=" + Uri.encode(sc) else "") +
             (if (rec.isNotBlank()) "&recent=" + Uri.encode(rec) else "")
     }
@@ -1083,6 +1087,32 @@ class MainActivity : AppCompatActivity() {
 
     private fun searchFor(q: String): String = engineStore.urlFor(q)
 
+    private fun onOff(v: Boolean) = if (v) "On" else "Off"
+
+    /** Privacy Pulse: what is protecting this page right now. */
+    private fun showPrivacyPulse() {
+        val w = cur() ?: return
+        val url = w.url ?: ""
+        val secure = url.startsWith("https")
+        val sb = StringBuilder()
+        sb.append(if (secure) "Secure connection (HTTPS)" else "Not secure (HTTP)")
+        sb.append("\n\nProtections on this device:")
+        sb.append("\n\u2022 Ads: ").append(onOff(prefs.getBoolean("block_ads", true)))
+        sb.append("\n\u2022 Trackers: ").append(onOff(prefs.getBoolean("block_trackers", true)))
+        sb.append("\n\u2022 Third-party cookies: ")
+            .append(if (prefs.getBoolean("block_3p", true)) "Blocked" else "Allowed")
+        sb.append("\n\u2022 HTTPS-only: ").append(onOff(prefs.getBoolean("https_only", true)))
+        sb.append("\n\u2022 Fingerprint noise: ").append(onOff(prefs.getBoolean("fingerprint", true)))
+        sb.append("\n\u2022 Site permissions: ")
+            .append(if (prefs.getBoolean("block_perms", true)) "Blocked" else "Asked")
+        sb.append("\n\n").append(url)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.pulse_title)
+            .setMessage(sb.toString())
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
     /** Applies address-bar / navigation placement and compact mode. */
     private fun applyLayoutPrefs() {
         val col = findViewById<LinearLayout>(R.id.column)
@@ -1094,6 +1124,8 @@ class MainActivity : AppCompatActivity() {
 
         val addrBottom = prefs.getString("address_bar", "top") == "bottom"
         val navTop = prefs.getString("toolbar_pos", "bottom") == "top"
+        val focus = prefs.getBoolean("focus_mode", false)
+        containerRow.visibility = if (focus) View.GONE else View.VISIBLE
 
         nav.layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,

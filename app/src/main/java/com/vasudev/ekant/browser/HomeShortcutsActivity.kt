@@ -34,12 +34,26 @@ class HomeShortcutsActivity : BaseSettingsActivity() {
             prefs.edit().remove("shortcuts").apply(); rebuild()
         }
 
+        b.section(getString(R.string.hs_start_style))
+        val st = b.card()
+        val style = prefs.getString("start_style", "personal")
+        b.radioRow(st, getString(R.string.hs_style_minimal), getString(R.string.hs_style_minimal_sum), style == "minimal") { setStyle("minimal") }
+        b.divider(st)
+        b.radioRow(st, getString(R.string.hs_style_personal), getString(R.string.hs_style_personal_sum), style == "personal") { setStyle("personal") }
+        b.divider(st)
+        b.radioRow(st, getString(R.string.hs_style_dashboard), getString(R.string.hs_style_dashboard_sum), style == "dashboard") { setStyle("dashboard") }
+
         b.section(getString(R.string.hs_recent))
         val rc = b.card()
         b.switchRow(rc, getString(R.string.hs_show_recent), getString(R.string.hs_show_recent_sum),
             prefs.getBoolean("show_recent", true)) { _, on ->
             prefs.edit().putBoolean("show_recent", on).apply()
         }
+    }
+
+    private fun setStyle(s: String) {
+        prefs.edit().putString("start_style", s).apply()
+        rebuild()
     }
 
     private fun list(): MutableList<String> =

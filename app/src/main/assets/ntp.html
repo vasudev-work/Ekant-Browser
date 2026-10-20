@@ -89,11 +89,13 @@
   (function () {
     var p = new URLSearchParams(location.search);
     if (p.get('bg') === '0') document.body.classList.add('nobg');
-    if (p.get('stats') === '0') document.getElementById('stats').style.display = 'none';
+    var style = p.get('style') || 'personal';
+    var showStats = (p.get('stats') !== '0') && (style === 'dashboard');
+    if (!showStats) document.getElementById('stats').style.display = 'none';
 
     var ts = document.getElementById('topsites');
     var sc = p.get('shortcuts');
-    if (p.get('topsites') === '0') {
+    if (p.get('topsites') === '0' || style === 'minimal') {
       ts.style.display = 'none';
     } else if (sc) {
       var items = sc.split(';;').filter(function (x) { return x.trim().length > 0; });
@@ -115,7 +117,7 @@
     }
 
     var rec = p.get('recent');
-    if (rec && p.get('show_recent') === '1') {
+    if (rec && p.get('show_recent') === '1' && style === 'dashboard') {
       var r = rec.split(';;').filter(function (x) { return x.trim().length > 0; });
       if (r.length) {
         document.getElementById('recent-wrap').style.display = 'block';
