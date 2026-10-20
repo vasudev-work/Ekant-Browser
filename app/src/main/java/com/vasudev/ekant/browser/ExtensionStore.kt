@@ -74,7 +74,7 @@ class ExtensionStore(context: Context) {
                 "function s(){try{" +
                 "document.querySelectorAll('video,audio,source').forEach(function(el){r(el.currentSrc||el.src||el.getAttribute('src'),el.tagName.toLowerCase());});" +
                 "document.querySelectorAll('a[href]').forEach(function(a){var h=a.getAttribute('href')||'';" +
-                "if(/\.(mp4|webm|m4a|mp3|ogg|m3u8|mpd|mov)(\?|$)/i.test(h)){try{r(new URL(h,location.href).href,'link');}catch(e){}}});" +
+                "if(/\\.(mp4|webm|m4a|mp3|ogg|m3u8|mpd|mov)(\\?|$)/i.test(h)){try{r(new URL(h,location.href).href,'link');}catch(e){}}});" +
                 "}catch(e){}}" +
                 "s();document.addEventListener('loadeddata',s,true);setInterval(s,5000);})();",
             true, true

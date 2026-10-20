@@ -34,6 +34,10 @@ class MediaActivity : BaseSettingsActivity() {
         b.note(getString(R.string.media_note))
     }
 
+    private fun toast(s: CharSequence) {
+        android.widget.Toast.makeText(this, s, android.widget.Toast.LENGTH_SHORT).show()
+    }
+
     private fun download(url: String) {
         try {
             val r = DownloadManager.Request(Uri.parse(url))
