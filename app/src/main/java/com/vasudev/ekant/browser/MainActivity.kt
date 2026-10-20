@@ -681,6 +681,10 @@ document.open();document.write(h);document.close();
             if (prefs.getBoolean("https_only", true) && url.startsWith("http://")) {
                 v?.loadUrl("https://" + url.substring(7)); return true
             }
+            if (prefs.getBoolean("clean_urls", true)) {
+                val c = UrlCleaner.clean(url)
+                if (c != url) { v?.loadUrl(c); return true }
+            }
             return false
         }
 
@@ -1397,7 +1401,8 @@ document.open();document.write(h);document.close();
     }
 
     private fun sharePage() {
-        val u = cur()?.url ?: return
+        var u = cur()?.url ?: return
+        if (prefs.getBoolean("clean_urls", true)) u = UrlCleaner.clean(u)
         val i = Intent(Intent.ACTION_SEND)
         i.type = "text/plain"
         i.putExtra(Intent.EXTRA_TEXT, u)

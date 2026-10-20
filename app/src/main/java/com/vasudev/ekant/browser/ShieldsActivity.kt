@@ -25,6 +25,11 @@ class ShieldsActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("block_trackers", on).apply()
         }
         b.divider(c)
+        b.switchRow(c, getString(R.string.sh_clean_urls), getString(R.string.sh_clean_urls_sum),
+            prefs.getBoolean("clean_urls", true)) { _, on ->
+            prefs.edit().putBoolean("clean_urls", on).apply()
+        }
+        b.divider(c)
         b.switchRow(c, getString(R.string.sh_3p), getString(R.string.sh_3p_sum),
             prefs.getBoolean("block_3p", true)) { _, on ->
             prefs.edit().putBoolean("block_3p", on).apply()

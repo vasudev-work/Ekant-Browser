@@ -379,6 +379,8 @@
     <string name="media_download">Download</string>
     <string name="media_copy">Copy link</string>
     <string name="media_note">Direct video/audio files download fully. HLS and DASH playlists download the manifest only \u2014 merging the segments needs a separate tool.</string>
+    <string name="sh_clean_urls">Strip tracking from links</string>
+    <string name="sh_clean_urls_sum">Remove utm, fbclid, gclid and similar tracking parameters</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>

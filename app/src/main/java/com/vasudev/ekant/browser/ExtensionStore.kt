@@ -68,6 +68,33 @@ class ExtensionStore(context: Context) {
             false, true
         ),
         Extension(
+            "builtin-json", "JSON viewer", "*",
+            "(function(){try{" +
+                "var ct=(document.contentType||'').toLowerCase();" +
+                "var pre=document.body&&document.body.children.length===1&&document.body.children[0].tagName==='PRE';" +
+                "if(ct.indexOf('json')<0&&!/\\.json(\\?|$)/i.test(location.href)&&!pre)return;" +
+                "var t=document.body?document.body.innerText:'';" +
+                "if(!t||t.length>3000000)return;" +
+                "var o=JSON.parse(t);var pre=document.createElement('pre');" +
+                "pre.style.cssText='white-space:pre-wrap;word-break:break-word;font:13px/1.5 monospace;padding:12px;margin:0';" +
+                "pre.textContent=JSON.stringify(o,null,2);" +
+                "document.body.style.margin='0';document.body.innerHTML='';document.body.appendChild(pre);" +
+                "}catch(e){}})();",
+            true, true
+        ),
+        Extension(
+            "builtin-ryd", "Return YouTube Dislike", "*youtube.com*",
+            "(function(){try{var m=location.href.match(/[?&]v=([\\w-]{11})/);if(!m)return;var id=m[1];" +
+                "fetch('https://returnyoutubedislikeapi.com/votes?videoId='+id).then(function(r){return r.json();})" +
+                ".then(function(d){if(typeof d.dislikes!=='number')return;" +
+                "var host=document.querySelector('#top-level-buttons-computed')||document.querySelector('#menu-container');" +
+                "if(!host)return;var s=document.getElementById('aekant-dislikes');" +
+                "if(!s){s=document.createElement('span');s.id='aekant-dislikes';" +
+                "s.style.cssText='margin-left:10px;font-weight:600';host.appendChild(s);}" +
+                "s.textContent='Dislikes: '+d.dislikes;}).catch(function(){});}catch(e){}})();",
+            false, true
+        ),
+        Extension(
             "builtin-media", "Media sniffer", "*",
             "(function(){if(window.__aekantSniff){return;}window.__aekantSniff=1;" +
                 "function r(u,t){try{if(u&&u.indexOf('blob:')!==0)window.AekantMedia&&window.AekantMedia.found(u,t);}catch(e){}}" +
