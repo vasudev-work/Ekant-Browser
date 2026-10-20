@@ -18,6 +18,7 @@ abstract class BaseSettingsActivity : AppCompatActivity() {
 
     protected lateinit var prefs: SharedPreferences
     protected lateinit var content: LinearLayout
+    protected lateinit var rootColumn: LinearLayout
     protected abstract val titleRes: Int
 
     override fun onCreate(saved: Bundle?) {
@@ -26,6 +27,7 @@ abstract class BaseSettingsActivity : AppCompatActivity() {
         super.onCreate(saved)
 
         val root = LinearLayout(this)
+        rootColumn = root
         root.orientation = LinearLayout.VERTICAL
         root.setBackgroundColor(attr(R.attr.bgColor))
 
@@ -67,6 +69,9 @@ abstract class BaseSettingsActivity : AppCompatActivity() {
     }
 
     protected abstract fun build(b: SettingsBuilder, content: LinearLayout)
+
+    /** Insert a view just under the header bar (it survives rebuild()). */
+    protected fun addTopView(v: android.view.View) { rootColumn.addView(v, 1) }
 
     /** Re-render the content (used after the extension list changes). */
     protected fun rebuild() {

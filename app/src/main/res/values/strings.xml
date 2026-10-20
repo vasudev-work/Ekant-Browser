@@ -359,6 +359,15 @@
     <string name="ctx_downloading">Downloading</string>
     <string name="ctx_failed">Could not start download</string>
     <string name="ctx_ask_ai">Ask AI</string>
+    <string name="hist_search">Search history</string>
+    <string name="hist_clear">Clear history</string>
+    <string name="hist_hour">Last hour</string>
+    <string name="hist_day">Last 24 hours</string>
+    <string name="hist_week">Last 7 days</string>
+    <string name="hist_today">Today</string>
+    <string name="hist_yesterday">Yesterday</string>
+    <string name="hist_older">Earlier</string>
+    <string name="hist_note">Clearing history removes the list only \u2014 cookies, cache and site data stay until you clear them from the Privacy dashboard.</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>

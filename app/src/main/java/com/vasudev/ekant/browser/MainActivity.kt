@@ -57,7 +57,26 @@ class MainActivity : AppCompatActivity() {
         const val HOME_ASSET = "file:///android_asset/ntp.html"
         const val UA_DESKTOP =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-        const val READER_JS = "(function(){try{var el=document.querySelector('article')||document.querySelector('main')||document.body;var txt=el.innerText||'';var title=document.title||'';function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}var h='<!doctype html><html><head><meta name=viewport content=\'width=device-width,initial-scale=1\'><style>body{background:__BG__;color:__FG__;font-family:Georgia,serif;line-height:1.75;padding:20px;max-width:760px;margin:0 auto}h1{font-size:24px;color:__BR__;font-family:sans-serif}p{font-size:17px;margin:0 0 16px}</style></head><body><h1>'+esc(title)+'</h1>';var ps=txt.split(/\\n{2,}/);for(var i=0;i<ps.length;i++){var p=ps[i].trim();if(p.length>0){h+='<p>'+esc(p)+'</p>';}}h+='</body></html>';document.open();document.write(h);document.close();}catch(e){}})();"
+        const val READER_JS = """(function(){try{
+var el=document.querySelector('article')||document.querySelector('main')||document.body;
+var txt=el.innerText||'';var title=document.title||'';
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+var css=':root{--bg:__BG__;--fg:__FG__;--br:__BR__}'
++'body{margin:0;background:var(--bg);color:var(--fg);font-family:Georgia,serif;line-height:1.75}'
++'.bar{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--bg);border-bottom:1px solid rgba(128,128,128,.35);font-family:sans-serif}'
++'.bar button{background:transparent;border:1px solid rgba(128,128,128,.45);color:var(--fg);border-radius:8px;padding:5px 11px;font-size:14px}'
++'.sp{flex:1}h1{font-size:24px;color:var(--br);font-family:sans-serif;margin:14px 0 10px}'
++'p{font-size:17px;margin:0 0 16px}.wrap{max-width:760px;margin:0 auto;padding:8px 20px 70px}'
++'body.sepia{background:#F4ECD8;color:#3B3226}body.dk{background:#0B0E12;color:#E8EAED}';
+var bar='<div class="bar"><button onclick="fs(-1)">A-</button><button onclick="fs(1)">A+</button><span class="sp"></span><button onclick="th(0)">Light</button><button onclick="th(1)">Sepia</button><button onclick="th(2)">Dark</button><button onclick="location.reload()">Close</button></div>';
+var js='<script>var f=17;function fs(d){f=Math.max(13,Math.min(28,f+d));var a=document.querySelectorAll("#c p");for(var i=0;i<a.length;i++){a[i].style.fontSize=f+"px";}}function th(m){document.body.className=(m===1?"sepia":(m===2?"dk":""));}<\/script>';
+var h='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'</style></head><body>'+bar+'<div class="wrap"><h1>'+esc(title)+'</h1><div id="c"></div></div>'+js+'</body></html>';
+var ps=txt.split(/
+{2,}/);var body='';
+for(var i=0;i<ps.length;i++){var p=ps[i].trim();if(p.length>0){body+='<p>'+esc(p)+'</p>';}}
+h=h.replace('<div id="c"></div>','<div id="c">'+body+'</div>');
+document.open();document.write(h);document.close();
+}catch(e){}})();"""
         const val REQ_UNLOCK = 42
         const val FP_SCRIPT = "(function(){try{var g=CanvasRenderingContext2D.prototype.getImageData;CanvasRenderingContext2D.prototype.getImageData=function(){var d=g.apply(this,arguments);try{for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}}catch(e){}return d;};}catch(e){}try{var t=HTMLCanvasElement.prototype.toDataURL;HTMLCanvasElement.prototype.toDataURL=function(){try{var c=this.getContext('2d');if(c){var d=c.getImageData(0,0,this.width,this.height);for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}c.putImageData(d,0,0);}}catch(e){}return t.apply(this,arguments);};}catch(e){}try{if(window.AudioBuffer){var p=AudioBuffer.prototype.getChannelData;AudioBuffer.prototype.getChannelData=function(){var a=p.apply(this,arguments);try{for(var i=0;i<a.length;i+=1000){a[i]=a[i]+(Math.random()-0.5)*1e-6;}}catch(e){}return a;};}}catch(e){}try{Object.defineProperty(navigator,'hardwareConcurrency',{get:function(){return 4;}});}catch(e){}try{Object.defineProperty(navigator,'deviceMemory',{get:function(){return 4;}});}catch(e){}})();"
         val SE_NAMES = arrayOf("Google", "DuckDuckGo", "Bing")
@@ -331,10 +350,9 @@ class MainActivity : AppCompatActivity() {
         val out = ArrayList<String>()
         for (e in a) {
             if (out.size >= 6) break
-            val i = e.indexOf('\u0001')
-            if (i < 0) continue
-            val title = e.substring(0, i).replace("|", " ")
-            val url = e.substring(i + 1)
+            val p = e.split('\u0001')
+            val title = p.getOrElse(0) { "" }.replace("|", " ")
+            val url = p.getOrElse(1) { "" }
             if (url.startsWith("http")) out.add(title + "|" + url)
         }
         return out.joinToString(";;")
@@ -866,11 +884,12 @@ class MainActivity : AppCompatActivity() {
     private fun addEntry(key: String, title: String?, url: String?, cap: Int, unique: Boolean) {
         if (url == null) return
         val t = if (title.isNullOrEmpty()) url else title.replace("\n", " ")
-        val line = t + "\u0001" + url
+        val base = t + "\u0001" + url
+        val line = base + "\u0001" + System.currentTimeMillis()
         val c0 = prefs.getString(key, "") ?: ""
         val l = ArrayList<String>()
         if (c0.isNotEmpty()) l.addAll(c0.split("\n"))
-        if (unique && l.contains(line)) return
+        if (unique && l.any { it.startsWith(base + "\u0001") }) return
         l.add(0, line)
         while (l.size > cap) l.removeAt(l.size - 1)
         prefs.edit().putString(key, TextUtils.join("\n", l)).apply()

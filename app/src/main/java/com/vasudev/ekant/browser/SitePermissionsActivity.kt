@@ -48,10 +48,10 @@ class SitePermissionsActivity : BaseSettingsActivity() {
     private fun knownHosts(): List<String> {
         val set = LinkedHashSet<String>()
         for (e in (prefs.getString("history", "") ?: "").split("\n")) {
-            val i = e.indexOf('\u0001')
-            if (i < 0) continue
+            val u = e.split('\u0001').getOrElse(1) { "" }
+            if (u.isBlank()) continue
             try {
-                val h = Uri.parse(e.substring(i + 1)).host
+                val h = Uri.parse(u).host
                 if (!h.isNullOrBlank()) set.add(h)
             } catch (_: Exception) { }
             if (set.size >= 40) break
