@@ -184,6 +184,11 @@ object TtsReader {
     }
 
     fun isActive(): Boolean = queue.isNotEmpty()
+
+    /** Installed TTS engines, for the diagnostics screen. */
+    fun engines(): List<String> = try {
+        tts?.engines?.map { it.label ?: it.name } ?: emptyList()
+    } catch (_: Exception) { emptyList() }
     fun isSpeaking(): Boolean = speaking
 
     fun start(lines: List<String>) {
@@ -193,7 +198,10 @@ object TtsReader {
         speaking = true
         requestFocus()
         speakCurrent()
-        ctx?.let { MediaPlaybackService.start(it) }
+        ctx?.let {
+            MediaPlaybackService.start(it)
+            if (pref("keep_alive")) KeepAlive.start(it)
+        }
     }
 
     private fun speakCurrent() {
@@ -261,6 +269,7 @@ object TtsReader {
         index = 0
         try { tts?.stop() } catch (_: Exception) { }
         try { ctx?.let { MediaPlaybackService.stop(it) } } catch (_: Exception) { }
+        try { KeepAlive.stop() } catch (_: Exception) { }
         listener?.onState(0, 0, "", false)
     }
 }

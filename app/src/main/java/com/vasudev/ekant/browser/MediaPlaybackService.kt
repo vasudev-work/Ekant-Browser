@@ -21,18 +21,24 @@ class MediaPlaybackService : Service() {
     override fun onCreate() {
         super.onCreate()
         createChannel()
-        val stop = PendingIntent.getService(this, 1,
-            Intent(this, MediaPlaybackService::class.java).setAction(ACTION_STOP),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        fun pi(id: Int, action: String) = PendingIntent.getService(this, id,
+            Intent(this, MediaPlaybackService::class.java).setAction(action), flags)
+        val stop = pi(1, ACTION_STOP)
+        val prev = pi(2, ACTION_PREV)
+        val toggle = pi(3, ACTION_TOGGLE)
+        val next = pi(4, ACTION_NEXT)
+        val icon = Icon.createWithResource(this, R.drawable.ic_aekant_launcher)
         running = true
         val notif: Notification = Notification.Builder(this, CHANNEL)
             .setContentTitle(getString(R.string.bg_playing))
             .setContentText(getString(R.string.bg_playing_sum))
             .setSmallIcon(R.drawable.ic_aekant_launcher)
             .setOngoing(true)
-            .addAction(Notification.Action.Builder(
-                Icon.createWithResource(this, R.drawable.ic_aekant_launcher),
-                getString(R.string.bg_stop), stop).build())
+            .addAction(Notification.Action.Builder(icon, getString(R.string.tts_prev), prev).build())
+            .addAction(Notification.Action.Builder(icon, getString(R.string.tts_play), toggle).build())
+            .addAction(Notification.Action.Builder(icon, getString(R.string.tts_next), next).build())
+            .addAction(Notification.Action.Builder(icon, getString(R.string.bg_stop), stop).build())
             .build()
         try {
             if (Build.VERSION.SDK_INT >= 29) {
@@ -51,7 +57,12 @@ class MediaPlaybackService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) { stopSelf(); return START_NOT_STICKY }
+        when (intent?.action) {
+            ACTION_STOP -> { stopSelf(); return START_NOT_STICKY }
+            ACTION_TOGGLE -> try { TtsReader.toggle() } catch (_: Exception) { }
+            ACTION_NEXT -> try { TtsReader.next() } catch (_: Exception) { }
+            ACTION_PREV -> try { TtsReader.prev() } catch (_: Exception) { }
+        }
         return START_STICKY
     }
 
@@ -80,6 +91,9 @@ class MediaPlaybackService : Service() {
         @Volatile var running: Boolean = false
         const val CHANNEL = "aekant_media"
         const val ACTION_STOP = "com.vasudev.ekant.browser.STOP_MEDIA"
+        const val ACTION_TOGGLE = "com.vasudev.ekant.browser.TOGGLE_MEDIA"
+        const val ACTION_NEXT = "com.vasudev.ekant.browser.NEXT_MEDIA"
+        const val ACTION_PREV = "com.vasudev.ekant.browser.PREV_MEDIA"
         fun start(c: Context) {
             try {
                 val i = Intent(c, MediaPlaybackService::class.java)

@@ -77,6 +77,21 @@ class ReadingActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("tts_live", on).apply()
         }
         b.divider(v)
+        b.switchRow(v, getString(R.string.rd_highlight), getString(R.string.rd_highlight_sum),
+            prefs.getBoolean("highlight", true)) { _, on ->
+            prefs.edit().putBoolean("highlight", on).apply()
+        }
+        b.divider(v)
+        b.switchRow(v, getString(R.string.rd_amoled), getString(R.string.rd_amoled_sum),
+            prefs.getBoolean("amoled", false)) { _, on ->
+            prefs.edit().putBoolean("amoled", on).apply()
+        }
+        b.divider(v)
+        b.switchRow(v, getString(R.string.rd_keepalive), getString(R.string.rd_keepalive_sum),
+            prefs.getBoolean("keep_alive", true)) { _, on ->
+            prefs.edit().putBoolean("keep_alive", on).apply()
+        }
+        b.divider(v)
         val spd = prefs.getInt("autoscroll_px", 2)
         val speeds = intArrayOf(1, 2, 4)
         val speedNames = intArrayOf(R.string.rd_slow, R.string.rd_normal, R.string.rd_fast)
@@ -84,6 +99,18 @@ class ReadingActivity : BaseSettingsActivity() {
             if (i > 0) b.divider(v)
             b.radioRow(v, getString(speedNames[i]), null, spd == speeds[i]) {
                 prefs.edit().putInt("autoscroll_px", speeds[i]).apply(); rebuild()
+            }
+        }
+
+        b.section(getString(R.string.rd_page_font))
+        val f = b.card()
+        val pfs = intArrayOf(0, 16, 18, 20, 22)
+        val pfNames = intArrayOf(R.string.rd_off, R.string.rd_small, R.string.rd_normal, R.string.rd_large, R.string.rd_huge)
+        val curPf = prefs.getInt("page_font", 0)
+        for (i in pfs.indices) {
+            if (i > 0) b.divider(f)
+            b.radioRow(f, getString(pfNames[i]), null, curPf == pfs[i]) {
+                prefs.edit().putInt("page_font", pfs[i]).apply(); rebuild()
             }
         }
 

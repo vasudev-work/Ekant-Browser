@@ -17,6 +17,12 @@ class DiagnosticsActivity : BaseSettingsActivity() {
         b.divider(c)
         b.valueRow(c, getString(R.string.dg_memory), memory(), null)
         b.divider(c)
+        b.valueRow(c, getString(R.string.dg_android), android.os.Build.VERSION.RELEASE + " (API " + android.os.Build.VERSION.SDK_INT + ")", null)
+        b.divider(c)
+        b.valueRow(c, getString(R.string.dg_battery), battery(), null)
+        b.divider(c)
+        b.valueRow(c, getString(R.string.dg_engines), TtsReader.engines().joinToString(", ").ifBlank { getString(R.string.dg_none) }, null)
+        b.divider(c)
         b.valueRow(c, getString(R.string.dg_service),
             if (MediaPlaybackService.running) getString(R.string.dg_on) else getString(R.string.dg_off), null)
         b.divider(c)
@@ -55,6 +61,17 @@ class DiagnosticsActivity : BaseSettingsActivity() {
         if (s.isBlank()) return 0
         return s.split("\n").count { it.isNotBlank() }
     }
+
+    private fun battery(): String = try {
+        val i = registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+        val level = i?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = i?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100) ?: 100
+        val st = i?.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1) ?: -1
+        val charging = st == android.os.BatteryManager.BATTERY_STATUS_CHARGING ||
+            st == android.os.BatteryManager.BATTERY_STATUS_FULL
+        (if (level >= 0 && scale > 0) (level * 100 / scale).toString() + "%" else "?") +
+            (if (charging) " (charging)" else "")
+    } catch (_: Exception) { "?" }
 
     private fun webViewVersion(): String = try {
         val p = WebViewCompat.getCurrentWebViewPackage(this)

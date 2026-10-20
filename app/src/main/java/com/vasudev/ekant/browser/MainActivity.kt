@@ -219,6 +219,7 @@ document.open();document.write(h);document.close();
                 listenText?.text = if (total == 0) "" else "" + (index + 1) + "/" + total + "  " + sentence
                 listenPlay?.text = if (speaking) "\u23F8" else "\u25B6"
                 if (total == 0) listenBar?.visibility = View.GONE
+                if (speaking && sentence.isNotBlank()) highlightSentence(sentence)
             }
         }
         setupMediaSession()
@@ -736,6 +737,26 @@ document.open();document.write(h);document.close();
         } catch (_: Exception) { }
     }
 
+    /** Highlight the sentence being read and scroll it into view. */
+    private fun highlightSentence(sentence: String) {
+        if (!prefs.getBoolean("highlight", true)) return
+        val w = cur() ?: return
+        val key = sentence.trim().take(48)
+        if (key.length < 8) return
+        val js = "(function(){try{var t=" + org.json.JSONObject.quote(key) + ";" +
+            "var old=document.getElementById('aekant-hl');" +
+            "if(old){var p=old.parentNode;p.replaceChild(document.createTextNode(old.textContent),old);p.normalize();}" +
+            "var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null,false),n;" +
+            "while(n=w.nextNode()){var i=n.nodeValue.indexOf(t);if(i>=0){" +
+            "var r=document.createRange();r.setStart(n,i);r.setEnd(n,i+t.length);" +
+            "var m=document.createElement('mark');m.id='aekant-hl';" +
+            "m.style.cssText='background:#ffe066;color:#000;border-radius:3px';" +
+            "try{r.surroundContents(m);}catch(e){}" +
+            "try{m.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}return;}}}" +
+            "}catch(e){}})()"
+        try { w.evaluateJavascript(js, null) } catch (_: Exception) { }
+    }
+
     /** Auto-scroll and e-ink paper mode, when switched on. */
     private fun injectReadingHelpers(wv: WebView?) {
         val w = wv ?: return
@@ -751,6 +772,16 @@ document.open();document.write(h);document.close();
             }
             if (prefs.getBoolean("tts_live", true)) {
                 w.evaluateJavascript(LIVE_TEXT_JS, null)
+            }
+            val pf = prefs.getInt("page_font", 0)
+            if (pf > 0 || prefs.getBoolean("amoled", false)) {
+                val css = StringBuilder()
+                if (pf > 0) css.append("body,p,li,span,div{font-size:").append(pf).append("px !important}")
+                if (prefs.getBoolean("amoled", false)) css.append("html,body{background:#000 !important}")
+                w.evaluateJavascript(
+                    "try{var s=document.getElementById('aekant-page-style');" +
+                        "if(!s){s=document.createElement('style');s.id='aekant-page-style';document.documentElement.appendChild(s);}" +
+                        "s.textContent=" + org.json.JSONObject.quote(css.toString()) + ";}catch(e){}", null)
             }
             if (prefs.getBoolean("eink", false)) {
                 w.evaluateJavascript(
