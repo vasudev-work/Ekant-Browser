@@ -13,7 +13,7 @@ class ContainerStore(context: Context) {
         context.getSharedPreferences("aekant_containers", Context.MODE_PRIVATE)
 
     val palette = listOf(
-        "#F26A1B", "#8CC63F", "#3B82F6", "#A855F7", "#EF4444", "#14B8A6"
+        "#FF6600", "#8CC63F", "#3B82F6", "#A855F7", "#EF4444", "#14B8A6"
     )
 
     fun getContainers(): List<Container> {

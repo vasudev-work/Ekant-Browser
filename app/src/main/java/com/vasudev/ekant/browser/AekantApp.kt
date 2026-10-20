@@ -17,7 +17,7 @@ class AekantApp : Application() {
         c.github = "https://github.com/vasudev-work"
         c.upiId = "Vasudevupi@upi"
         c.upiPayee = "Vasudev"
-        c.accent = 0xFFF26A1B.toInt()
+        c.accent = 0xFFFF6600.toInt()
         c.darkBackground = 0xFF0B0E12.toInt()
         c.darkSurface = 0xFF161B21.toInt()
         c.lightBackground = 0xFFF4F6F8.toInt()
