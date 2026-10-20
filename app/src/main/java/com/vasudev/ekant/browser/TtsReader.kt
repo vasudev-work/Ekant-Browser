@@ -86,26 +86,26 @@ object TtsReader {
     fun next() {
         if (index + 1 >= queue.size) return
         index++
-        if (speaking) speakCurrent() else notify()
+        if (speaking) speakCurrent() else notifyState()
     }
 
     fun prev() {
         if (index <= 0) return
         index--
-        if (speaking) speakCurrent() else notify()
+        if (speaking) speakCurrent() else notifyState()
     }
 
     fun setRate(v: Float) {
         rate = v
         try { tts?.setSpeechRate(v) } catch (_: Exception) { }
-        if (speaking) speakCurrent() else notify()
+        if (speaking) speakCurrent() else notifyState()
     }
 
     fun rate(): Float = rate
 
     fun stop() = stopInternal()
 
-    private fun notify() {
+    private fun notifyState() {
         listener?.onState(index, queue.size, queue.getOrNull(index) ?: "", speaking)
     }
 
