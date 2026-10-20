@@ -8,6 +8,9 @@ class AdBlocker(context: Context) {
 
     private val hosts = HashSet<String>()
 
+    @Volatile
+    var enabled: Boolean = true
+
     init {
         try {
             context.assets.open("blocklist.txt").bufferedReader().forEachLine { raw ->
@@ -19,6 +22,7 @@ class AdBlocker(context: Context) {
     }
 
     fun isBlocked(url: String?): Boolean {
+        if (!enabled) return false
         val u = url ?: return false
         val host = try { URI(u).host?.lowercase() } catch (_: Exception) { null } ?: return false
         if (hosts.contains(host)) return true

@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Aekant Gecko (spike)</string>
+    <string name="app_name">Aekant Gecko</string>
     <string name="url_hint">Search or type a URL</string>
-    <string name="go">Go</string>
-    <string name="back">Back</string>
-    <string name="forward">Forward</string>
-    <string name="reload">Reload</string>
-    <string name="home">Home</string>
-    <string name="new_tab">New tab</string>
-    <string name="container">Container</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_forward">Forward</string>
+    <string name="cd_reload">Reload</string>
+    <string name="cd_home">Home</string>
+    <string name="cd_tabs">Tabs</string>
+    <string name="cd_menu">Menu</string>
 </resources>
