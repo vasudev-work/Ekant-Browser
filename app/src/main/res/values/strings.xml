@@ -396,6 +396,8 @@
     <string name="ssl_msg">The certificate for %1$s could not be verified. Continuing may expose your data to a third party.</string>
     <string name="ssl_back">Go back</string>
     <string name="ssl_proceed">Continue anyway</string>
+    <string name="m_listen">Read aloud</string>
+    <string name="tts_none">No readable text on this page</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>

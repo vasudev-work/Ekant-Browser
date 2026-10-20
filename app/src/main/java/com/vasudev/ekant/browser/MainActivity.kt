@@ -65,6 +65,8 @@ class MainActivity : AppCompatActivity() {
         const val HOME_ASSET = "file:///android_asset/ntp.html"
         const val UA_DESKTOP =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        const val EXTRACT_JS = "(function(){try{var el=document.querySelector('article')||document.querySelector('main')||document.body;var t=(el&&el.innerText)||'';t=t.replace(/\\s+/g,' ').trim();return t.slice(0,200000);}catch(e){return '';}})()"
+
         const val READER_JS = """(function(){try{
 var el=document.querySelector('article')||document.querySelector('main')||document.body;
 var txt=el.innerText||'';var title=document.title||'';
@@ -140,6 +142,10 @@ document.open();document.write(h);document.close();
     private val pinned = HashSet<WebView>()
     private val closedStack = ArrayDeque<String>()
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    private var listenBar: LinearLayout? = null
+    private var listenText: TextView? = null
+    private var listenPlay: TextView? = null
+    private var mediaSession: android.media.session.MediaSession? = null
     private var customView: View? = null
     private var customCallback: WebChromeClient.CustomViewCallback? = null
 
@@ -181,6 +187,15 @@ document.open();document.write(h);document.close();
         WebView.setWebContentsDebuggingEnabled(prefs.getBoolean("remote_debug", false))
         AdFilterEngine.enabled = prefs.getBoolean("easylist", true)
         AdFilterEngine.ensureLoaded(applicationContext)
+        TtsReader.init(this)
+        TtsReader.listener = object : TtsReader.Listener {
+            override fun onState(index: Int, total: Int, sentence: String, speaking: Boolean) {
+                listenText?.text = if (total == 0) "" else (index + 1) + "/" + total + "  " + sentence
+                listenPlay?.text = if (speaking) "\u23F8" else "\u25B6"
+                if (total == 0) listenBar?.visibility = View.GONE
+            }
+        }
+        setupMediaSession()
         adBlocker = AdBlocker(applicationContext)
         store = ContainerStore(this)
         extStore = ExtensionStore(this)
@@ -564,6 +579,82 @@ document.open();document.write(h);document.close();
             "['play','playing'].forEach(function(e){document.addEventListener(e,function(){n(true);},true);});" +
             "['pause','ended','emptied','abort'].forEach(function(e){document.addEventListener(e,function(){n(false);},true);});})();"
         try { w.evaluateJavascript(js, null) } catch (_: Exception) { }
+    }
+
+    /** Read the current page aloud. */
+    private fun readAloud() {
+        val w = cur() ?: return
+        w.evaluateJavascript(EXTRACT_JS) { js ->
+            val text = try { org.json.JSONTokener(js).nextValue() as? String ?: "" } catch (_: Exception) { "" }
+            val parts = text.split(Regex("(?<=[.!?])\\s+"))
+                .map { it.trim() }.filter { it.length > 1 }
+            if (parts.isEmpty()) { toast(getString(R.string.tts_none)); return@evaluateJavascript }
+            TtsReader.start(parts)
+            showListenBar()
+        }
+    }
+
+    private fun barButton(label: String, cb: () -> Unit): TextView {
+        val t = TextView(this)
+        t.text = label
+        t.textSize = 16f
+        t.setPadding(dp(12), dp(6), dp(12), dp(6))
+        t.setTextColor(attr(R.attr.brandColor))
+        t.setOnClickListener { cb() }
+        return t
+    }
+
+    private fun showListenBar() {
+        if (listenBar == null) {
+            val bar = LinearLayout(this)
+            bar.orientation = LinearLayout.HORIZONTAL
+            bar.gravity = Gravity.CENTER_VERTICAL
+            bar.setPadding(dp(10), dp(6), dp(10), dp(6))
+            bar.setBackgroundColor(attr(R.attr.surfaceColor))
+            listenText = TextView(this)
+            listenText?.textSize = 12f
+            listenText?.maxLines = 2
+            listenText?.ellipsize = TextUtils.TruncateAt.END
+            listenText?.setTextColor(attr(R.attr.textPrimaryColor))
+            bar.addView(listenText, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            bar.addView(barButton("\u23EE") { TtsReader.prev() })
+            listenPlay = barButton("\u23F8") { TtsReader.toggle() }
+            bar.addView(listenPlay)
+            bar.addView(barButton("\u23ED") { TtsReader.next() })
+            bar.addView(barButton("1.0x") { cycleRate() })
+            val lp = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.gravity = Gravity.BOTTOM
+            lp.bottomMargin = dp(74)
+            listenBar = bar
+            try { findViewById<ViewGroup>(android.R.id.content).addView(bar, lp) } catch (_: Exception) { }
+        }
+        listenBar?.visibility = View.VISIBLE
+    }
+
+    private fun cycleRate() {
+        val next = when {
+            TtsReader.rate() < 1.05f -> 1.25f
+            TtsReader.rate() < 1.3f -> 1.5f
+            TtsReader.rate() < 1.55f -> 0.75f
+            else -> 1.0f
+        }
+        TtsReader.setRate(next)
+    }
+
+    private fun setupMediaSession() {
+        try {
+            val ms = android.media.session.MediaSession(this, "Aekant")
+            ms.setCallback(object : android.media.session.MediaSession.Callback() {
+                override fun onPlay() { TtsReader.resume() }
+                override fun onPause() { TtsReader.pause() }
+                override fun onSkipToNext() { TtsReader.next() }
+                override fun onSkipToPrevious() { TtsReader.prev() }
+                override fun onStop() { TtsReader.stop() }
+            })
+            ms.isActive = true
+            mediaSession = ms
+        } catch (_: Exception) { }
     }
 
     /** HTML5 full-screen video: show the custom view over the whole window. */
@@ -980,16 +1071,17 @@ document.open();document.write(h);document.close();
         b.iconRow(c3, R.drawable.ic_find, getString(R.string.m_reader), null, act(14)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_summary), null, act(15)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_star, getString(R.string.m_save_later), null, act(16)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_media), null, act(17))
+        b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_media), null, act(17)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_listen), null, act(18))
 
         b.section(getString(R.string.sec_more))
         val c4 = b.card()
-        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(18)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(19)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(20)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(21)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(22)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(23))
+        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(19)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(20)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(21)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(22)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(23)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(24))
     }
 
     private fun act(which: Int): View.OnClickListener = View.OnClickListener { onMenuAction(which) }
@@ -1014,12 +1106,13 @@ document.open();document.write(h);document.close();
             15 -> { aiSummary(); hideMenuPanel() }
             16 -> { saveForLater(); hideMenuPanel() }
             17 -> { startActivity(Intent(this, MediaActivity::class.java)); hideMenuPanel() }
-            18 -> { addToHomeScreen(); hideMenuPanel() }
-            19 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
-            20 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
-            21 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
-            22 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
-            23 -> finishAffinity()
+            18 -> { readAloud(); hideMenuPanel() }
+            19 -> { addToHomeScreen(); hideMenuPanel() }
+            20 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
+            21 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
+            22 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
+            23 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
+            24 -> finishAffinity()
         }
     }
 
