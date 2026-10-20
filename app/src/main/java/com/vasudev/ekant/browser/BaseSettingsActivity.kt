@@ -27,7 +27,7 @@ abstract class BaseSettingsActivity : AppCompatActivity() {
 
         val root = LinearLayout(this)
         root.orientation = LinearLayout.VERTICAL
-        root.setBackgroundColor(attr(android.R.attr.colorBackground))
+        root.setBackgroundColor(attr(R.attr.bgColor))
 
         val header = LinearLayout(this)
         header.orientation = LinearLayout.HORIZONTAL
@@ -37,13 +37,15 @@ abstract class BaseSettingsActivity : AppCompatActivity() {
 
         val back = ImageView(this)
         back.setImageResource(R.drawable.ic_back)
-        back.setColorFilter(attr(android.R.attr.textColorPrimary))
+        back.setColorFilter(attr(R.attr.textPrimaryColor))
         back.setOnClickListener { finish() }
-        header.addView(back, LinearLayout.LayoutParams(dp(42), dp(42)))
+        val backLp = LinearLayout.LayoutParams(dp(44), dp(44))
+        back.setPadding(dp(11), dp(11), dp(11), dp(11))
+        header.addView(back, backLp)
 
         val title = TextView(this)
         title.text = getString(titleRes)
-        title.setTextColor(attr(android.R.attr.textColorPrimary))
+        title.setTextColor(attr(R.attr.textPrimaryColor))
         title.textSize = 18f
         title.setTypeface(null, Typeface.BOLD)
         title.setPadding(dp(8), 0, 0, 0)

@@ -2,4 +2,7 @@
 <resources>
     <attr name="barColor" format="color" />
     <attr name="mutedColor" format="color" />
+    <attr name="textPrimaryColor" format="color" />
+    <attr name="textSecondaryColor" format="color" />
+    <attr name="bgColor" format="color" />
 </resources>

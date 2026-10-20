@@ -62,7 +62,7 @@ class AIActivity : AppCompatActivity() {
         val t = TextView(this)
         t.text = text
         t.textSize = 14f
-        t.setTextColor(if (user) 0xFF0B0E12.toInt() else attr(android.R.attr.textColorPrimary))
+        t.setTextColor(if (user) 0xFF0B0E12.toInt() else attr(R.attr.textPrimaryColor))
         t.setBackgroundResource(if (user) R.drawable.bubble_user else R.drawable.bubble_bot)
         val p = dp(12)
         t.setPadding(p, p, p, p)
@@ -88,7 +88,7 @@ class AIActivity : AppCompatActivity() {
         val thinking = TextView(this)
         thinking.text = getString(R.string.ai_thinking)
         thinking.textSize = 13f
-        thinking.setTextColor(attr(android.R.attr.textColorSecondary))
+        thinking.setTextColor(attr(R.attr.textSecondaryColor))
         thinking.setPadding(dp(6), dp(10), 0, 0)
         log.addView(thinking)
 

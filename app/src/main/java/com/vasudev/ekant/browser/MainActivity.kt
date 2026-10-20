@@ -365,7 +365,7 @@ class MainActivity : AppCompatActivity() {
         val w = cur() ?: return
         val u = w.url
         if (u != null) {
-            urlBar.setText(u)
+            urlBar.setText(if (u.startsWith(HOME_ASSET)) "" else u)
             updateLock(u)
         }
     }
@@ -508,14 +508,14 @@ class MainActivity : AppCompatActivity() {
         c.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         val ic = ImageView(this)
         ic.setImageResource(iconRes)
-        ic.setColorFilter(attr(android.R.attr.textColorPrimary))
+        ic.setColorFilter(attr(R.attr.textPrimaryColor))
         val sz = dp(24)
         ic.layoutParams = LinearLayout.LayoutParams(sz, sz)
         c.addView(ic)
         val t = TextView(this)
         t.text = label
         t.textSize = 11f
-        t.setTextColor(attr(android.R.attr.textColorSecondary))
+        t.setTextColor(attr(R.attr.textSecondaryColor))
         t.setPadding(0, dp(7), 0, 0)
         c.addView(t)
         c.setOnClickListener(l)
@@ -632,7 +632,7 @@ class MainActivity : AppCompatActivity() {
         val title = v.title ?: ""
         val url = v.url ?: ""
         t.text = "$title\n\n$url"
-        t.setTextColor(attr(android.R.attr.textColorSecondary))
+        t.setTextColor(attr(R.attr.textSecondaryColor))
         t.textSize = 14f
         t.setPadding(dp(20), dp(4), dp(20), dp(12))
         Sheet.build(this, getString(R.string.q_info)).content(t)
@@ -726,7 +726,7 @@ class MainActivity : AppCompatActivity() {
     private fun showExtensions() {
         val t = TextView(this)
         t.text = getString(R.string.d_ext_msg)
-        t.setTextColor(attr(android.R.attr.textColorSecondary))
+        t.setTextColor(attr(R.attr.textSecondaryColor))
         t.textSize = 14f
         t.setPadding(dp(20), dp(4), dp(20), dp(12))
         Sheet.build(this, getString(R.string.d_ext_title)).content(t)

@@ -12,6 +12,9 @@
         <item name="android:navigationBarColor">@color/bg</item>
         <item name="barColor">@color/surface</item>
         <item name="mutedColor">@color/text_secondary</item>
+        <item name="textPrimaryColor">@color/text_primary</item>
+        <item name="textSecondaryColor">@color/text_secondary</item>
+        <item name="bgColor">@color/bg</item>
     </style>
 
     <style name="Theme.Aekant.Light" parent="Theme.Material3.Light.NoActionBar">
@@ -26,5 +29,8 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="barColor">@color/light_surface</item>
         <item name="mutedColor">@color/light_muted</item>
+        <item name="textPrimaryColor">@color/light_text</item>
+        <item name="textSecondaryColor">@color/light_muted</item>
+        <item name="bgColor">@color/light_bg</item>
     </style>
 </resources>

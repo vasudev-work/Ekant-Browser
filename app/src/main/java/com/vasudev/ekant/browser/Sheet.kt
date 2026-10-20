@@ -41,7 +41,7 @@ class Sheet private constructor(private val a: AppCompatActivity) {
     fun item(label: String, index: Int, cb: OnItemClick?): Sheet {
         val t = TextView(a)
         t.text = label
-        t.setTextColor(attr(android.R.attr.textColorPrimary))
+        t.setTextColor(attr(R.attr.textPrimaryColor))
         t.textSize = 15f
         t.setPadding(dp(20), dp(15), dp(20), dp(15))
         t.setOnClickListener { dismiss(); cb?.onItem(index) }
