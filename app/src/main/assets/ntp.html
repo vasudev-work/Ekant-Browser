@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aekant</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0B0E12;color:#F2F4F7;
+    font-family:-apple-system,Roboto,"Segoe UI",Arial,sans-serif;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100vh;padding:44px 22px 30px;text-align:center;
+    background-image:radial-gradient(900px 420px at 50% -10%,#1c1408,#0B0E12 60%);
+    background-repeat:no-repeat}
+  body.nobg{background-image:none}
+  .brand{display:flex;align-items:center;gap:12px}
+  .cup{width:44px;height:44px}
+  .wordmark{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1;
+    background:linear-gradient(90deg,#F26A1B 0%,#E3A52A 45%,#8CC63F 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .flag{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#F26A1B;
+    font-weight:700;margin-bottom:14px}
+  .sub{margin:12px 0 22px;font-size:13px;color:#9BA3AE}
+  form{width:100%;max-width:520px}
+  input{width:100%;height:50px;border-radius:26px;border:1px solid #262C34;
+    background:#1E242C;color:#F2F4F7;padding:0 20px;font-size:15px;outline:none}
+  input::placeholder{color:#6B7382}
+  .stats{display:flex;gap:10px;margin:20px 0 2px;width:100%;max-width:520px}
+  .stat{flex:1;background:#161B21;border:1px solid #262C34;border-radius:14px;padding:12px 8px}
+  .stat b{display:block;font-size:16px;color:#F26A1B}
+  .stat span{font-size:10.5px;color:#9BA3AE}
+  .sc{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px;
+    width:100%;max-width:520px;margin:24px 0 10px}
+  .sc a{display:flex;flex-direction:column;align-items:center;gap:8px;
+    text-decoration:none;color:#9BA3AE;font-size:11px}
+  .dot{width:48px;height:48px;border-radius:15px;background:#1E242C;
+    display:flex;align-items:center;justify-content:center;
+    color:#F2F4F7;font-weight:700;font-size:17px}
+  .foot{margin-top:22px;font-size:11px;color:#6B7382;line-height:1.6}
+  .foot b{color:#8CC63F}
+</style></head>
+<body>
+  <div class="flag">India&rsquo;s Sovereign Browser</div>
+  <div class="brand">
+    <svg class="cup" viewBox="0 0 24 24" fill="none" stroke="#F2F4F7" stroke-width="1.6"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9v7.5c0 2.5 1.8 4 4 4h4c2.2 0 4-1.5 4-4V9" />
+      <path d="M18 11c2.4 0 3.4 1.4 3.4 3s-1 3-3.4 3" />
+      <path d="M9.2 4v2.4M12 3v3.4M14.8 4v2.4" />
+    </svg>
+    <span class="wordmark">Aekant</span>
+  </div>
+  <div class="sub">Private, fast and secure browsing &middot; local-only data</div>
+
+  <form action="aekant://search" method="get" autocomplete="off">
+    <input name="q" placeholder="Search or type a URL" autofocus>
+  </form>
+
+  <div class="stats" id="stats">
+    <div class="stat"><b>On</b><span>Shields</span></div>
+    <div class="stat"><b>On</b><span>Ad blocker</span></div>
+    <div class="stat"><b>Local</b><span>Storage</span></div>
+  </div>
+
+  <div class="sc" id="topsites">
+    <a href="aekant://open?u=https%3A%2F%2Faekant.com"><span class="dot">A</span>Aekant</a>
+    <a href="aekant://open?u=https%3A%2F%2Fwww.google.com"><span class="dot">G</span>Google</a>
+    <a href="aekant://open?u=https%3A%2F%2Fwww.youtube.com"><span class="dot">&#9654;</span>YouTube</a>
+    <a href="aekant://open?u=https%3A%2F%2Fwww.wikipedia.org"><span class="dot">W</span>Wikipedia</a>
+    <a href="aekant://open?u=https%3A%2F%2Fwww.flipkart.com"><span class="dot">F</span>Flipkart</a>
+    <a href="aekant://open?u=https%3A%2F%2Fwww.amazon.in"><span class="dot">a</span>Amazon</a>
+    <a href="aekant://open?u=https%3A%2F%2Fnews.google.com"><span class="dot">N</span>News</a>
+    <a href="aekant://open?u=https%3A%2F%2Fwww.instagram.com"><span class="dot">I</span>Instagram</a>
+  </div>
+
+  <div class="foot">Aekant &middot; Made in Bharat<br/>Developed by Vasudev Dangaya</div>
+
+<script>
+  (function () {
+    var p = new URLSearchParams(location.search);
+    if (p.get('bg') === '0') document.body.classList.add('nobg');
+    if (p.get('topsites') === '0') document.getElementById('topsites').style.display = 'none';
+    if (p.get('stats') === '0') document.getElementById('stats').style.display = 'none';
+  })();
+</script>
+</body></html>

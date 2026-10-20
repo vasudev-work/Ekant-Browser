@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Aekant</string>
+    <string name="about_title">About Aekant</string>
+    <string name="settings_title">Settings</string>
+    <string name="search_hint">Search or type a URL</string>
+
+    <string name="cd_home">Home</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_forward">Forward</string>
+    <string name="cd_refresh">Refresh</string>
+    <string name="cd_menu">Menu</string>
+    <string name="cd_tabs">Tabs</string>
+    <string name="cd_secure">Secure connection</string>
+
+    <string name="q_forward">Forward</string>
+    <string name="q_bookmark">Bookmark</string>
+    <string name="q_download">Download</string>
+    <string name="q_info">Info</string>
+    <string name="q_refresh">Refresh</string>
+
+    <string name="sec_tabs">Tabs</string>
+    <string name="sec_library">Library</string>
+    <string name="sec_tools">Tools</string>
+    <string name="sec_more">More</string>
+
+    <string name="menu_title">Aekant</string>
+    <string name="m_new_tab">New tab</string>
+    <string name="m_new_incognito">New incognito tab</string>
+    <string name="m_history">History</string>
+    <string name="m_downloads">Downloads</string>
+    <string name="m_bookmarks">Bookmarks</string>
+    <string name="m_recent">Recent tabs</string>
+    <string name="m_containers">Containers</string>
+    <string name="m_extensions">Extensions</string>
+    <string name="m_zoom">Zoom</string>
+    <string name="m_share">Share</string>
+    <string name="m_find">Find in page</string>
+    <string name="m_translate">Translate</string>
+    <string name="m_desktop">Desktop site</string>
+    <string name="m_ads">Block ads</string>
+    <string name="m_settings">Settings</string>
+    <string name="m_about">About Aekant</string>
+    <string name="m_exit">Exit</string>
+
+    <string name="d_history">History</string>
+    <string name="d_bookmarks">Bookmarks</string>
+    <string name="d_recent">Recent tabs</string>
+    <string name="d_empty">Nothing here yet</string>
+    <string name="d_clear">Clear</string>
+    <string name="d_close">Close</string>
+    <string name="d_add">Add current</string>
+    <string name="d_find_hint">Find text on page</string>
+    <string name="d_find">Find</string>
+    <string name="d_ext_title">Extensions</string>
+    <string name="d_ext_msg">Aekant on Android renders with the system WebView engine, so it cannot run Chrome extensions. You can still open the Chrome Web Store in Desktop mode to browse it.</string>
+    <string name="d_ext_open">Open Chrome Web Store</string>
+    <string name="d_tab">Tab</string>
+    <string name="d_new_tab">New tab</string>
+    <string name="d_close_tab">Close tab</string>
+    <string name="t_bookmarked">Bookmark added</string>
+    <string name="t_incognito">Incognito tab opened</string>
+    <string name="t_desktop_on">Desktop site on</string>
+    <string name="t_desktop_off">Desktop site off</string>
+    <string name="t_cleared">Browsing data cleared</string>
+
+    <string name="sec_general">General</string>
+    <string name="sec_display">Display</string>
+    <string name="sec_ai">Assistant</string>
+    <string name="sec_passwords">Passwords &amp; autofill</string>
+    <string name="sec_privacy">Privacy &amp; security</string>
+    <string name="sec_about">About</string>
+
+    <string name="r_shields">Shields &amp; privacy</string>
+    <string name="r_shields_sum">Ad, tracker and content blocking</string>
+    <string name="r_ai">AI assistant</string>
+    <string name="r_ai_sum">Chat with an AI assistant</string>
+    <string name="r_search">Search engines</string>
+    <string name="r_home">Homepage</string>
+    <string name="r_ntp">New tab page</string>
+    <string name="r_downloads">Downloads</string>
+    <string name="r_clear">Clear browsing data</string>
+    <string name="r_clear_sum">Cookies, cache and history</string>
+    <string name="r_close">Close browser when all tabs are closed</string>
+    <string name="r_appearance">Appearance</string>
+    <string name="r_languages">Languages</string>
+    <string name="r_passwords">Password manager</string>
+    <string name="r_autofill">Autofill services</string>
+    <string name="r_about">About Aekant</string>
+
+    <string name="sh_https">Always use secure connections</string>
+    <string name="sh_https_sum">Upgrade navigations to HTTPS where possible</string>
+    <string name="sh_scripts">Block scripts</string>
+    <string name="sh_scripts_sum">Some sites may not work correctly without JavaScript</string>
+    <string name="sh_cookies">Block cookies</string>
+    <string name="sh_cookies_sum">Sites will not be able to store cookies</string>
+    <string name="sh_images">Block images</string>
+    <string name="sh_images_sum">Saves data; pages load without pictures</string>
+    <string name="sh_ads">Block ads</string>
+    <string name="sh_ads_sum">Answers requests to known ad hosts with an empty response</string>
+    <string name="sh_trackers">Block trackers</string>
+    <string name="sh_trackers_sum">Stops known analytics and tracking hosts from loading</string>
+    <string name="sh_3p">Block third-party cookies</string>
+    <string name="sh_3p_sum">Prevents sites from setting cross-site cookies</string>
+
+    <string name="ap_dark">Dark theme</string>
+    <string name="ap_dark_sum">Use a dark interface throughout</string>
+    <string name="ap_text">Text size</string>
+    <string name="ap_small">Small</string>
+    <string name="ap_normal">Normal</string>
+    <string name="ap_large">Large</string>
+    <string name="ap_huge">Huge</string>
+
+    <string name="ntp_bg_sec">Background</string>
+    <string name="ntp_bg">Show background gradient</string>
+    <string name="ntp_widgets">Widgets</string>
+    <string name="ntp_topsites">Show top sites</string>
+    <string name="ntp_stats">Show browser stats</string>
+    <string name="ntp_opening">Opening screen</string>
+    <string name="ntp_last">Last open tab</string>
+    <string name="ntp_new">New tab</string>
+    <string name="ntp_new_1h">New tab after 1 hour of inactivity</string>
+
+    <string name="lang_section">Aekant\u2019s language</string>
+    <string name="lang_device">Current device language</string>
+    <string name="lang_en_in">English (India)</string>
+    <string name="lang_translate">Use Aekant Translate</string>
+    <string name="lang_preferred">Preferred languages</string>
+    <string name="lang_preferred_desc">Let websites know the languages that you speak. They will show content in those languages, when possible.</string>
+    <string name="lang_add">Add language</string>
+
+    <string name="pw_save">Save passwords</string>
+    <string name="pw_save_sum">Offer to save passwords you enter</string>
+    <string name="pw_auto">Auto sign-in</string>
+    <string name="pw_auto_sum">Sign in automatically using stored credentials</string>
+    <string name="pw_import">Import passwords</string>
+    <string name="pw_import_sum">Import a .csv file into the password manager</string>
+    <string name="pw_export">Export passwords</string>
+    <string name="pw_export_sum">Export saved passwords</string>
+    <string name="pw_list">Passwords</string>
+    <string name="pw_never">Never saved</string>
+
+    <string name="af_browser">Autofill with Aekant</string>
+    <string name="af_browser_sum">Use info saved in Aekant to autofill passwords, addresses and payment methods</string>
+    <string name="af_other">Autofill using another service</string>
+    <string name="af_other_sum">To use another autofill service, choose your provider in Android settings</string>
+    <string name="af_note">Autofill services are also managed in Android settings.</string>
+    <string name="af_private">Auto-fill in private tabs</string>
+    <string name="af_private_sum">Saved information can be auto-filled in private tabs</string>
+
+    <string name="ai_title">AI assistant</string>
+    <string name="ai_hint">Ask anything\u2026</string>
+    <string name="ai_send">Send</string>
+    <string name="ai_config">AI settings</string>
+    <string name="ai_endpoint">API endpoint</string>
+    <string name="ai_key">API key</string>
+    <string name="ai_model">Model</string>
+    <string name="ai_save">Save</string>
+    <string name="ai_setup">Connect an AI endpoint to start chatting. Tap the gear to set your endpoint, key and model.</string>
+    <string name="ai_thinking">Thinking\u2026</string>
+    <string name="ai_error">Couldn\u2019t reach the AI service. Check your endpoint and key in AI settings.</string>
+    <string name="ai_hello">Hi! Ask me anything.</string>
+
+    <string name="lock_private">Lock private tabs</string>
+    <string name="lock_private_sum">Require fingerprint or device unlock to open incognito tabs</string>
+    <string name="lock_prompt">Unlock private tabs</string>
+    <string name="lock_prompt_sub">Verify to open an incognito tab</string>
+
+    <string name="info_chromium">This feature needs a custom Chromium engine build. It is not active in this WebView build of Aekant.</string>
+
+    <string name="containers">Containers</string>
+    <string name="new_container">New container</string>
+    <string name="container_name">Container name</string>
+    <string name="delete_current_container">Delete current container</string>
+    <string name="need_one_container">Keep at least one container</string>
+
+    <string name="version_line">Version 2.0</string>
+    <string name="developed_by">DEVELOPED BY</string>
+    <string name="developer">Vasudev Danganya</string>
+    <string name="advanced_settings">Advanced settings</string>
+    <string name="advanced_settings_sum">Style engine, languages, backup, diagnostics</string>
+    <string name="github_title">GitHub</string>
+    <string name="github_label">github.com/vasudev-work</string>
+    <string name="open_github">Tap to open GitHub</string>
+    <string name="made_in">Made in Bharat</string>
+    <string name="support_title">Tea &amp; coffee</string>
+    <string name="support_sub">Support development via UPI</string>
+    <string name="upi_id">Vasudevupi@upi</string>
+    <string name="feedback_title">Send feedback</string>
+    <string name="feedback_email">Vasudev.work@rediffmail.com</string>
+    <string name="love">Aekant is a privacy-first, local-only browser. Thank you for using it \u2014 it is kept alive by your support and feedback.</string>
+    <string name="copy_upi">Tap to copy UPI ID</string>
+    <string name="email_us">Tap to email us</string>
+</resources>
