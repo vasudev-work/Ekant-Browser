@@ -127,8 +127,8 @@ class MainActivity : Activity() {
             if (session === cur()) progress.progress = p
         }
 
-        override fun onPageStart(session: GeckoSession, url: String?) {
-            if (session === cur()) urlBar.setText(url ?: "")
+        override fun onPageStart(session: GeckoSession, url: String) {
+            if (session === cur()) urlBar.setText(url)
         }
     }
 
