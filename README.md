@@ -20,6 +20,36 @@ result is one app: Aekant's identity and privacy engine with My Browser's featur
 > that mirrors Aekant's ideas on Android; it is not the official Aekant app.
 > The browser feature set is ported from **My Browser** by Vasudev Dangaya.
 
+## Download & install (Android)
+
+**Latest APK (built by CI on every push):**
+
+    https://github.com/vasudev-work/Ekant-Browser/releases/latest/download/Aekant-debug.apk
+
+Install it on a phone with USB debugging on:
+
+    adb install Aekant-debug.apk
+
+Or copy `Aekant-debug.apk` to the phone, open it and allow "install unknown apps".
+
+> This is a debug-signed build for sideloading and testing. To publish on the Play Store
+> you need your own release keystore — never commit that keystore (it is already ignored
+> in `.gitignore`).
+
+### Build from source
+
+    git clone https://github.com/vasudev-work/Ekant-Browser
+    cd Ekant-Browser
+    gradle assembleDebug          # or just open the folder in Android Studio
+
+Requirements: JDK 17 and Android SDK 34 (compileSdk 34, minSdk 24).
+
+### GeckoView (non-Chromium) build
+
+`spike-geckoview/` is a separate Gradle project that renders with Mozilla's Gecko engine
+instead of WebView. Build it with `gradle -p spike-geckoview assembleDebug`; its APK is
+produced by the separate CI workflow.
+
 ## What's in the merged app
 
 **Aekant side**

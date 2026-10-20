@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,9 +35,30 @@ jobs:
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon --stacktrace
 
-      - name: Upload debug APK
+      - name: Name the APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk Aekant-debug.apk
+
+      - name: Upload debug APK (artifact)
         uses: actions/upload-artifact@v4
         with:
           name: aekant-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: Aekant-debug.apk
           if-no-files-found: error
+
+      - name: Publish / update the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Aekant for Android (latest)
+          make_latest: true
+          body: |
+            Latest debug APK, built automatically by CI on every push.
+
+            ## Install
+            ```
+            adb install Aekant-debug.apk
+            ```
+            Or copy `Aekant-debug.apk` to the phone, open it and allow "install unknown apps".
+
+            Debug-signed build for sideloading/testing.
+          files: Aekant-debug.apk
