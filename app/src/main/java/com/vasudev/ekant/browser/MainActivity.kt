@@ -81,9 +81,8 @@ var css=':root{--bg:__BG__;--fg:__FG__;--br:__BR__}'
 var bar='<div class="bar"><button onclick="fs(-1)">A-</button><button onclick="fs(1)">A+</button><span class="sp"></span><button onclick="th(0)">Light</button><button onclick="th(1)">Sepia</button><button onclick="th(2)">Dark</button><button onclick="location.reload()">Close</button></div>';
 var js='<script>var f=17;function fs(d){f=Math.max(13,Math.min(28,f+d));var a=document.querySelectorAll("#c p");for(var i=0;i<a.length;i++){a[i].style.fontSize=f+"px";}}function th(m){document.body.className=(m===1?"sepia":(m===2?"dk":""));}<\/script>';
 var h='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'</style></head><body>'+bar+'<div class="wrap"><h1>'+esc(title)+'</h1><div id="c"></div></div>'+js+'</body></html>';
-var ps=txt.split(/
-{2,}/);var body='';
-for(var i=0;i<ps.length;i++){var p=ps[i].trim();if(p.length>0){body+='<p>'+esc(p)+'</p>';}}
+var ps=txt.split(/\s\s+/);var body='';
+var BI=__BIONIC__;function bw(w){var n=Math.max(1,Math.ceil(w.length*0.4));return '<b>'+w.slice(0,n)+'</b>'+w.slice(n);}for(var i=0;i<ps.length;i++){var p=ps[i].trim();if(p.length>0){var e=esc(p);var x=BI?e.split(/(\s+)/).map(function(w){return /^\s+$/.test(w)?w:bw(w);}).join(''):e;body+='<p>'+x+'</p>';}}
 h=h.replace('<div id="c"></div>','<div id="c">'+body+'</div>');
 document.open();document.write(h);document.close();
 }catch(e){}})();"""
@@ -142,6 +141,7 @@ document.open();document.write(h);document.close();
     private val pinned = HashSet<WebView>()
     private val closedStack = ArrayDeque<String>()
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    private val retries = HashMap<String, Int>()
     private var listenBar: LinearLayout? = null
     private var listenText: TextView? = null
     private var listenPlay: TextView? = null
@@ -888,6 +888,18 @@ document.open();document.write(h);document.close();
 
         override fun onReceivedError(v: WebView?, request: WebResourceRequest?, error: android.webkit.WebResourceError?) {
             if (request?.isForMainFrame == true) {
+                val failed = request.url?.toString() ?: ""
+                if (prefs.getBoolean("auto_retry", true) && failed.startsWith("http")) {
+                    val n = retries.getOrDefault(failed, 0)
+                    if (n < 2) {
+                        retries[failed] = n + 1
+                        toast(getString(R.string.retry_msg))
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            try { v?.loadUrl(failed) } catch (_: Exception) { }
+                        }, 2500)
+                        return
+                    }
+                }
                 val html = "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'>" +
                     "<style>body{background:" + hex(attr(R.attr.bgColor)) + ";color:" + hex(attr(R.attr.textPrimaryColor)) +
                     ";font-family:sans-serif;text-align:center;padding:56px 24px}" +
@@ -1578,6 +1590,7 @@ document.open();document.write(h);document.close();
         .replace("__BG__", hex(attr(R.attr.bgColor)))
         .replace("__FG__", hex(attr(R.attr.textPrimaryColor)))
         .replace("__BR__", hex(attr(R.attr.brandColor)))
+        .replace("__BIONIC__", if (prefs.getBoolean("bionic", false)) "1" else "0")
 
     private fun onOff(v: Boolean) = if (v) "On" else "Off"
 

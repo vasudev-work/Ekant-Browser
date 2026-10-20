@@ -24,6 +24,7 @@ class MediaPlaybackService : Service() {
         val stop = PendingIntent.getService(this, 1,
             Intent(this, MediaPlaybackService::class.java).setAction(ACTION_STOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        running = true
         val notif: Notification = Notification.Builder(this, CHANNEL)
             .setContentTitle(getString(R.string.bg_playing))
             .setContentText(getString(R.string.bg_playing_sum))
@@ -57,6 +58,7 @@ class MediaPlaybackService : Service() {
     override fun onDestroy() {
         try { wake?.let { if (it.isHeld) it.release() } } catch (_: Exception) { }
         wake = null
+        running = false
         super.onDestroy()
     }
 
@@ -75,6 +77,7 @@ class MediaPlaybackService : Service() {
     }
 
     companion object {
+        @Volatile var running: Boolean = false
         const val CHANNEL = "aekant_media"
         const val ACTION_STOP = "com.vasudev.ekant.browser.STOP_MEDIA"
         fun start(c: Context) {

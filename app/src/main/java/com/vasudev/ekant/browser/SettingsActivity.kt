@@ -30,7 +30,8 @@ class SettingsActivity : BaseSettingsActivity() {
         b.navRow(br, getString(R.string.s_downloads), null) {
             try { startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)) } catch (_: Exception) { }
         }; b.divider(br)
-        b.navRow(br, getString(R.string.s_website_settings), null) { go(AdvancedActivity::class.java) }
+        b.navRow(br, getString(R.string.s_website_settings), null) { go(AdvancedActivity::class.java) }; b.divider(br)
+        b.navRow(br, getString(R.string.rd_title), null) { go(ReadingActivity::class.java) }
 
         // ---------------- PRIVACY & SECURITY ----------------
         b.section(getString(R.string.sec_privacy))
@@ -63,6 +64,7 @@ class SettingsActivity : BaseSettingsActivity() {
         val ad = b.card()
         b.navRow(ad, getString(R.string.s_backup), null) { go(BackupActivity::class.java) }; b.divider(ad)
         b.navRow(ad, getString(R.string.s_developer), null) { go(AdvancedActivity::class.java) }; b.divider(ad)
+        b.navRow(ad, getString(R.string.dg_title), null) { go(DiagnosticsActivity::class.java) }; b.divider(ad)
         b.navRow(ad, getString(R.string.s_experimental), null) {
             showDialog(getString(R.string.s_experimental), getString(R.string.exp_note))
         }; b.divider(ad)
