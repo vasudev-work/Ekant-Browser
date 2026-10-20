@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Aekant Gecko (spike)</string>
+    <string name="url_hint">Search or type a URL</string>
+    <string name="go">Go</string>
+    <string name="back">Back</string>
+    <string name="forward">Forward</string>
+    <string name="reload">Reload</string>
+    <string name="home">Home</string>
+    <string name="new_tab">New tab</string>
+    <string name="container">Container</string>
+</resources>

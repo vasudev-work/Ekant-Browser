@@ -1,0 +1,17 @@
+# Aekant GeckoView spike - top-level ad/tracker hosts
+doubleclick.net
+googlesyndication.com
+googleadservices.com
+google-analytics.com
+googletagmanager.com
+adnxs.com
+adsrvr.org
+criteo.com
+outbrain.com
+taboola.com
+scorecardresearch.com
+quantserve.com
+pubmatic.com
+rubiconproject.com
+openx.net
+casalemedia.com
