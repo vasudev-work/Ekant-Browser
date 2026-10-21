@@ -88,6 +88,8 @@ var BI=__BIONIC__;function bw(w){var n=Math.max(1,Math.ceil(w.length*0.4));retur
 h=h.replace('<div id="c"></div>','<div id="c">'+body+'</div>');
 document.open();document.write(h);document.close();
 }catch(e){}})();"""
+        const val TOOLS_ASSET = "file:///android_asset/tools.html"
+
         const val PAGINATE_JS = "(function(){try{if(window.__aekantPaginate)return;window.__aekantPaginate=1;var n=0;" +
             "function nl(){var a=document.querySelector('a[rel=next]');if(a&&a.href)return a.href;" +
             "var as=document.querySelectorAll('a');for(var i=0;i<as.length;i++){var t=(as[i].innerText||'').trim().toLowerCase();" +
@@ -406,6 +408,14 @@ document.open();document.write(h);document.close();
     }
 
     // ---------- urls / content ----------
+    /** Offline toolbox page, themed like the rest of the app. */
+    private fun toolsUrl(): String = TOOLS_ASSET +
+        "?tbg=" + Uri.encode(hex(attr(R.attr.bgColor))) +
+        "&tsurf=" + Uri.encode(hex(attr(R.attr.surfaceColor))) +
+        "&tfg=" + Uri.encode(hex(attr(R.attr.textPrimaryColor))) +
+        "&tmut=" + Uri.encode(hex(attr(R.attr.textSecondaryColor))) +
+        "&tbrand=" + Uri.encode(hex(attr(R.attr.brandColor)))
+
     private fun ntpUrl(): String {
         val sc = prefs.getString("shortcuts", "") ?: ""
         val showRecent = prefs.getBoolean("show_recent", true)
@@ -911,6 +921,7 @@ document.open();document.write(h);document.close();
         when (uri.host) {
             "search" -> go(searchFor(uri.getQueryParameter("q") ?: ""))
             "open" -> go(uri.getQueryParameter("u"))
+            "tools" -> go(toolsUrl())
         }
     }
 
@@ -1217,16 +1228,17 @@ document.open();document.write(h);document.close();
         b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_summary), null, act(15)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_star, getString(R.string.m_save_later), null, act(16)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_media), null, act(17)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_listen), null, act(18))
+        b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_listen), null, act(18)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_ext, getString(R.string.m_tools), null, act(19))
 
         b.section(getString(R.string.sec_more))
         val c4 = b.card()
-        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(19)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(20)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(21)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(22)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(23)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(24))
+        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(20)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(21)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(22)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(23)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(24)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(25))
     }
 
     private fun act(which: Int): View.OnClickListener = View.OnClickListener { onMenuAction(which) }
@@ -1252,12 +1264,13 @@ document.open();document.write(h);document.close();
             16 -> { saveForLater(); hideMenuPanel() }
             17 -> { startActivity(Intent(this, MediaActivity::class.java)); hideMenuPanel() }
             18 -> { readAloud(); hideMenuPanel() }
-            19 -> { addToHomeScreen(); hideMenuPanel() }
-            20 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
-            21 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
-            22 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
-            23 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
-            24 -> finishAffinity()
+            19 -> { go(toolsUrl()); hideMenuPanel() }
+            20 -> { addToHomeScreen(); hideMenuPanel() }
+            21 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
+            22 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
+            23 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
+            24 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
+            25 -> finishAffinity()
         }
     }
 

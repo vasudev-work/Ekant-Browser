@@ -502,6 +502,7 @@
     <string name="ap_rot_landscape">Lock landscape</string>
     <string name="ap_desktop">Desktop website by default</string>
     <string name="ap_desktop_sum">Request the desktop version of sites in new tabs</string>
+    <string name="m_tools">Tools</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>
