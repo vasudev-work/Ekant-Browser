@@ -27,6 +27,7 @@ class SettingsActivity : BaseSettingsActivity() {
         b.navRow(br, getString(R.string.s_bookmarks), null) { go(BookmarksActivity::class.java) }; b.divider(br)
         b.navRow(br, getString(R.string.s_history), null) { go(HistoryActivity::class.java) }; b.divider(br)
         b.navRow(br, getString(R.string.rl_title), null) { go(ReadingListActivity::class.java) }; b.divider(br)
+        b.navRow(br, getString(R.string.fl_title), null) { go(FilesActivity::class.java) }; b.divider(br)
         b.navRow(br, getString(R.string.s_downloads), null) {
             try { startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)) } catch (_: Exception) { }
         }; b.divider(br)
@@ -37,6 +38,7 @@ class SettingsActivity : BaseSettingsActivity() {
         b.section(getString(R.string.sec_privacy))
         val p = b.card()
         b.navRow(p, getString(R.string.r_privacy_dashboard), null) { go(PrivacyActivity::class.java) }; b.divider(p)
+        b.navRow(p, getString(R.string.ab_title), null) { go(AdBlockActivity::class.java) }; b.divider(p)
         b.navRow(p, getString(R.string.s_tracking), null) { go(ShieldsActivity::class.java) }; b.divider(p)
         b.navRow(p, getString(R.string.s_cookies), null) { go(ShieldsActivity::class.java) }; b.divider(p)
         b.navRow(p, getString(R.string.s_permissions), null) { go(SitePermissionsActivity::class.java) }; b.divider(p)

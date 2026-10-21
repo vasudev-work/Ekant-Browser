@@ -11,6 +11,11 @@ class AppearanceActivity : BaseSettingsActivity() {
         recreate()
     }
 
+    private fun setRotation(m: String) {
+        prefs.edit().putString("orientation", m).apply()
+        recreate()
+    }
+
     private fun setThemeMode(m: String) {
         prefs.edit().putString("theme_mode", m).apply()
         recreate()
@@ -48,6 +53,20 @@ class AppearanceActivity : BaseSettingsActivity() {
         b.divider(c3)
         b.navRow(c3, getString(R.string.us_title), null) {
             startActivity(android.content.Intent(this, UserStylesActivity::class.java))
+        }
+
+        b.section(getString(R.string.ap_browsing))
+        val c4 = b.card()
+        val rot = prefs.getString("orientation", "system")
+        b.radioRow(c4, getString(R.string.ap_rot_system), null, rot == "system") { setRotation("system") }
+        b.divider(c4)
+        b.radioRow(c4, getString(R.string.ap_rot_portrait), null, rot == "portrait") { setRotation("portrait") }
+        b.divider(c4)
+        b.radioRow(c4, getString(R.string.ap_rot_landscape), null, rot == "landscape") { setRotation("landscape") }
+        b.divider(c4)
+        b.switchRow(c4, getString(R.string.ap_desktop), getString(R.string.ap_desktop_sum),
+            prefs.getBoolean("desktop_default", false)) { _, on ->
+            prefs.edit().putBoolean("desktop_default", on).apply()
         }
 
         b.section(getString(R.string.ap_text))

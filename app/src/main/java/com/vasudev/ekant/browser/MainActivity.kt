@@ -290,8 +290,19 @@ document.open();document.write(h);document.close();
 
     private fun dp(v: Int) = (resources.displayMetrics.density * v).toInt()
 
+    private fun applyOrientation() {
+        try {
+            requestedOrientation = when (prefs.getString("orientation", "system")) {
+                "portrait" -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                "landscape" -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                else -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
+        } catch (_: Exception) { }
+    }
+
     override fun onResume() {
         super.onResume()
+        applyOrientation()
         val wasDark = dark
         readPrefs()
         adBlocker.blockAds = prefs.getBoolean("block_ads", true)
@@ -484,15 +495,16 @@ document.open();document.write(h);document.close();
         w.webViewClient = BrowserClient()
         w.webChromeClient = buildChromeClient()
         w.setDownloadListener(DownloadListener { url, _, cd, mime, _ ->
-            try {
-                val name = URLUtil.guessFileName(url, cd, mime)
-                val r = DownloadManager.Request(Uri.parse(url))
-                r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
-                (getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(r)
-                toast("Downloading " + name)
-            } catch (_: Exception) {
-                toast("Download failed")
+            val name = URLUtil.guessFileName(url, cd, mime)
+            if (prefs.getBoolean("ask_download", false)) {
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.dl_confirm)
+                    .setMessage(name)
+                    .setPositiveButton(R.string.media_download) { _, _ -> startDownload(url, name, cd, mime) }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            } else {
+                startDownload(url, name, cd, mime)
             }
         })
         w.setFindListener { _, count, done -> if (done) toast("" + count + " matches") }
@@ -509,9 +521,10 @@ document.open();document.write(h);document.close();
 
     private fun applyUa(s: WebSettings) {
         val custom = prefs.getString("ua_custom", "") ?: ""
+        val desk = desktop || prefs.getBoolean("desktop_default", false)
         s.userAgentString = when {
             custom.isNotBlank() -> custom
-            desktop -> UA_DESKTOP
+            desk -> UA_DESKTOP
             else -> null
         }
     }
@@ -1057,6 +1070,7 @@ document.open();document.write(h);document.close();
                 }
             }
             if (AdFilterEngine.isBlocked(url) || adBlocker.isBlocked(url)) {
+                try { AdFilterEngine.recordBlocked() } catch (_: Exception) { }
                 return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
             }
             return null
@@ -1555,14 +1569,35 @@ document.open();document.write(h);document.close();
         } catch (_: Exception) { }
     }
 
-    private fun downloadUrl(url: String) {
+    /** Enqueue a download, honouring the background-download setting. */
+    private fun startDownload(url: String, name: String, cd: String?, mime: String?) {
         try {
             val r = DownloadManager.Request(Uri.parse(url))
-            r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, URLUtil.guessFileName(url, null, null))
+            r.setNotificationVisibility(
+                if (prefs.getBoolean("bg_download", true))
+                    DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+                else DownloadManager.Request.VISIBILITY_HIDDEN)
+            r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
+                if (name.isBlank()) URLUtil.guessFileName(url, cd, mime) else name)
             (getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(r)
             toast(getString(R.string.ctx_downloading))
-        } catch (_: Exception) { toast(getString(R.string.ctx_failed)) }
+        } catch (_: Exception) {
+            toast(getString(R.string.ctx_failed))
+        }
+    }
+
+    private fun downloadUrl(url: String) {
+        val name = URLUtil.guessFileName(url, null, null)
+        if (prefs.getBoolean("ask_download", false)) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.dl_confirm)
+                .setMessage(name)
+                .setPositiveButton(R.string.media_download) { _, _ -> startDownload(url, name, null, null) }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        } else {
+            startDownload(url, name, null, null)
+        }
     }
 
     private fun reopenClosed() {
