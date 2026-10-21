@@ -88,6 +88,11 @@ class AppearanceActivity : BaseSettingsActivity() {
             prefs.getBoolean("immersive", false)) { _, on ->
             prefs.edit().putBoolean("immersive", on).apply()
         }
+        b.divider(c4)
+        b.switchRow(c4, getString(R.string.ap_volume), getString(R.string.ap_volume_sum),
+            prefs.getBoolean("volume_scroll", false)) { _, on ->
+            prefs.edit().putBoolean("volume_scroll", on).apply()
+        }
 
         b.section(getString(R.string.ap_text))
         val c2 = b.card()

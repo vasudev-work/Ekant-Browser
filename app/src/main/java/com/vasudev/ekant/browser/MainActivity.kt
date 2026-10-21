@@ -79,10 +79,11 @@ var css=':root{--bg:__BG__;--fg:__FG__;--br:__BR__}'
 +'.bar button{background:transparent;border:1px solid rgba(128,128,128,.45);color:var(--fg);border-radius:8px;padding:5px 11px;font-size:14px}'
 +'.sp{flex:1}h1{font-size:24px;color:var(--br);font-family:sans-serif;margin:14px 0 10px}'
 +'p{font-size:17px;margin:0 0 16px}.wrap{max-width:760px;margin:0 auto;padding:8px 20px 70px}'
++'.wrap.vert{writing-mode:vertical-rl;text-orientation:mixed;height:76vh;overflow:auto;max-width:none;padding:8px 12px 8px 22px}'
 +'body.sepia{background:#F4ECD8;color:#3B3226}body.dk{background:#0B0E12;color:#E8EAED}';
 var bar='<div class="bar"><button onclick="fs(-1)">A-</button><button onclick="fs(1)">A+</button><span class="sp"></span><button onclick="th(0)">Light</button><button onclick="th(1)">Sepia</button><button onclick="th(2)">Dark</button><button onclick="location.reload()">Close</button></div>';
 var js='<script>var f=17;function fs(d){f=Math.max(13,Math.min(28,f+d));var a=document.querySelectorAll("#c p");for(var i=0;i<a.length;i++){a[i].style.fontSize=f+"px";}}function th(m){document.body.className=(m===1?"sepia":(m===2?"dk":""));}<\/script>';
-var h='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'</style></head><body>'+bar+'<div class="wrap"><h1>'+esc(title)+'</h1><div id="c"></div></div>'+js+'</body></html>';
+var h='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'</style></head><body>'+bar+'<div class="wrap__VERTCLS__"><h1>'+esc(title)+'</h1><div id="c"></div></div>'+js+'</body></html>';
 var ps=txt.split(/\s\s+/);var body='';
 var BI=__BIONIC__;function bw(w){var n=Math.max(1,Math.ceil(w.length*0.4));return '<b>'+w.slice(0,n)+'</b>'+w.slice(n);}for(var i=0;i<ps.length;i++){var p=ps[i].trim();if(p.length>0){var e=esc(p);var x=BI?e.split(/(\s+)/).map(function(w){return /^\s+$/.test(w)?w:bw(w);}).join(''):e;body+='<p>'+x+'</p>';}}
 h=h.replace('<div id="c"></div>','<div id="c">'+body+'</div>');
@@ -218,6 +219,7 @@ document.open();document.write(h);document.close();
 
         WebView.setWebContentsDebuggingEnabled(prefs.getBoolean("remote_debug", false))
         AdFilterEngine.enabled = prefs.getBoolean("easylist", true)
+        NetLog.enabled = prefs.getBoolean("net_log", false)
         AdFilterEngine.ensureLoaded(applicationContext)
         TtsReader.init(this)
         TtsReader.listener = object : TtsReader.Listener {
@@ -462,9 +464,48 @@ document.open();document.write(h);document.close();
     }
 
     override fun onDestroy() {
+        if (isFinishing && prefs.getBoolean("clear_on_exit", false)) clearEverything()
         for (t in tabs) t.destroy()
         tabs.clear()
         super.onDestroy()
+    }
+
+    /** Wipe cookies, storage, cache and history, e.g. on exit. */
+    private fun clearEverything() {
+        try {
+            val cm = CookieManager.getInstance()
+            cm.removeAllCookies(null)
+            cm.flush()
+        } catch (_: Exception) { }
+        try { android.webkit.WebStorage.getInstance().deleteAllData() } catch (_: Exception) { }
+        for (t in tabs) { try { t.clearCache(true) } catch (_: Exception) { } }
+        try { prefs.edit().remove("history").apply() } catch (_: Exception) { }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (prefs.getBoolean("volume_scroll", false)) {
+            val w = cur()
+            if (w != null) {
+                when (keyCode) {
+                    KeyEvent.KEYCODE_VOLUME_DOWN -> { w.scrollBy(0, w.height / 2); return true }
+                    KeyEvent.KEYCODE_VOLUME_UP -> { w.scrollBy(0, -(w.height / 2)); return true }
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    /** True when a regex URL filter matches. */
+    private fun urlFiltered(url: String): Boolean {
+        if (!prefs.getBoolean("url_filter_on", false)) return false
+        val raw = prefs.getString("url_filters", "") ?: return false
+        if (raw.isBlank()) return false
+        for (line in raw.split("\n")) {
+            val p = line.trim()
+            if (p.isEmpty()) continue
+            try { if (Regex(p, RegexOption.IGNORE_CASE).containsMatchIn(url)) return true } catch (_: Exception) { }
+        }
+        return false
     }
 
     // ---------- containers ----------
@@ -1196,6 +1237,14 @@ document.open();document.write(h);document.close();
         override fun shouldOverrideUrlLoading(v: WebView?, request: WebResourceRequest?): Boolean {
             val url = request?.url?.toString() ?: return false
             if (url.startsWith("aekant://")) { handleScheme(url); return true }
+            if (urlFiltered(url)) {
+                val html = "<html><body style='background:" + hex(attr(R.attr.bgColor)) +
+                    ";color:" + hex(attr(R.attr.textPrimaryColor)) + ";font-family:sans-serif;text-align:center;padding:60px 24px'>" +
+                    "<h2 style='color:" + hex(attr(R.attr.brandColor)) + "'>Blocked</h2>" +
+                    "<p>A filter rule blocks this address.</p><p style='font-size:12px'>" + url + "</p></body></html>"
+                v?.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
+                return true
+            }
             val scheme = Uri.parse(url).scheme?.lowercase() ?: ""
             if (EXTERNAL_SCHEMES.contains(scheme)) {
                 return try {
@@ -1240,10 +1289,16 @@ document.open();document.write(h);document.close();
                     return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
                 }
             }
-            if (AdFilterEngine.isBlocked(url) || adBlocker.isBlocked(url)) {
-                try { AdFilterEngine.recordBlocked() } catch (_: Exception) { }
+            if (urlFiltered(url)) {
+                try { NetLog.add(url, true) } catch (_: Exception) { }
                 return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
             }
+            if (AdFilterEngine.isBlocked(url) || adBlocker.isBlocked(url)) {
+                try { AdFilterEngine.recordBlocked() } catch (_: Exception) { }
+                try { NetLog.add(url, true) } catch (_: Exception) { }
+                return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
+            }
+            try { NetLog.add(url, false) } catch (_: Exception) { }
             return null
         }
     }
@@ -1922,6 +1977,7 @@ document.open();document.write(h);document.close();
         .replace("__FG__", hex(attr(R.attr.textPrimaryColor)))
         .replace("__BR__", hex(attr(R.attr.brandColor)))
         .replace("__BIONIC__", if (prefs.getBoolean("bionic", false)) "1" else "0")
+        .replace("__VERTCLS__", if (prefs.getBoolean("vertical_reading", false)) " vert" else "")
 
     private fun onOff(v: Boolean) = if (v) "On" else "Off"
 

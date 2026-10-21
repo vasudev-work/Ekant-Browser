@@ -82,6 +82,11 @@ class ReadingActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("tts_live", on).apply()
         }
         b.divider(v)
+        b.switchRow(v, getString(R.string.rd_vertical), getString(R.string.rd_vertical_sum),
+            prefs.getBoolean("vertical_reading", false)) { _, on ->
+            prefs.edit().putBoolean("vertical_reading", on).apply()
+        }
+        b.divider(v)
         b.switchRow(v, getString(R.string.rd_highlight), getString(R.string.rd_highlight_sum),
             prefs.getBoolean("highlight", true)) { _, on ->
             prefs.edit().putBoolean("highlight", on).apply()

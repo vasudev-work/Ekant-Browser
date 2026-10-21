@@ -67,6 +67,8 @@ class SettingsActivity : BaseSettingsActivity() {
         b.navRow(ad, getString(R.string.s_backup), null) { go(BackupActivity::class.java) }; b.divider(ad)
         b.navRow(ad, getString(R.string.s_developer), null) { go(AdvancedActivity::class.java) }; b.divider(ad)
         b.navRow(ad, getString(R.string.dg_title), null) { go(DiagnosticsActivity::class.java) }; b.divider(ad)
+        b.navRow(ad, getString(R.string.nl_title), null) { go(NetLogActivity::class.java) }; b.divider(ad)
+        b.navRow(ad, getString(R.string.uf_title), null) { go(UrlFiltersActivity::class.java) }; b.divider(ad)
         b.navRow(ad, getString(R.string.s_experimental), null) {
             showDialog(getString(R.string.s_experimental), getString(R.string.exp_note))
         }; b.divider(ad)
