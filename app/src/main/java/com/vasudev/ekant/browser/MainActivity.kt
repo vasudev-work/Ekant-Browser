@@ -442,7 +442,13 @@ document.open();document.write(h);document.close();
         if (wasDark != dark) { recreate(); return }
         try { cur()?.onResume() } catch (_: Exception) { }
         applyLayoutPrefs()
-        for (t in tabs) applyContent(t.settings)
+        for (t in tabs) {
+            applyContent(t.settings)
+            try {
+                t.isVerticalScrollBarEnabled = prefs.getBoolean("scrollbars", false)
+                t.isHorizontalScrollBarEnabled = prefs.getBoolean("scrollbars", false)
+            } catch (_: Exception) { }
+        }
         updateContainerUi()
     }
 
@@ -620,8 +626,6 @@ document.open();document.write(h);document.close();
         s.useWideViewPort = true
         s.textZoom = textZoom
         s.mediaPlaybackRequiresUserGesture = !prefs.getBoolean("bg_media", false)
-        s.setVerticalScrollBarEnabled(prefs.getBoolean("scrollbars", false))
-        s.setHorizontalScrollBarEnabled(prefs.getBoolean("scrollbars", false))
         s.databaseEnabled = true
         s.allowFileAccess = false
         s.allowContentAccess = false
@@ -652,6 +656,8 @@ document.open();document.write(h);document.close();
         w.onTextAction = { action, text -> handleTextAction(action, text) }
         w.onLinkLongPress = { url, isImage -> showLinkMenu(url, isImage) }
         attachSwipe(w)
+        val showBars = prefs.getBoolean("scrollbars", false)
+        try { w.isVerticalScrollBarEnabled = showBars; w.isHorizontalScrollBarEnabled = showBars } catch (_: Exception) { }
         val wrapper = androidx.swiperefreshlayout.widget.SwipeRefreshLayout(this)
         wrapper.setOnRefreshListener { try { w.reload() } catch (_: Exception) { } }
         wrapper.isEnabled = prefs.getBoolean("pull_refresh", true)
