@@ -78,6 +78,16 @@ class AppearanceActivity : BaseSettingsActivity() {
             prefs.getBoolean("external_links", false)) { _, on ->
             prefs.edit().putBoolean("external_links", on).apply()
         }
+        b.divider(c4)
+        b.switchRow(c4, getString(R.string.ap_scrollbars), getString(R.string.ap_scrollbars_sum),
+            prefs.getBoolean("scrollbars", false)) { _, on ->
+            prefs.edit().putBoolean("scrollbars", on).apply()
+        }
+        b.divider(c4)
+        b.switchRow(c4, getString(R.string.ap_immersive), getString(R.string.ap_immersive_sum),
+            prefs.getBoolean("immersive", false)) { _, on ->
+            prefs.edit().putBoolean("immersive", on).apply()
+        }
 
         b.section(getString(R.string.ap_text))
         val c2 = b.card()

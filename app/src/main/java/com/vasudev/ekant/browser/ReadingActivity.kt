@@ -55,6 +55,11 @@ class ReadingActivity : BaseSettingsActivity() {
             prefs.getBoolean("auto_retry", true)) { _, on ->
             prefs.edit().putBoolean("auto_retry", on).apply()
         }
+        b.divider(c)
+        b.switchRow(c, getString(R.string.rd_keep_screen), getString(R.string.rd_keep_screen_sum),
+            prefs.getBoolean("keep_screen_on", false)) { _, on ->
+            prefs.edit().putBoolean("keep_screen_on", on).apply()
+        }
         b.section(getString(R.string.rd_visual))
         val v = b.card()
         b.switchRow(v, getString(R.string.rd_eink), getString(R.string.rd_eink_sum),

@@ -296,6 +296,68 @@ document.open();document.write(h);document.close();
 
     private fun dp(v: Int) = (resources.displayMetrics.density * v).toInt()
 
+    /** Hide the system bars when immersive mode is on. */
+    private fun applyImmersive() {
+        val on = prefs.getBoolean("immersive", false)
+        try {
+            if (Build.VERSION.SDK_INT >= 30) {
+                val c = window.insetsController ?: return
+                if (on) {
+                    c.hide(android.view.WindowInsets.Type.systemBars())
+                    c.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                } else {
+                    c.show(android.view.WindowInsets.Type.systemBars())
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                window.decorView.systemUiVisibility = if (on)
+                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
+                else 0
+            }
+        } catch (_: Exception) { }
+    }
+
+    private fun applyKeepScreenOn() {
+        try {
+            if (prefs.getBoolean("keep_screen_on", false)) {
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            } else {
+                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+        } catch (_: Exception) { }
+    }
+
+    /** Save a picture of the current page. */
+    private fun captureScreenshot() {
+        val w = cur() ?: return
+        try {
+            val bmp = Bitmap.createBitmap(
+                w.width.coerceAtLeast(1), w.height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+            w.draw(android.graphics.Canvas(bmp))
+            val name = "aekant-" + System.currentTimeMillis() + ".png"
+            if (Build.VERSION.SDK_INT >= 29) {
+                val values = android.content.ContentValues().apply {
+                    put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, name)
+                    put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png")
+                    put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Aekant")
+                }
+                val uri = contentResolver.insert(
+                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                if (uri != null) {
+                    contentResolver.openOutputStream(uri)?.use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                    toast(getString(R.string.shot_saved))
+                } else toast(getString(R.string.ctx_failed))
+            } else {
+                val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: filesDir
+                java.io.FileOutputStream(java.io.File(dir, name)).use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                toast(getString(R.string.shot_saved))
+            }
+        } catch (_: Exception) {
+            toast(getString(R.string.ctx_failed))
+        }
+    }
+
     /** Block screenshots when the user asks for it. */
     private fun applySecureScreen() {
         try {
@@ -370,6 +432,8 @@ document.open();document.write(h);document.close();
         super.onResume()
         applyOrientation()
         applySecureScreen()
+        applyImmersive()
+        applyKeepScreenOn()
         val wasDark = dark
         readPrefs()
         adBlocker.blockAds = prefs.getBoolean("block_ads", true)
@@ -556,6 +620,8 @@ document.open();document.write(h);document.close();
         s.useWideViewPort = true
         s.textZoom = textZoom
         s.mediaPlaybackRequiresUserGesture = !prefs.getBoolean("bg_media", false)
+        s.setVerticalScrollBarEnabled(prefs.getBoolean("scrollbars", false))
+        s.setHorizontalScrollBarEnabled(prefs.getBoolean("scrollbars", false))
         s.databaseEnabled = true
         s.allowFileAccess = false
         s.allowContentAccess = false
@@ -1318,16 +1384,17 @@ document.open();document.write(h);document.close();
         b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_media), null, act(17)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_listen), null, act(18)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_ext, getString(R.string.m_tools), null, act(19)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_lock, getString(R.string.kiosk_title), null, act(20))
+        b.iconRow(c3, R.drawable.ic_lock, getString(R.string.kiosk_title), null, act(20)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_screenshot), null, act(21))
 
         b.section(getString(R.string.sec_more))
         val c4 = b.card()
-        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(21)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(22)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(23)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(24)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(25)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(26))
+        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(22)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(23)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(24)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(25)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(26)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(27))
     }
 
     private fun act(which: Int): View.OnClickListener = View.OnClickListener { onMenuAction(which) }
@@ -1355,12 +1422,13 @@ document.open();document.write(h);document.close();
             18 -> { readAloud(); hideMenuPanel() }
             19 -> { go(toolsUrl()); hideMenuPanel() }
             20 -> { enterKiosk(); hideMenuPanel() }
-            21 -> { addToHomeScreen(); hideMenuPanel() }
-            22 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
-            23 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
-            24 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
-            25 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
-            26 -> finishAffinity()
+            21 -> { captureScreenshot(); hideMenuPanel() }
+            22 -> { addToHomeScreen(); hideMenuPanel() }
+            23 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
+            24 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
+            25 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
+            26 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
+            27 -> finishAffinity()
         }
     }
 

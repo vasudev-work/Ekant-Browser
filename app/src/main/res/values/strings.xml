@@ -515,6 +515,14 @@
     <string name="ap_external_sum">Links to a different site go to your default browser</string>
     <string name="sh_secure_screen">Block screenshots</string>
     <string name="sh_secure_screen_sum">Hide browser content in screenshots and the recents list</string>
+    <string name="m_screenshot">Save a picture of the page</string>
+    <string name="shot_saved">Screenshot saved to Pictures</string>
+    <string name="ap_scrollbars">Show scrollbars</string>
+    <string name="ap_scrollbars_sum">Draw a scrollbar on the side of pages</string>
+    <string name="ap_immersive">Full-screen browsing</string>
+    <string name="ap_immersive_sum">Hide the status and navigation bars</string>
+    <string name="rd_keep_screen">Keep the screen on</string>
+    <string name="rd_keep_screen_sum">Stop the screen sleeping while you read</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>
