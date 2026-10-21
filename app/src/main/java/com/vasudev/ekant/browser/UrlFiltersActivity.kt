@@ -33,7 +33,7 @@ class UrlFiltersActivity : BaseSettingsActivity() {
         } else {
             for (p in list) {
                 val card = b.card()
-                b.valueRow(card, p.take(46), null, null)
+                b.valueRow(card, p.take(46), "", null)
                 b.divider(card)
                 b.navRow(card, getString(R.string.ext_delete), null) { save(patterns().filter { it != p }) }
             }
