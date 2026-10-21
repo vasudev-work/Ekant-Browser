@@ -169,6 +169,10 @@ document.open();document.write(h);document.close();
     private val closedStack = ArrayDeque<String>()
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private val retries = HashMap<String, Int>()
+    private val wrappers = HashMap<WebView, androidx.swiperefreshlayout.widget.SwipeRefreshLayout>()
+    private var kiosk = false
+    private var kioskHost = ""
+    private var kioskExit: View? = null
     private var listenBar: LinearLayout? = null
     private var listenText: TextView? = null
     private var listenPlay: TextView? = null
@@ -292,6 +296,66 @@ document.open();document.write(h);document.close();
 
     private fun dp(v: Int) = (resources.displayMetrics.density * v).toInt()
 
+    /** Block screenshots when the user asks for it. */
+    private fun applySecureScreen() {
+        try {
+            if (prefs.getBoolean("secure_screen", false)) {
+                window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                    android.view.WindowManager.LayoutParams.FLAG_SECURE)
+            } else {
+                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+            }
+        } catch (_: Exception) { }
+    }
+
+    /** Kiosk mode: lock the browser to the current site, hide the chrome. */
+    private fun enterKiosk() {
+        val h = try { Uri.parse(cur()?.url ?: "").host ?: "" } catch (_: Exception) { "" }
+        if (h.isEmpty()) { toast(getString(R.string.kiosk_need_page)); return }
+        kiosk = true
+        kioskHost = h
+        try {
+            findViewById<View>(R.id.topbar)?.visibility = View.GONE
+            findViewById<View>(R.id.bottom_nav)?.visibility = View.GONE
+        } catch (_: Exception) { }
+        if (kioskExit == null) {
+            val b = TextView(this)
+            b.text = "\uD83D\uDD13"
+            b.textSize = 18f
+            b.setPadding(dp(10), dp(6), dp(10), dp(6))
+            b.setBackgroundColor(attr(R.attr.surfaceColor))
+            b.setOnClickListener { confirmExitKiosk() }
+            val lp = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.gravity = Gravity.TOP or Gravity.END
+            lp.topMargin = dp(10)
+            lp.rightMargin = dp(10)
+            try { findViewById<ViewGroup>(android.R.id.content).addView(b, lp) } catch (_: Exception) { }
+            kioskExit = b
+        }
+        kioskExit?.visibility = View.VISIBLE
+        toast(getString(R.string.kiosk_on, h))
+    }
+
+    private fun confirmExitKiosk() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.kiosk_title)
+            .setMessage(R.string.kiosk_exit_q)
+            .setPositiveButton(R.string.kiosk_exit) { _, _ -> exitKiosk() }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun exitKiosk() {
+        kiosk = false
+        kioskHost = ""
+        try {
+            findViewById<View>(R.id.topbar)?.visibility = View.VISIBLE
+            findViewById<View>(R.id.bottom_nav)?.visibility = View.VISIBLE
+        } catch (_: Exception) { }
+        kioskExit?.visibility = View.GONE
+    }
+
     private fun applyOrientation() {
         try {
             requestedOrientation = when (prefs.getString("orientation", "system")) {
@@ -305,6 +369,7 @@ document.open();document.write(h);document.close();
     override fun onResume() {
         super.onResume()
         applyOrientation()
+        applySecureScreen()
         val wasDark = dark
         readPrefs()
         adBlocker.blockAds = prefs.getBoolean("block_ads", true)
@@ -336,7 +401,7 @@ document.open();document.write(h);document.close();
     private fun loadContainer(c: Container) {
         active = c
         store.activeContainerId = c.id
-        for (t in tabs) { container.removeView(t); t.destroy() }
+        for (t in tabs) { val wp = wrappers.remove(t); container.removeView(wp ?: t); t.destroy() }
         tabs.clear()
         current = -1
         val saved = if (prefs.getBoolean("restore_tabs", true)) store.getTabs(c.id) else emptyList()
@@ -521,8 +586,14 @@ document.open();document.write(h);document.close();
         w.onTextAction = { action, text -> handleTextAction(action, text) }
         w.onLinkLongPress = { url, isImage -> showLinkMenu(url, isImage) }
         attachSwipe(w)
-        w.visibility = View.GONE
-        container.addView(w)
+        val wrapper = androidx.swiperefreshlayout.widget.SwipeRefreshLayout(this)
+        wrapper.setOnRefreshListener { try { w.reload() } catch (_: Exception) { } }
+        wrapper.isEnabled = prefs.getBoolean("pull_refresh", true)
+        wrapper.addView(w, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        wrapper.visibility = View.GONE
+        wrappers[w] = wrapper
+        container.addView(wrapper)
         tabs.add(w)
         if (select) showTab(tabs.size - 1)
         if (u.isNotEmpty()) w.loadUrl(u)
@@ -549,7 +620,7 @@ document.open();document.write(h);document.close();
         if (prev in tabs.indices && prev != i) {
             try { tabs[prev].onPause() } catch (_: Exception) { }
         }
-        for (k in tabs.indices) tabs[k].visibility = if (k == i) View.VISIBLE else View.GONE
+        for (k in tabs.indices) (wrappers[tabs[k]] ?: tabs[k]).visibility = if (k == i) View.VISIBLE else View.GONE
         current = i
         if (prefs.getBoolean("memory_saver", true)) {
             try { tabs[i].onResume() } catch (_: Exception) { }
@@ -568,7 +639,8 @@ document.open();document.write(h);document.close();
         if (prefs.getBoolean("clear_on_close", false) && u != null) clearSiteData(u)
         pinned.remove(w)
         favicons.remove(w)
-        container.removeView(w)
+        val wrap = wrappers.remove(w)
+        if (wrap != null) container.removeView(wrap) else container.removeView(w)
         w.destroy()
         if (tabs.isEmpty()) {
             if (closeOnLast) finishAffinity() else newTab(ntpUrl())
@@ -1006,6 +1078,7 @@ document.open();document.write(h);document.close();
         }
 
         override fun onPageFinished(v: WebView?, url: String?) {
+            try { wrappers[v]?.isRefreshing = false } catch (_: Exception) { }
             if (v == cur()) {
                 progress.visibility = View.GONE
                 updateUrl()
@@ -1060,6 +1133,21 @@ document.open();document.write(h);document.close();
             if (scheme.isNotEmpty() && !INTERNAL_SCHEMES.contains(scheme)) return true
             if (prefs.getBoolean("https_only", true) && url.startsWith("http://")) {
                 v?.loadUrl("https://" + url.substring(7)); return true
+            }
+            if (kiosk) {
+                val h = try { Uri.parse(url).host ?: "" } catch (_: Exception) { "" }
+                if (h.isNotEmpty() && h != kioskHost) {
+                    toast(getString(R.string.kiosk_locked))
+                    return true
+                }
+            }
+            if (prefs.getBoolean("external_links", false) && url.startsWith("http")) {
+                val here = try { Uri.parse(cur()?.url ?: "").host ?: "" } catch (_: Exception) { "" }
+                val there = try { Uri.parse(url).host ?: "" } catch (_: Exception) { "" }
+                if (here.isNotEmpty() && there.isNotEmpty() && there != here) {
+                    return try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))); true }
+                    catch (_: Exception) { false }
+                }
             }
             if (prefs.getBoolean("clean_urls", true)) {
                 val c = UrlCleaner.clean(url)
@@ -1229,16 +1317,17 @@ document.open();document.write(h);document.close();
         b.iconRow(c3, R.drawable.ic_star, getString(R.string.m_save_later), null, act(16)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_media), null, act(17)); b.divider(c3)
         b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_listen), null, act(18)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_ext, getString(R.string.m_tools), null, act(19))
+        b.iconRow(c3, R.drawable.ic_ext, getString(R.string.m_tools), null, act(19)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_lock, getString(R.string.kiosk_title), null, act(20))
 
         b.section(getString(R.string.sec_more))
         val c4 = b.card()
-        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(20)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(21)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(22)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(23)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(24)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(25))
+        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(21)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(22)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(23)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(24)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(25)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(26))
     }
 
     private fun act(which: Int): View.OnClickListener = View.OnClickListener { onMenuAction(which) }
@@ -1265,12 +1354,13 @@ document.open();document.write(h);document.close();
             17 -> { startActivity(Intent(this, MediaActivity::class.java)); hideMenuPanel() }
             18 -> { readAloud(); hideMenuPanel() }
             19 -> { go(toolsUrl()); hideMenuPanel() }
-            20 -> { addToHomeScreen(); hideMenuPanel() }
-            21 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
-            22 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
-            23 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
-            24 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
-            25 -> finishAffinity()
+            20 -> { enterKiosk(); hideMenuPanel() }
+            21 -> { addToHomeScreen(); hideMenuPanel() }
+            22 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
+            23 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
+            24 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
+            25 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
+            26 -> finishAffinity()
         }
     }
 
@@ -1637,7 +1727,7 @@ document.open();document.write(h);document.close();
                 val keep = ArrayList<WebView>()
                 for (t in ArrayList(tabs)) {
                     if (pinned.contains(t)) { keep.add(t); continue }
-                    container.removeView(t); t.destroy(); favicons.remove(t)
+                    val wp = wrappers.remove(t); container.removeView(wp ?: t); t.destroy(); favicons.remove(t)
                 }
                 tabs.clear(); tabs.addAll(keep); current = -1
                 if (tabs.isEmpty()) newTab(ntpUrl()) else showTab(0)

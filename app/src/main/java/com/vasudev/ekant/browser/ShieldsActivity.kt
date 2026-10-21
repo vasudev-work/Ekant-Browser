@@ -25,6 +25,11 @@ class ShieldsActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("block_trackers", on).apply()
         }
         b.divider(c)
+        b.switchRow(c, getString(R.string.sh_secure_screen), getString(R.string.sh_secure_screen_sum),
+            prefs.getBoolean("secure_screen", false)) { _, on ->
+            prefs.edit().putBoolean("secure_screen", on).apply()
+        }
+        b.divider(c)
         b.switchRow(c, getString(R.string.sh_clear_close), getString(R.string.sh_clear_close_sum),
             prefs.getBoolean("clear_on_close", false)) { _, on ->
             prefs.edit().putBoolean("clear_on_close", on).apply()

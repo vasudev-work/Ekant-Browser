@@ -68,6 +68,16 @@ class AppearanceActivity : BaseSettingsActivity() {
             prefs.getBoolean("desktop_default", false)) { _, on ->
             prefs.edit().putBoolean("desktop_default", on).apply()
         }
+        b.divider(c4)
+        b.switchRow(c4, getString(R.string.ap_pull), getString(R.string.ap_pull_sum),
+            prefs.getBoolean("pull_refresh", true)) { _, on ->
+            prefs.edit().putBoolean("pull_refresh", on).apply()
+        }
+        b.divider(c4)
+        b.switchRow(c4, getString(R.string.ap_external), getString(R.string.ap_external_sum),
+            prefs.getBoolean("external_links", false)) { _, on ->
+            prefs.edit().putBoolean("external_links", on).apply()
+        }
 
         b.section(getString(R.string.ap_text))
         val c2 = b.card()
