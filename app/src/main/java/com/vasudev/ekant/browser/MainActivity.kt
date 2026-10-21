@@ -201,6 +201,7 @@ document.open();document.write(h);document.close();
         setTheme(ThemeHelper.res(this))
         super.onCreate(saved)
         setContentView(R.layout.activity_main)
+        applyEdgeToEdge()
 
         container = findViewById(R.id.container)
         urlBar = findViewById(R.id.url)
@@ -297,6 +298,32 @@ document.open();document.write(h);document.close();
     }
 
     private fun dp(v: Int) = (resources.displayMetrics.density * v).toInt()
+
+    /** Draw under the system bars and pad for them. */
+    private fun applyEdgeToEdge() {
+        try {
+            if (Build.VERSION.SDK_INT >= 30) {
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+                val root = findViewById<View>(android.R.id.content) ?: return
+                androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+                    val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+                    v.setPadding(0, bars.top, 0, bars.bottom)
+                    insets
+                }
+            }
+        } catch (_: Exception) { }
+    }
+
+    /** Apply the site's privacy profile to a WebView before it loads. */
+    private fun applyProfile(w: WebView, url: String) {
+        try {
+            val host = Uri.parse(url).host ?: return
+            val p = Profiles.profileFor(this, host)
+            val s = w.settings
+            s.javaScriptEnabled = js && p != Profiles.RESTRICTED
+            s.blockNetworkImage = !images || p == Profiles.RESTRICTED
+        } catch (_: Exception) { }
+    }
 
     /** Hide the system bars when immersive mode is on. */
     private fun applyImmersive() {
@@ -1096,6 +1123,7 @@ document.open();document.write(h);document.close();
         if (prefs.getBoolean("https_only", true) && u.startsWith("http://")) {
             u = "https://" + u.substring(7)
         }
+        cur()?.let { applyProfile(it, u) }
         cur()?.loadUrl(u)
         val im = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         im?.hideSoftInputFromWindow(urlBar.windowToken, 0)
@@ -1272,8 +1300,9 @@ document.open();document.write(h);document.close();
             }
             if (prefs.getBoolean("clean_urls", true)) {
                 val c = UrlCleaner.clean(url)
-                if (c != url) { v?.loadUrl(c); return true }
+                if (c != url) { if (v != null) applyProfile(v, c); v?.loadUrl(c); return true }
             }
+            if (v != null) applyProfile(v, url)
             return false
         }
 

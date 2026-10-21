@@ -42,6 +42,7 @@ class SettingsActivity : BaseSettingsActivity() {
         b.navRow(p, getString(R.string.s_tracking), null) { go(ShieldsActivity::class.java) }; b.divider(p)
         b.navRow(p, getString(R.string.s_cookies), null) { go(ShieldsActivity::class.java) }; b.divider(p)
         b.navRow(p, getString(R.string.s_permissions), null) { go(SitePermissionsActivity::class.java) }; b.divider(p)
+        b.navRow(p, getString(R.string.pf_title), null) { go(ProfilesActivity::class.java) }; b.divider(p)
         b.navRow(p, getString(R.string.s_passwords), null) { go(PasswordsActivity::class.java) }; b.divider(p)
         b.navRow(p, getString(R.string.s_clear_data), null) { go(PrivacyActivity::class.java) }
 

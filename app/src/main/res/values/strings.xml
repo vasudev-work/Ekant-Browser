@@ -545,6 +545,17 @@
     <string name="rd_vertical_sum">Lay the article out top-to-bottom in reader mode</string>
     <string name="sh_clear_exit">Clear data on exit</string>
     <string name="sh_clear_exit_sum">Wipe cookies, storage, cache and history when you leave</string>
+    <string name="pf_title">Site profiles</string>
+    <string name="pf_default">Default profile</string>
+    <string name="pf_sites">Sites</string>
+    <string name="pf_trusted">Trusted</string>
+    <string name="pf_trusted_sum">Scripts, images and media all allowed</string>
+    <string name="pf_standard">Standard</string>
+    <string name="pf_standard_sum">Your normal browsing settings</string>
+    <string name="pf_restricted">Restricted</string>
+    <string name="pf_restricted_sum">Scripts off and images blocked</string>
+    <string name="pf_change">Change profile</string>
+    <string name="pf_note">A site with its own profile uses that instead of the default. Handy for a trusted site you want fully working, or one you want locked down.</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>
