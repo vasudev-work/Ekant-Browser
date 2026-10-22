@@ -1778,118 +1778,239 @@ document.open();document.write(h);document.close();
     private fun showTabs() {
         val root = LinearLayout(this)
         root.orientation = LinearLayout.VERTICAL
-        val pad = dp(12)
-        root.setPadding(pad, pad, pad, pad)
+        root.setBackgroundColor(attr(R.attr.bgColor))
+        root.setPadding(dp(14), dp(16), dp(14), dp(10))
 
+        var gridMode = prefs.getBoolean("tabs_grid", true)
+        lateinit var dlg: android.app.Dialog
+        var filter = ""
+
+        // ---- top bar: + | count | layout toggle | overflow ----
+        val top = LinearLayout(this)
+        top.orientation = LinearLayout.HORIZONTAL
+        top.gravity = Gravity.CENTER_VERTICAL
+
+        val plus = TextView(this)
+        plus.text = "+"
+        plus.textSize = 26f
+        plus.gravity = Gravity.CENTER
+        plus.setTextColor(attr(R.attr.bgColor))
+        val pbg = GradientDrawable()
+        pbg.cornerRadius = dp(14).toFloat()
+        pbg.setColor(attr(R.attr.brandColor))
+        plus.background = pbg
+        plus.layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
+        plus.setOnClickListener { dlg.dismiss(); newTab(ntpUrl()) }
+        top.addView(plus)
+
+        val spacer = View(this)
+        spacer.layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
+        top.addView(spacer)
+
+        val count = TextView(this)
+        count.text = "" + tabs.size
+        count.textSize = 14f
+        count.gravity = Gravity.CENTER
+        count.setTextColor(attr(R.attr.textPrimaryColor))
+        val cbg = GradientDrawable()
+        cbg.cornerRadius = dp(12).toFloat()
+        cbg.setStroke(dp(2), attr(R.attr.textPrimaryColor))
+        cbg.setColor(0x00000000)
+        count.background = cbg
+        count.layoutParams = LinearLayout.LayoutParams(dp(44), dp(36))
+        top.addView(count)
+
+        val toggle = TextView(this)
+        toggle.text = if (gridMode) "\u25A6" else "\u2630"
+        toggle.textSize = 22f
+        toggle.gravity = Gravity.CENTER
+        toggle.setTextColor(attr(R.attr.textPrimaryColor))
+        toggle.setPadding(dp(10), 0, dp(10), 0)
+        top.addView(toggle)
+
+        val more = TextView(this)
+        more.text = "\u22EE"
+        more.textSize = 24f
+        more.gravity = Gravity.CENTER
+        more.setTextColor(attr(R.attr.textPrimaryColor))
+        more.setPadding(dp(8), 0, dp(4), 0)
+        top.addView(more)
+
+        root.addView(top)
+
+        // ---- search ----
         val search = EditText(this)
-        search.hint = getString(R.string.tabs_search)
+        search.hint = getString(R.string.tabs_search_yours)
         search.isSingleLine = true
         search.setTextColor(attr(R.attr.textPrimaryColor))
         search.setHintTextColor(attr(R.attr.textSecondaryColor))
         val sbg = GradientDrawable()
-        sbg.cornerRadius = dp(18).toFloat()
+        sbg.cornerRadius = dp(22).toFloat()
         sbg.setColor(attr(R.attr.surface2Color))
         search.background = sbg
-        search.setPadding(dp(14), dp(10), dp(14), dp(10))
-        root.addView(search)
+        search.setPadding(dp(18), dp(13), dp(18), dp(13))
+        val slp = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        slp.topMargin = dp(14)
+        root.addView(search, slp)
 
-        val grid = GridLayout(this)
-        grid.columnCount = 3
         val scroll = ScrollView(this)
+        val grid = GridLayout(this)
+        grid.columnCount = 2
+        grid.setPadding(0, dp(12), 0, dp(12))
         scroll.addView(grid)
         root.addView(scroll, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
-        val actions = LinearLayout(this)
-        actions.orientation = LinearLayout.HORIZONTAL
-        root.addView(actions)
-
-        val dialog = AlertDialog.Builder(this)
-            .setView(root)
-            .setNegativeButton(R.string.d_close, null)
-            .create()
-
-        fun addAction(label: String, cb: () -> Unit) {
-            val t = TextView(this)
-            t.text = label
-            t.textSize = 12f
-            t.setTextColor(attr(R.attr.brandColor))
-            t.setPadding(dp(12), dp(14), dp(12), dp(4))
-            t.setOnClickListener { cb() }
-            actions.addView(t)
-        }
-
-        fun buildGrid(filter: String) {
-            grid.removeAllViews()
-            for (i in tabs.indices) {
-                val wv = tabs[i]
-                val title = wv.title ?: "New tab"
-                if (filter.isNotBlank() &&
-                    !title.contains(filter, true) &&
-                    !(wv.url ?: "").contains(filter, true)) continue
-
-                val cell = LinearLayout(this)
-                cell.orientation = LinearLayout.VERTICAL
-                cell.gravity = Gravity.CENTER_HORIZONTAL
-                val lp = GridLayout.LayoutParams()
-                lp.width = 0
-                lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-                lp.setMargins(dp(4), dp(4), dp(4), dp(4))
-                cell.layoutParams = lp
-                cell.setPadding(dp(8), dp(10), dp(8), dp(10))
-                val bg = GradientDrawable()
-                bg.cornerRadius = dp(14).toFloat()
-                bg.setColor(if (i == current) attr(R.attr.surface2Color) else attr(R.attr.surfaceColor))
-                cell.background = bg
-
-                val iv = ImageView(this)
-                val fav = favicons[wv]
-                if (fav != null) iv.setImageBitmap(fav) else iv.setImageResource(R.drawable.ic_tabs)
-                iv.setColorFilter(attr(R.attr.textSecondaryColor))
-                iv.layoutParams = LinearLayout.LayoutParams(dp(30), dp(30))
-                cell.addView(iv)
-
-                val tv = TextView(this)
-                tv.text = if (pinned.contains(wv)) "\uD83D\uDCCC " + title else title
-                tv.maxLines = 2
-                tv.ellipsize = TextUtils.TruncateAt.END
-                tv.gravity = Gravity.CENTER
-                tv.textSize = 11f
-                tv.setTextColor(attr(R.attr.textPrimaryColor))
-                tv.setPadding(0, dp(6), 0, dp(2))
-                cell.addView(tv)
-
-                val close = TextView(this)
-                close.text = "\u2715"
-                close.textSize = 12f
-                close.gravity = Gravity.CENTER
-                close.setTextColor(attr(R.attr.brandColor))
-                close.setPadding(dp(10), dp(2), dp(10), dp(2))
-                close.setOnClickListener { closeTab(i); dialog.dismiss(); showTabs() }
-                cell.addView(close)
-
-                cell.setOnClickListener { showTab(i); dialog.dismiss() }
-                grid.addView(cell)
+        fun thumbOf(wv: WebView): Bitmap? = try {
+            if (wv.width <= 0 || wv.height <= 0) null
+            else {
+                val b = Bitmap.createBitmap(wv.width, wv.height, Bitmap.Config.ARGB_8888)
+                wv.draw(android.graphics.Canvas(b))
+                b
             }
+        } catch (_: Exception) { null }
+
+        fun card(i: Int) {
+            val wv = tabs[i]
+            val title = wv.title ?: getString(R.string.m_new_tab)
+            if (filter.isNotBlank() &&
+                !title.contains(filter, true) &&
+                !(wv.url ?: "").contains(filter, true)) return
+
+            val cell = LinearLayout(this)
+            cell.orientation = LinearLayout.VERTICAL
+            val lp = GridLayout.LayoutParams()
+            lp.width = 0
+            lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, if (gridMode) 1f else 2f)
+            lp.setMargins(dp(5), dp(5), dp(5), dp(5))
+            cell.layoutParams = lp
+            val bg = GradientDrawable()
+            bg.cornerRadius = dp(16).toFloat()
+            bg.setColor(if (i == current) attr(R.attr.surface2Color) else attr(R.attr.surfaceColor))
+            if (i == current) bg.setStroke(dp(2), attr(R.attr.brandColor))
+            cell.background = bg
+
+            val head = LinearLayout(this)
+            head.orientation = LinearLayout.HORIZONTAL
+            head.gravity = Gravity.CENTER_VERTICAL
+            head.setPadding(dp(12), dp(11), dp(8), dp(8))
+
+            val iv = ImageView(this)
+            val fav = favicons[wv]
+            if (fav != null) iv.setImageBitmap(fav) else iv.setImageResource(R.drawable.ic_tabs)
+            iv.setColorFilter(attr(R.attr.textSecondaryColor))
+            iv.layoutParams = LinearLayout.LayoutParams(dp(22), dp(22))
+            head.addView(iv)
+
+            val tv = TextView(this)
+            tv.text = (if (pinned.contains(wv)) "\uD83D\uDCCC " else "") + title
+            tv.maxLines = 1
+            tv.ellipsize = TextUtils.TruncateAt.END
+            tv.textSize = 13f
+            tv.setTextColor(attr(R.attr.textPrimaryColor))
+            val tlp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            tlp.leftMargin = dp(9)
+            head.addView(tv, tlp)
+
+            val close = TextView(this)
+            close.text = "\u2715"
+            close.textSize = 16f
+            close.setTextColor(attr(R.attr.textSecondaryColor))
+            close.setPadding(dp(8), dp(2), dp(4), dp(2))
+            close.setOnClickListener { closeTab(i); dlg.dismiss(); showTabs() }
+            head.addView(close)
+            cell.addView(head)
+
+            if (gridMode) {
+                val prev = ImageView(this)
+                prev.scaleType = ImageView.ScaleType.CENTER_CROP
+                val bmp = thumbOf(wv)
+                if (bmp != null) prev.setImageBitmap(bmp) else {
+                    val ph = GradientDrawable()
+                    ph.cornerRadius = dp(10).toFloat()
+                    ph.setColor(attr(R.attr.surface2Color))
+                    prev.setBackground(ph)
+                    prev.setImageResource(R.drawable.ic_logo)
+                    prev.setColorFilter(attr(R.attr.textSecondaryColor))
+                }
+                val plp = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(150))
+                plp.setMargins(dp(10), 0, dp(10), dp(10))
+                cell.addView(prev, plp)
+            }
+
+            cell.setOnClickListener { showTab(i); dlg.dismiss() }
+            grid.addView(cell)
         }
 
-        buildGrid("")
+        fun rebuild() {
+            grid.removeAllViews()
+            count.text = "" + tabs.size
+            for (i in tabs.indices) card(i)
+        }
+
+        toggle.setOnClickListener {
+            gridMode = !gridMode
+            prefs.edit().putBoolean("tabs_grid", gridMode).apply()
+            toggle.text = if (gridMode) "\u25A6" else "\u2630"
+            rebuild()
+        }
+        more.setOnClickListener { tabsOverflow(dlg) }
+
         search.addTextChangedListener(object : android.text.TextWatcher {
-            override fun afterTextChanged(s: android.text.Editable?) { buildGrid(s?.toString() ?: "") }
+            override fun afterTextChanged(s: android.text.Editable?) { filter = s?.toString() ?: ""; rebuild() }
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) { }
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) { }
         })
 
-        addAction(getString(R.string.d_new_tab)) { dialog.dismiss(); newTab(ntpUrl()) }
-        addAction(getString(R.string.tabs_reopen)) { dialog.dismiss(); reopenClosed() }
-        addAction(getString(R.string.tabs_duplicate)) { dialog.dismiss(); duplicateTab(current) }
-        addAction(getString(R.string.tabs_pin)) { dialog.dismiss(); togglePin(current); showTabs() }
-        addAction(getString(R.string.d_close_all_tabs)) { dialog.dismiss(); closeAllTabs() }
+        rebuild()
 
-        dialog.show()
+        dlg = android.app.Dialog(this)
+        dlg.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+        dlg.setContentView(root)
+        dlg.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        dlg.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(attr(R.attr.bgColor)))
+        dlg.show()
     }
 
-    /** Save the current page into the reading list. */
+    /** Floating overflow card for the tab switcher. */
+    private fun tabsOverflow(dlg: android.app.Dialog) {
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        val bg = GradientDrawable()
+        bg.cornerRadius = dp(20).toFloat()
+        bg.setColor(attr(R.attr.surfaceColor))
+        bg.setStroke(dp(1), attr(R.attr.dividerColor))
+        card.background = bg
+        card.setPadding(0, dp(6), 0, dp(6))
+
+        fun item(label: String, run: () -> Unit) {
+            val tv = TextView(this)
+            tv.text = label
+            tv.textSize = 15f
+            tv.setPadding(dp(20), dp(14), dp(20), dp(14))
+            tv.setTextColor(attr(R.attr.textPrimaryColor))
+            tv.setOnClickListener { dlg.dismiss(); run() }
+            card.addView(tv)
+        }
+        item(getString(R.string.m_new_tab)) { newTab(ntpUrl()) }
+        item(getString(R.string.m_new_incognito)) { openIncognito() }
+        item(getString(R.string.m_add_group)) { showContainers() }
+        item(getString(R.string.d_close_all_tabs)) { closeAllTabs() }
+        item(getString(R.string.tabs_select)) { toast(getString(R.string.tabs_select_note)) }
+        item(getString(R.string.m_delete_data)) { startActivity(Intent(this, PrivacyActivity::class.java)) }
+        item(getString(R.string.m_settings)) { startActivity(Intent(this, SettingsActivity::class.java)) }
+        item(getString(R.string.m_about)) { startActivity(Intent(this, AboutActivity::class.java)) }
+
+        val d = android.app.Dialog(this)
+        d.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+        d.setContentView(card)
+        d.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(0x00000000))
+        d.window?.setLayout(dp(240), ViewGroup.LayoutParams.WRAP_CONTENT)
+        d.show()
+    }
+
     private fun saveForLater() {
         val w = cur() ?: return
         val url = w.url ?: return
