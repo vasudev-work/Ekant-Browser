@@ -1510,14 +1510,18 @@ document.open();document.write(h);document.close();
 
     private fun showMenuPanel() {
         if (!menuBuilt) buildMenu()
-        val h = (resources.displayMetrics.heightPixels * 0.72).toInt()
-        panel.layoutParams = FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, h, Gravity.BOTTOM)
+        val lp = FrameLayout.LayoutParams(
+            dp(310), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.END)
+        lp.topMargin = dp(62)
+        lp.rightMargin = dp(12)
+        panel.layoutParams = lp
         overlay.visibility = View.VISIBLE
         scrim.alpha = 0f
-        scrim.animate().alpha(1f).setDuration(200).start()
-        panel.translationY = h.toFloat()
-        panel.animate().translationY(0f).setDuration(220).start()
+        scrim.animate().alpha(1f).setDuration(180).start()
+        panel.alpha = 0f
+        panel.scaleX = 0.96f
+        panel.scaleY = 0.96f
+        panel.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(180).start()
         menuOpen = true
     }
 
@@ -1529,7 +1533,7 @@ document.open();document.write(h);document.close();
         scrim.animate().alpha(0f).setDuration(180).start()
     }
 
-    private fun quickAction(iconRes: Int, label: String, l: View.OnClickListener): View {
+    private fun quickAction(iconRes: Int, label: String?, l: View.OnClickListener): View {
         val c = LinearLayout(this)
         c.orientation = LinearLayout.VERTICAL
         c.gravity = Gravity.CENTER_HORIZONTAL
@@ -1540,12 +1544,14 @@ document.open();document.write(h);document.close();
         val sz = dp(24)
         ic.layoutParams = LinearLayout.LayoutParams(sz, sz)
         c.addView(ic)
-        val t = TextView(this)
-        t.text = label
-        t.textSize = 11f
-        t.setTextColor(attr(R.attr.textSecondaryColor))
-        t.setPadding(0, dp(7), 0, 0)
-        c.addView(t)
+        if (label != null) {
+            val t = TextView(this)
+            t.text = label
+            t.textSize = 11f
+            t.setTextColor(attr(R.attr.textSecondaryColor))
+            t.setPadding(0, dp(7), 0, 0)
+            c.addView(t)
+        }
         c.setOnClickListener(l)
         c.isClickable = true
         return c
@@ -1566,59 +1572,40 @@ document.open();document.write(h);document.close();
             cur()?.reload(); hideMenuPanel() })
 
         val b = SettingsBuilder(this, menuList)
-
+        val c = b.card()
         if (updateTag != null) {
-            b.section(getString(R.string.sec_update))
-            val cu = b.card()
-            b.iconRow(cu, R.drawable.ic_info, getString(R.string.m_update),
-                getString(R.string.m_update_sum), act(28))
+            b.iconRow(c, R.drawable.ic_info, getString(R.string.m_update), getString(R.string.m_update_sum), act(28), false); b.divider(c)
         }
-
-        b.section(getString(R.string.sec_tabs))
-        val c1 = b.card()
-        b.iconRow(c1, R.drawable.ic_new_tab, getString(R.string.m_new_tab), null, act(0)); b.divider(c1)
-        b.iconRow(c1, R.drawable.ic_incognito, getString(R.string.m_new_incognito), null, act(1)); b.divider(c1)
-        b.iconRow(c1, R.drawable.ic_ext, getString(R.string.m_add_group), null, act(3))
-
-        b.section(getString(R.string.sec_history_data))
-        val c2 = b.card()
-        b.iconRow(c2, R.drawable.ic_history, getString(R.string.m_history), null, act(4)); b.divider(c2)
-        b.iconRow(c2, R.drawable.ic_exit, getString(R.string.m_delete_data), null, act(29))
-
-        b.section(getString(R.string.sec_library))
-        val c3 = b.card()
-        b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_downloads), null, act(6)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_bookmark, getString(R.string.m_bookmarks), null, act(5)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_tabs, getString(R.string.m_recent), null, act(2))
-
-        b.section(getString(R.string.sec_app))
-        val c4 = b.card()
-        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(25)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_help), null, act(30)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_logo, getString(R.string.m_about), null, act(26))
-
-        b.section(getString(R.string.sec_tools))
-        val c5 = b.card()
-        b.iconRow(c5, R.drawable.ic_find, getString(R.string.m_find), null, act(7)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_share, getString(R.string.m_share), null, act(8)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_translate, getString(R.string.m_translate), null, act(9)); b.divider(c5)
-        b.iconValueRow(c5, R.drawable.ic_desktop, getString(R.string.m_desktop),
-            if (desktop) "On" else "Off", act(10)); b.divider(c5)
-        b.iconValueRow(c5, R.drawable.ic_zoom, getString(R.string.m_zoom), "$textZoom%", act(11)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_download, getString(R.string.m_save_pdf), null, act(12)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_folder, getString(R.string.m_save_page), null, act(13)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_find, getString(R.string.m_reader), null, act(14)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_ai, getString(R.string.m_summary), null, act(15)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_star, getString(R.string.m_save_later), null, act(16)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_download, getString(R.string.m_media), null, act(17)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_ai, getString(R.string.m_listen), null, act(18)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_ext, getString(R.string.m_tools), null, act(19)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_lock, getString(R.string.kiosk_title), null, act(20)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_download, getString(R.string.m_screenshot), null, act(21)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_star, getString(R.string.m_pin), null, act(22)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_ai, getString(R.string.ai_title), null, act(23)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(24)); b.divider(c5)
-        b.iconRow(c5, R.drawable.ic_exit, getString(R.string.m_exit), null, act(27))
+        b.iconRow(c, R.drawable.ic_new_tab, getString(R.string.m_new_tab), null, act(0), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_incognito, getString(R.string.m_new_incognito), null, act(1), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_ext, getString(R.string.m_add_group), null, act(3), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_history, getString(R.string.m_history), null, act(4), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_exit, getString(R.string.m_delete_data), null, act(29), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_download, getString(R.string.m_downloads), null, act(6), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_bookmark, getString(R.string.m_bookmarks), null, act(5), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_tabs, getString(R.string.m_recent), null, act(2), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_settings, getString(R.string.m_settings), null, act(25), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_info, getString(R.string.m_help), null, act(30), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_logo, getString(R.string.m_about), null, act(26), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_find, getString(R.string.m_find), null, act(7), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_share, getString(R.string.m_share), null, act(8), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_translate, getString(R.string.m_translate), null, act(9), false); b.divider(c)
+        b.iconValueRow(c, R.drawable.ic_desktop, getString(R.string.m_desktop), if (desktop) "On" else "Off", act(10)); b.divider(c)
+        b.iconValueRow(c, R.drawable.ic_zoom, getString(R.string.m_zoom), "$textZoom%", act(11)); b.divider(c)
+        b.iconRow(c, R.drawable.ic_download, getString(R.string.m_save_pdf), null, act(12), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_folder, getString(R.string.m_save_page), null, act(13), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_find, getString(R.string.m_reader), null, act(14), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_ai, getString(R.string.m_summary), null, act(15), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_star, getString(R.string.m_save_later), null, act(16), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_download, getString(R.string.m_media), null, act(17), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_ai, getString(R.string.m_listen), null, act(18), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_ext, getString(R.string.m_tools), null, act(19), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_lock, getString(R.string.kiosk_title), null, act(20), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_download, getString(R.string.m_screenshot), null, act(21), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_star, getString(R.string.m_pin), null, act(22), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_ai, getString(R.string.ai_title), null, act(23), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(24), false); b.divider(c)
+        b.iconRow(c, R.drawable.ic_exit, getString(R.string.m_exit), null, act(27), false); b.divider(c)
     }
 
     private fun act(which: Int): View.OnClickListener = View.OnClickListener { onMenuAction(which) }

@@ -125,11 +125,12 @@ class SettingsBuilder(private val a: Context, private val root: LinearLayout) {
         r.isClickable = l != null
     }
 
-    fun iconRow(card: LinearLayout, iconRes: Int, title: String, summary: String?, l: View.OnClickListener?) {
+    fun iconRow(card: LinearLayout, iconRes: Int, title: String, summary: String?,
+                l: View.OnClickListener?, chevron: Boolean = true) {
         val r = rowBase(card)
         addIcon(r, iconRes)
         textCol(r, title, summary, textColor)
-        addChevron(r)
+        if (chevron) addChevron(r)
         r.setOnClickListener(l)
         r.isClickable = l != null
     }
