@@ -178,6 +178,8 @@ document.open();document.write(h);document.close();
             if (!t.isNullOrBlank()) go(t)
         }
     }
+    private var updateTag: String? = null
+    private var updateChecked = false
     private var kiosk = false
     private var kioskHost = ""
     private var kioskExit: View? = null
@@ -228,6 +230,7 @@ document.open();document.write(h);document.close();
         WebView.setWebContentsDebuggingEnabled(prefs.getBoolean("remote_debug", false))
         AdFilterEngine.enabled = prefs.getBoolean("easylist", true)
         NetLog.enabled = prefs.getBoolean("net_log", false)
+        checkForUpdate()
         AdFilterEngine.ensureLoaded(applicationContext)
         TtsReader.init(this)
         TtsReader.listener = object : TtsReader.Listener {
@@ -332,6 +335,34 @@ document.open();document.write(h);document.close();
         } catch (_: Exception) {
             toast(getString(R.string.voice_unavailable))
         }
+    }
+
+    /** Look for a newer published APK; shows an Update row in the menu. */
+    private fun checkForUpdate() {
+        if (updateChecked) return
+        updateChecked = true
+        Thread {
+            try {
+                val c = java.net.URL("https://api.github.com/repos/vasudev-work/Ekant-Browser/releases/latest")
+                    .openConnection() as java.net.HttpURLConnection
+                c.connectTimeout = 8000
+                c.readTimeout = 8000
+                c.setRequestProperty("Accept", "application/vnd.github+json")
+                val body = c.inputStream.bufferedReader().readText()
+                val o = org.json.JSONObject(body)
+                val updated = o.optJSONArray("assets")?.optJSONObject(0)?.optString("updated_at") ?: ""
+                if (updated.isBlank()) return@Thread
+                val remote = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
+                    .parse(updated)?.time ?: return@Thread
+                val installed = packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+                if (remote > installed + 60000) {
+                    runOnUiThread {
+                        updateTag = o.optString("tag_name", "latest")
+                        if (menuOpen) { menuBuilt = false; buildMenu() }
+                    }
+                }
+            } catch (_: Exception) { }
+        }.start()
     }
 
     /** Forget this site: cookies, storage and the fingerprint seed. */
@@ -1531,56 +1562,76 @@ document.open();document.write(h);document.close();
             addCurrentBookmark(); hideMenuPanel() })
         quick.addView(quickAction(R.drawable.ic_download, getString(R.string.q_download)) {
             openDownloads(); hideMenuPanel() })
-        quick.addView(quickAction(R.drawable.ic_info, getString(R.string.q_info)) {
-            showPageInfo() })
         quick.addView(quickAction(R.drawable.ic_refresh, getString(R.string.q_refresh)) {
             cur()?.reload(); hideMenuPanel() })
 
         val b = SettingsBuilder(this, menuList)
 
+        if (updateTag != null) {
+            b.section(getString(R.string.sec_update))
+            val cu = b.card()
+            b.iconRow(cu, R.drawable.ic_info, getString(R.string.m_update),
+                getString(R.string.m_update_sum), act(28))
+        }
+
         b.section(getString(R.string.sec_tabs))
         val c1 = b.card()
         b.iconRow(c1, R.drawable.ic_new_tab, getString(R.string.m_new_tab), null, act(0)); b.divider(c1)
         b.iconRow(c1, R.drawable.ic_incognito, getString(R.string.m_new_incognito), null, act(1)); b.divider(c1)
-        b.iconRow(c1, R.drawable.ic_tabs, getString(R.string.m_recent), null, act(2)); b.divider(c1)
-        b.iconRow(c1, R.drawable.ic_ext, getString(R.string.m_containers), active?.name, act(3))
+        b.iconRow(c1, R.drawable.ic_ext, getString(R.string.m_add_group), null, act(3))
 
-        b.section(getString(R.string.sec_library))
+        b.section(getString(R.string.sec_history_data))
         val c2 = b.card()
         b.iconRow(c2, R.drawable.ic_history, getString(R.string.m_history), null, act(4)); b.divider(c2)
-        b.iconRow(c2, R.drawable.ic_bookmark, getString(R.string.m_bookmarks), null, act(5)); b.divider(c2)
-        b.iconRow(c2, R.drawable.ic_download, getString(R.string.m_downloads), null, act(6))
+        b.iconRow(c2, R.drawable.ic_exit, getString(R.string.m_delete_data), null, act(29))
+
+        b.section(getString(R.string.sec_library))
+        val c3 = b.card()
+        b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_downloads), null, act(6)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_bookmark, getString(R.string.m_bookmarks), null, act(5)); b.divider(c3)
+        b.iconRow(c3, R.drawable.ic_tabs, getString(R.string.m_recent), null, act(2))
+
+        b.section(getString(R.string.sec_app))
+        val c4 = b.card()
+        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(25)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_help), null, act(30)); b.divider(c4)
+        b.iconRow(c4, R.drawable.ic_logo, getString(R.string.m_about), null, act(26))
 
         b.section(getString(R.string.sec_tools))
-        val c3 = b.card()
-        b.iconRow(c3, R.drawable.ic_find, getString(R.string.m_find), null, act(7)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_share, getString(R.string.m_share), null, act(8)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_translate, getString(R.string.m_translate), null, act(9)); b.divider(c3)
-        b.iconValueRow(c3, R.drawable.ic_desktop, getString(R.string.m_desktop),
-            if (desktop) "On" else "Off", act(10)); b.divider(c3)
-        b.iconValueRow(c3, R.drawable.ic_zoom, getString(R.string.m_zoom), "$textZoom%", act(11)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_save_pdf), null, act(12)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_folder, getString(R.string.m_save_page), null, act(13)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_find, getString(R.string.m_reader), null, act(14)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_summary), null, act(15)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_star, getString(R.string.m_save_later), null, act(16)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_media), null, act(17)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_ai, getString(R.string.m_listen), null, act(18)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_ext, getString(R.string.m_tools), null, act(19)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_lock, getString(R.string.kiosk_title), null, act(20)); b.divider(c3)
-        b.iconRow(c3, R.drawable.ic_download, getString(R.string.m_screenshot), null, act(21))
-
-        b.section(getString(R.string.sec_more))
-        val c4 = b.card()
-        b.iconRow(c4, R.drawable.ic_star, getString(R.string.m_pin), null, act(22)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ai, getString(R.string.ai_title), null, act(23)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(24)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_settings, getString(R.string.m_settings), null, act(25)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_info, getString(R.string.m_about), null, act(26)); b.divider(c4)
-        b.iconRow(c4, R.drawable.ic_exit, getString(R.string.m_exit), null, act(27))
+        val c5 = b.card()
+        b.iconRow(c5, R.drawable.ic_find, getString(R.string.m_find), null, act(7)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_share, getString(R.string.m_share), null, act(8)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_translate, getString(R.string.m_translate), null, act(9)); b.divider(c5)
+        b.iconValueRow(c5, R.drawable.ic_desktop, getString(R.string.m_desktop),
+            if (desktop) "On" else "Off", act(10)); b.divider(c5)
+        b.iconValueRow(c5, R.drawable.ic_zoom, getString(R.string.m_zoom), "$textZoom%", act(11)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_download, getString(R.string.m_save_pdf), null, act(12)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_folder, getString(R.string.m_save_page), null, act(13)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_find, getString(R.string.m_reader), null, act(14)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_ai, getString(R.string.m_summary), null, act(15)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_star, getString(R.string.m_save_later), null, act(16)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_download, getString(R.string.m_media), null, act(17)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_ai, getString(R.string.m_listen), null, act(18)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_ext, getString(R.string.m_tools), null, act(19)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_lock, getString(R.string.kiosk_title), null, act(20)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_download, getString(R.string.m_screenshot), null, act(21)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_star, getString(R.string.m_pin), null, act(22)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_ai, getString(R.string.ai_title), null, act(23)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(24)); b.divider(c5)
+        b.iconRow(c5, R.drawable.ic_exit, getString(R.string.m_exit), null, act(27))
     }
 
     private fun act(which: Int): View.OnClickListener = View.OnClickListener { onMenuAction(which) }
+
+    private fun feedback() {
+        try {
+            startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:Vasudev.work@rediffmail.com")))
+        } catch (_: Exception) {
+            AlertDialog.Builder(this).setTitle(R.string.m_help)
+                .setMessage("Vasudev.work@rediffmail.com")
+                .setPositiveButton(android.R.string.ok, null).show()
+        }
+    }
 
     private fun onMenuAction(which: Int) {
         when (which) {
@@ -1612,6 +1663,9 @@ document.open();document.write(h);document.close();
             25 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
             26 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
             27 -> finishAffinity()
+            28 -> { go("https://github.com/vasudev-work/Ekant-Browser/releases/latest"); hideMenuPanel() }
+            29 -> { startActivity(Intent(this, PrivacyActivity::class.java)); hideMenuPanel() }
+            30 -> { feedback(); hideMenuPanel() }
         }
     }
 

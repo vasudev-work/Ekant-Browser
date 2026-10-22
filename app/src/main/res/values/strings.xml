@@ -591,6 +591,15 @@
     <string name="reset_identity_sum">Forget cookies, site storage and cache</string>
     <string name="reset_identity_q">Forget cookies, site storage and cache for every site? You will be signed out.</string>
     <string name="reset_done">Site data cleared</string>
+    <string name="sec_update">Update</string>
+    <string name="sec_history_data">History and data</string>
+    <string name="sec_library">Library</string>
+    <string name="sec_app">App</string>
+    <string name="m_update">Update Available</string>
+    <string name="m_update_sum">A newer build is published</string>
+    <string name="m_add_group">Add tab to new group</string>
+    <string name="m_delete_data">Delete browsing data</string>
+    <string name="m_help">Help and feedback</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>
