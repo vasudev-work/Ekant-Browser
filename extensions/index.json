@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "extensions": [
+    {
+      "id": "hide-shorts",
+      "name": "Hide YouTube Shorts",
+      "desc": "Remove the Shorts shelves from YouTube",
+      "pattern": "*youtube.com*",
+      "file": "hide-shorts.js",
+      "version": "1.0"
+    },
+    {
+      "id": "wide-github",
+      "name": "Wide GitHub",
+      "desc": "Use the full window width on GitHub",
+      "pattern": "*github.com*",
+      "file": "wide-github.js",
+      "version": "1.0"
+    }
+  ]
+}

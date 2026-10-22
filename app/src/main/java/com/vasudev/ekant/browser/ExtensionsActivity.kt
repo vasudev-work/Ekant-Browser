@@ -27,6 +27,13 @@ class ExtensionsActivity : BaseSettingsActivity() {
         0xFFA855F7.toInt(), 0xFF14B8A6.toInt(), 0xFFEF4444.toInt()
     )
 
+    private var remote: List<ExtStore.Remote>? = null
+    private var remoteError: String? = null
+    private var remoteLoading = false
+
+    private fun storeBase(): String =
+        prefs.getString("ext_store_base", ExtStore.DEFAULT_BASE) ?: ExtStore.DEFAULT_BASE
+
     private val importFile =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) importFrom(uri)
@@ -44,6 +51,28 @@ class ExtensionsActivity : BaseSettingsActivity() {
         if (catalog.isNotEmpty()) {
             b.section(getString(R.string.ext_recommended))
             catalog.forEach { addCard(content, it, true) }
+        }
+
+        // ---------- remote store (your GitHub) ----------
+        b.section(getString(R.string.ext_remote))
+        val rc = b.card()
+        b.navRow(rc, getString(R.string.ext_remote_source), shortBase(),
+            android.view.View.OnClickListener { editBaseDialog() })
+        b.divider(rc)
+        b.navRow(rc, if (remoteLoading) getString(R.string.ext_checking) else getString(R.string.ext_check),
+            getString(R.string.ext_check_sum), android.view.View.OnClickListener { checkStore() })
+        b.divider(rc)
+        b.navRow(rc, getString(R.string.ext_paste_url), getString(R.string.ext_paste_url_sum),
+            android.view.View.OnClickListener { pasteDialog() })
+
+        if (remoteLoading) b.note(getString(R.string.ext_checking))
+        remoteError?.let { b.note(getString(R.string.ext_remote_error, it)) }
+        remote?.let { list ->
+            if (list.isEmpty()) {
+                b.note(getString(R.string.ext_remote_empty))
+            } else {
+                for (r in list) addCard(content, r, haveIds.contains(r.id))
+            }
         }
 
         b.section(getString(R.string.ext_add))
@@ -128,6 +157,136 @@ class ExtensionsActivity : BaseSettingsActivity() {
         d.setColor(palette[Math.abs(name.hashCode()) % palette.size])
         t.background = d
         return t
+    }
+
+    // ---------- remote ----------
+    private fun shortBase(): String {
+        val b = storeBase()
+        return if (b.length > 46) b.take(22) + "..." + b.takeLast(20) else b
+    }
+
+    private fun checkStore() {
+        remoteLoading = true
+        remoteError = null
+        rebuild()
+        ExtStore.fetchIndex(storeBase()) { list, err ->
+            runOnUiThread {
+                remoteLoading = false
+                remote = list
+                remoteError = err
+                rebuild()
+            }
+        }
+    }
+
+    private fun installRemote(r: ExtStore.Remote, already: Boolean) {
+        if (already) { toast(getString(R.string.ext_already)); return }
+        toast(getString(R.string.ext_downloading, r.name))
+        ExtStore.fetchScript(storeBase(), r.file) { code, err ->
+            runOnUiThread {
+                if (code == null) { toast(err ?: getString(R.string.ext_load_failed)); return@runOnUiThread }
+                store.add(
+                    Extension(
+                        id = r.id, name = r.name, pattern = r.pattern.ifBlank { "*" },
+                        code = code, enabled = true, builtIn = false,
+                        desc = r.desc.ifBlank { getString(R.string.ext_from_github) })
+                )
+                toast(getString(R.string.ext_installed_toast, r.name))
+                rebuild()
+            }
+        }
+    }
+
+    private fun pasteDialog() {
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val name = EditText(this).apply { hint = getString(R.string.ext_name) }
+        val url = EditText(this).apply {
+            hint = "https://.../my-script.js"
+            inputType = android.text.InputType.TYPE_TEXT_VARIATION_URI
+        }
+        val pattern = EditText(this).apply { hint = getString(R.string.ext_pattern); setText("*") }
+        box.addView(name); box.addView(url); box.addView(pattern)
+        AlertDialog.Builder(this).setTitle(R.string.ext_paste_url).setView(box)
+            .setPositiveButton(R.string.media_download) { _, _ ->
+                val u = url.text.toString().trim()
+                if (u.startsWith("http")) {
+                    val nm = name.text.toString().trim().ifEmpty { u.substringAfterLast("/").substringBefore(".") }
+                    toast(getString(R.string.ext_downloading, nm))
+                    Thread {
+                        try {
+                            val c = java.net.URL(u).openConnection() as java.net.HttpURLConnection
+                            c.connectTimeout = 10000
+                            c.readTimeout = 15000
+                            c.setRequestProperty("User-Agent", "Aekant")
+                            val code = c.inputStream.bufferedReader().readText()
+                            runOnUiThread {
+                                if (code.isBlank()) { toast(getString(R.string.ext_empty)); return@runOnUiThread }
+                                store.add(Extension.new(nm, pattern.text.toString().trim().ifEmpty { "*" }, code,
+                                    getString(R.string.ext_from_url)))
+                                toast(getString(R.string.ext_installed_toast, nm))
+                                rebuild()
+                            }
+                        } catch (_: Exception) {
+                            runOnUiThread { toast(getString(R.string.ext_load_failed)) }
+                        }
+                    }.start()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun editBaseDialog() {
+        val e = EditText(this)
+        e.setText(storeBase())
+        e.inputType = android.text.InputType.TYPE_TEXT_VARIATION_URI
+        AlertDialog.Builder(this).setTitle(R.string.ext_remote_source).setView(e)
+            .setPositiveButton(R.string.ext_save) { _, _ ->
+                prefs.edit().putString("ext_store_base", e.text.toString().trim()).apply()
+                remote = null; remoteError = null
+                rebuild()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun addCard(content: LinearLayout, r: ExtStore.Remote, already: Boolean) {
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.HORIZONTAL
+        card.gravity = Gravity.CENTER_VERTICAL
+        card.setPadding(dp(14), dp(12), dp(10), dp(12))
+        val bg = GradientDrawable()
+        bg.cornerRadius = dp(16).toFloat()
+        bg.setColor(attr(R.attr.surfaceColor))
+        card.background = bg
+        card.addView(iconView(r.name), LinearLayout.LayoutParams(dp(38), dp(38)))
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        val nm = TextView(this)
+        nm.text = r.name
+        nm.setTextColor(attr(R.attr.textPrimaryColor))
+        nm.textSize = 15f
+        nm.setTypeface(null, Typeface.BOLD)
+        val ds = TextView(this)
+        ds.text = (if (r.desc.isNotBlank()) r.desc else r.pattern) + "  \u00b7  v" + r.version
+        ds.setTextColor(attr(R.attr.textSecondaryColor))
+        ds.textSize = 12f
+        ds.maxLines = 2
+        col.addView(nm); col.addView(ds)
+        val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        lp.leftMargin = dp(12)
+        card.addView(col, lp)
+        val btn = TextView(this)
+        btn.text = if (already) getString(R.string.ext_installed_mark) else "+"
+        btn.textSize = if (already) 12f else 24f
+        btn.setTextColor(if (already) attr(R.attr.textSecondaryColor) else attr(R.attr.brandColor))
+        btn.setPadding(dp(12), dp(2), dp(10), dp(2))
+        btn.setOnClickListener { installRemote(r, already) }
+        card.addView(btn)
+        val clp = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        clp.bottomMargin = dp(10)
+        content.addView(card, clp)
     }
 
     // ---------- actions ----------
