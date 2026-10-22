@@ -171,6 +171,13 @@ document.open();document.write(h);document.close();
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private val retries = HashMap<String, Int>()
     private val wrappers = HashMap<WebView, androidx.swiperefreshlayout.widget.SwipeRefreshLayout>()
+
+    private val voiceLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+        if (res.resultCode == RESULT_OK) {
+            val t = res.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!t.isNullOrBlank()) go(t)
+        }
+    }
     private var kiosk = false
     private var kioskHost = ""
     private var kioskExit: View? = null
@@ -299,6 +306,42 @@ document.open();document.write(h);document.close();
 
     private fun dp(v: Int) = (resources.displayMetrics.density * v).toInt()
 
+    private fun isNtp(u: String?): Boolean = u != null && u.contains("ntp.html")
+
+    /** The start page provides its own chrome, so hide the native bars there. */
+    private fun applyChrome() {
+        try {
+            val hide = kiosk || isNtp(cur()?.url)
+            findViewById<View>(R.id.topbar)?.visibility = if (hide) View.GONE else View.VISIBLE
+            findViewById<View>(R.id.bottom_nav)?.visibility = if (hide) View.GONE else View.VISIBLE
+        } catch (_: Exception) { }
+    }
+
+    private fun voiceSearch() {
+        try {
+            val i = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            i.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            i.putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, getString(R.string.voice_prompt))
+            voiceLauncher.launch(i)
+        } catch (_: Exception) {
+            toast(getString(R.string.voice_unavailable))
+        }
+    }
+
+    /** Mute or unmute every media element on the page. */
+    private fun toggleMediaMute() {
+        val w = cur() ?: return
+        try {
+            w.evaluateJavascript(
+                "(function(){try{var m=window.__aekantMuted?false:true;window.__aekantMuted=m;" +
+                    "document.querySelectorAll('video,audio').forEach(function(e){e.muted=m;});" +
+                    "return m;}catch(e){return null;}})()") { r ->
+                toast(if (r != null && r.contains("true")) getString(R.string.muted) else getString(R.string.unmuted))
+            }
+        } catch (_: Exception) { }
+    }
+
     /** Draw under the system bars and pad for them. */
     private fun applyEdgeToEdge() {
         try {
@@ -405,10 +448,7 @@ document.open();document.write(h);document.close();
         if (h.isEmpty()) { toast(getString(R.string.kiosk_need_page)); return }
         kiosk = true
         kioskHost = h
-        try {
-            findViewById<View>(R.id.topbar)?.visibility = View.GONE
-            findViewById<View>(R.id.bottom_nav)?.visibility = View.GONE
-        } catch (_: Exception) { }
+        applyChrome()
         if (kioskExit == null) {
             val b = TextView(this)
             b.text = "\uD83D\uDD13"
@@ -440,10 +480,7 @@ document.open();document.write(h);document.close();
     private fun exitKiosk() {
         kiosk = false
         kioskHost = ""
-        try {
-            findViewById<View>(R.id.topbar)?.visibility = View.VISIBLE
-            findViewById<View>(R.id.bottom_nav)?.visibility = View.VISIBLE
-        } catch (_: Exception) { }
+        applyChrome()
         kioskExit?.visibility = View.GONE
     }
 
@@ -632,6 +669,8 @@ document.open();document.write(h);document.close();
             (if (sc.isNotBlank()) "&shortcuts=" + Uri.encode(sc) else "") +
             (if (rec.isNotBlank()) "&recent=" + Uri.encode(rec) else "") +
             "&greet=" + (if (prefs.getBoolean("greeting", true)) "1" else "0") +
+            "&mode=" + Uri.encode(active?.name ?: "Personal") +
+            "&tabs=" + tabs.size +
             "&tbg=" + Uri.encode(hex(attr(R.attr.bgColor))) +
             "&tsurf=" + Uri.encode(hex(attr(R.attr.surfaceColor))) +
             "&tfg=" + Uri.encode(hex(attr(R.attr.textPrimaryColor))) +
@@ -796,6 +835,7 @@ document.open();document.write(h);document.close();
             urlBar.setText(if (u.startsWith(HOME_ASSET)) "" else u)
             updateLock(u)
         }
+        applyChrome()
     }
 
     private fun updateLock(url: String?) {
@@ -1135,6 +1175,13 @@ document.open();document.write(h);document.close();
             "search" -> go(searchFor(uri.getQueryParameter("q") ?: ""))
             "open" -> go(uri.getQueryParameter("u"))
             "tools" -> go(toolsUrl())
+            "tabs" -> showTabs()
+            "menu" -> showMenuPanel()
+            "home" -> { val q = findViewById<View>(R.id.url); q?.requestFocus() }
+            "containers" -> showContainers()
+            "addshortcut" -> startActivity(Intent(this, HomeShortcutsActivity::class.java))
+            "voice" -> voiceSearch()
+            "mute" -> toggleMediaMute()
         }
     }
 
@@ -1432,6 +1479,8 @@ document.open();document.write(h);document.close();
     private fun buildMenu() {
         menuBuilt = true
         quick.removeAllViews()
+        quick.addView(quickAction(R.drawable.ic_back, getString(R.string.q_back)) {
+            cur()?.let { if (it.canGoBack()) it.goBack() }; hideMenuPanel() })
         quick.addView(quickAction(R.drawable.ic_forward, getString(R.string.q_forward)) {
             cur()?.let { if (it.canGoForward()) it.goForward() }; hideMenuPanel() })
         quick.addView(quickAction(R.drawable.ic_star, getString(R.string.q_bookmark)) {
@@ -2052,6 +2101,7 @@ document.open();document.write(h);document.close();
             ViewGroup.LayoutParams.MATCH_PARENT,
             dp(if (prefs.getBoolean("compact", false)) 46 else 58))
 
+        applyChrome()
         col.removeAllViews()
         if (navTop) col.addView(nav)
         if (!addrBottom) col.addView(topBar)

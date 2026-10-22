@@ -556,6 +556,11 @@
     <string name="pf_restricted_sum">Scripts off and images blocked</string>
     <string name="pf_change">Change profile</string>
     <string name="pf_note">A site with its own profile uses that instead of the default. Handy for a trusted site you want fully working, or one you want locked down.</string>
+    <string name="q_back">Back</string>
+    <string name="voice_prompt">Search or say a web address</string>
+    <string name="voice_unavailable">Voice search is not available on this device</string>
+    <string name="muted">Muted</string>
+    <string name="unmuted">Sound on</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>
