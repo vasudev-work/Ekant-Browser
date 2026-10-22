@@ -1528,9 +1528,9 @@ document.open();document.write(h);document.close();
     private fun hideMenuPanel() {
         if (!menuOpen) return
         menuOpen = false
-        panel.animate().translationY(panel.height.toFloat()).setDuration(180)
+        panel.animate().alpha(0f).setDuration(150)
             .withEndAction { overlay.visibility = View.GONE }.start()
-        scrim.animate().alpha(0f).setDuration(180).start()
+        scrim.animate().alpha(0f).setDuration(150).start()
     }
 
     private fun quickAction(iconRes: Int, label: String?, l: View.OnClickListener): View {
