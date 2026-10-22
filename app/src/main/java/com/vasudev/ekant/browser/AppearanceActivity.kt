@@ -89,6 +89,11 @@ class AppearanceActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("immersive", on).apply()
         }
         b.divider(c4)
+        b.switchRow(c4, getString(R.string.ap_force_zoom), getString(R.string.ap_force_zoom_sum),
+            prefs.getBoolean("force_zoom", false)) { _, on ->
+            prefs.edit().putBoolean("force_zoom", on).apply()
+        }
+        b.divider(c4)
         b.switchRow(c4, getString(R.string.ap_volume), getString(R.string.ap_volume_sum),
             prefs.getBoolean("volume_scroll", false)) { _, on ->
             prefs.edit().putBoolean("volume_scroll", on).apply()

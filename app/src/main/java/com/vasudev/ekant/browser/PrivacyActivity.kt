@@ -13,6 +13,25 @@ class PrivacyActivity : BaseSettingsActivity() {
 
     private fun onOff(v: Boolean) = if (v) "On" else "Off"
 
+    private fun confirmReset() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.reset_identity)
+            .setMessage(R.string.reset_identity_q)
+            .setPositiveButton(R.string.reset_identity) { _, _ -> resetNow() }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun resetNow() {
+        try {
+            val cm = android.webkit.CookieManager.getInstance()
+            cm.removeAllCookies(null); cm.flush()
+        } catch (_: Exception) { }
+        try { android.webkit.WebStorage.getInstance().deleteAllData() } catch (_: Exception) { }
+        try { android.webkit.WebView(this).clearCache(true) } catch (_: Exception) { }
+        android.widget.Toast.makeText(this, getString(R.string.reset_done), android.widget.Toast.LENGTH_SHORT).show()
+    }
+
     override fun build(b: SettingsBuilder, content: LinearLayout) {
         b.section(getString(R.string.priv_protection))
         val c1 = b.card()
@@ -23,6 +42,11 @@ class PrivacyActivity : BaseSettingsActivity() {
         b.valueRow(c1, getString(R.string.adv_fp), onOff(prefs.getBoolean("fingerprint", true)), null); b.divider(c1)
         b.valueRow(c1, getString(R.string.adv_perms), onOff(prefs.getBoolean("block_perms", true)), null); b.divider(c1)
         b.valueRow(c1, getString(R.string.adv_memory), onOff(prefs.getBoolean("memory_saver", true)), null)
+
+        b.section(getString(R.string.reset_identity))
+        val ri = b.card()
+        b.navRow(ri, getString(R.string.reset_identity), getString(R.string.reset_identity_sum),
+            android.view.View.OnClickListener { confirmReset() })
 
         b.section(getString(R.string.priv_data))
         val c2 = b.card()

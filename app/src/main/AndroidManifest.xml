@@ -57,6 +57,8 @@
         <activity android:name=".BookmarksActivity" android:exported="false" android:label="@string/s_bookmarks" />
         <activity android:name=".SitePermissionsActivity" android:exported="false" android:label="@string/s_permissions" />
         <service android:name=".MediaPlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
+        <activity android:name=".HomepageActivity" android:exported="false" android:label="@string/hp_title" />
+        <activity android:name=".DownloadSettingsActivity" android:exported="false" android:label="@string/dls_title" />
         <activity android:name=".ProfilesActivity" android:exported="false" android:label="@string/pf_title" />
         <activity android:name=".NetLogActivity" android:exported="false" android:label="@string/nl_title" />
         <activity android:name=".UrlFiltersActivity" android:exported="false" android:label="@string/uf_title" />

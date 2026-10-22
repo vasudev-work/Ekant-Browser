@@ -334,6 +334,20 @@ document.open();document.write(h);document.close();
         }
     }
 
+    /** Forget this site: cookies, storage and the fingerprint seed. */
+    private fun resetIdentity() {
+        try {
+            val cm = CookieManager.getInstance()
+            cm.removeAllCookies(null)
+            cm.flush()
+        } catch (_: Exception) { }
+        try { android.webkit.WebStorage.getInstance().deleteAllData() } catch (_: Exception) { }
+        try { for (t in tabs) t.clearCache(true) } catch (_: Exception) { }
+        try { prefs.edit().remove("ab_count").apply() } catch (_: Exception) { }
+        toast(getString(R.string.reset_done))
+        try { cur()?.reload() } catch (_: Exception) { }
+    }
+
     /** Mute or unmute every media element on the page. */
     private fun toggleMediaMute() {
         val w = cur() ?: return
@@ -670,6 +684,11 @@ document.open();document.write(h);document.close();
         "&tbrand=" + Uri.encode(hex(attr(R.attr.brandColor)))
 
     private fun ntpUrl(): String {
+        if (prefs.getBoolean("homepage_on", true) &&
+            prefs.getString("homepage_type", "start") == "custom") {
+            val custom = (prefs.getString("homepage_url", "") ?: "").trim()
+            if (custom.startsWith("http")) return custom
+        }
         val sc = prefs.getString("shortcuts", "") ?: ""
         val showRecent = prefs.getBoolean("show_recent", true)
         val rec = if (showRecent) recentForNtp() else ""
@@ -715,6 +734,11 @@ document.open();document.write(h);document.close();
         s.javaScriptEnabled = js
         s.blockNetworkImage = !images
         s.textZoom = textZoom
+        try {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
+                WebSettingsCompat.setSafeBrowsingEnabled(s, prefs.getBoolean("safe_browsing", true))
+            }
+        } catch (_: Exception) { }
         applyDarkMode(s)
     }
 
@@ -1070,6 +1094,13 @@ document.open();document.write(h);document.close();
                     "try{var s=document.getElementById('aekant-page-style');" +
                         "if(!s){s=document.createElement('style');s.id='aekant-page-style';document.documentElement.appendChild(s);}" +
                         "s.textContent=" + org.json.JSONObject.quote(css.toString()) + ";}catch(e){}", null)
+            }
+            if (prefs.getBoolean("force_zoom", false)) {
+                w.evaluateJavascript(
+                    "(function(){try{var m=document.querySelector('meta[name=viewport]');" +
+                        "if(!m){m=document.createElement('meta');m.name='viewport';document.head.appendChild(m);}" +
+                        "m.content='width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes';}catch(e){}})();",
+                    null)
             }
             if (prefs.getBoolean("eink", false)) {
                 w.evaluateJavascript(

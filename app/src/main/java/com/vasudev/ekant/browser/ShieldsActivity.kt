@@ -50,6 +50,11 @@ class ShieldsActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("popups", on).apply()
         }
         b.divider(c)
+        b.switchRow(c, getString(R.string.sh_safe_browsing), getString(R.string.sh_safe_browsing_sum),
+            prefs.getBoolean("safe_browsing", true)) { _, on ->
+            prefs.edit().putBoolean("safe_browsing", on).apply()
+        }
+        b.divider(c)
         b.switchRow(c, getString(R.string.sh_clean_urls), getString(R.string.sh_clean_urls_sum),
             prefs.getBoolean("clean_urls", true)) { _, on ->
             prefs.edit().putBoolean("clean_urls", on).apply()

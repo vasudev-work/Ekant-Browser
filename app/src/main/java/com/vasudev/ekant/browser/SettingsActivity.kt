@@ -19,6 +19,7 @@ class SettingsActivity : BaseSettingsActivity() {
     private fun sections(): List<Pair<String, List<Item>>> = listOf(
         getString(R.string.sec_general) to listOf(
             Item(getString(R.string.s_appearance)) { go(AppearanceActivity::class.java) },
+            Item(getString(R.string.hp_title)) { go(HomepageActivity::class.java) },
             Item(getString(R.string.s_homepage)) { go(HomeShortcutsActivity::class.java) },
             Item(getString(R.string.s_search_engine)) { go(SearchEngineActivity::class.java) },
             Item(getString(R.string.s_toolbar_nav)) { go(ToolbarActivity::class.java) }
@@ -32,6 +33,7 @@ class SettingsActivity : BaseSettingsActivity() {
             Item(getString(R.string.s_downloads)) {
                 try { startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)) } catch (_: Exception) { }
             },
+            Item(getString(R.string.dls_title)) { go(DownloadSettingsActivity::class.java) },
             Item(getString(R.string.s_website_settings)) { go(AdvancedActivity::class.java) },
             Item(getString(R.string.rd_title)) { go(ReadingActivity::class.java) }
         ),
