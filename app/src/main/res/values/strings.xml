@@ -593,7 +593,6 @@
     <string name="reset_done">Site data cleared</string>
     <string name="sec_update">Update</string>
     <string name="sec_history_data">History and data</string>
-    <string name="sec_library">Library</string>
     <string name="sec_app">App</string>
     <string name="m_update">Update Available</string>
     <string name="m_update_sum">A newer build is published</string>
