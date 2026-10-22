@@ -15,7 +15,8 @@ data class Extension(
     val pattern: String,
     val code: String,
     val enabled: Boolean,
-    val builtIn: Boolean = false
+    val builtIn: Boolean = false,
+    val desc: String = ""
 ) {
     /** pattern supports '*' wildcards and comma-separated alternatives. */
     fun matches(url: String): Boolean {
@@ -41,6 +42,7 @@ data class Extension(
     fun toJson(): JSONObject = JSONObject()
         .put("id", id).put("name", name).put("pattern", pattern)
         .put("code", code).put("enabled", enabled).put("builtIn", builtIn)
+        .put("desc", desc)
 
     companion object {
         fun fromJson(o: JSONObject) = Extension(
@@ -49,10 +51,11 @@ data class Extension(
             pattern = o.optString("pattern", "*"),
             code = o.optString("code", ""),
             enabled = o.optBoolean("enabled", true),
-            builtIn = o.optBoolean("builtIn", false)
+            builtIn = o.optBoolean("builtIn", false),
+            desc = o.optString("desc", "")
         )
 
-        fun new(name: String, pattern: String, code: String) =
-            Extension(UUID.randomUUID().toString(), name, pattern, code, true)
+        fun new(name: String, pattern: String, code: String, desc: String = "") =
+            Extension(UUID.randomUUID().toString(), name, pattern, code, true, false, desc)
     }
 }

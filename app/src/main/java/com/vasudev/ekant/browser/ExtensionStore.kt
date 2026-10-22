@@ -60,12 +60,12 @@ class ExtensionStore(context: Context) {
                 "s.textContent='html{filter:invert(1) hue-rotate(180deg);background:#101010!important}" +
                 "img,video,picture,canvas,svg{filter:invert(1) hue-rotate(180deg)!important}';" +
                 "document.documentElement.appendChild(s);}catch(e){}",
-            false, true
+            false, true, desc = "Invert every page for comfortable night reading"
         ),
         Extension(
             "builtin-font", "Bigger text", "*",
             "try{document.body.style.fontSize='18px';}catch(e){}",
-            false, true
+            false, true, desc = "Bump the default body text to 18px"
         ),
         Extension(
             "builtin-cookie", "Cookie banner remover", "*",
@@ -78,7 +78,7 @@ class ExtensionStore(context: Context) {
                 "if(/^(accept|accept all|agree|i agree|ok|got it|allow all|accept cookies)$/.test(t)){bs[j].click();return;}}}" +
                 "catch(e){}}" +
                 "go();setTimeout(go,1500);setTimeout(go,4000);}catch(e){}})();",
-            true, true
+            true, true, desc = "Click the Accept button on common cookie banners"
         ),
         Extension(
             "builtin-json", "JSON viewer", "*",
@@ -93,7 +93,7 @@ class ExtensionStore(context: Context) {
                 "pre.textContent=JSON.stringify(o,null,2);" +
                 "document.body.style.margin='0';document.body.innerHTML='';document.body.appendChild(pre);" +
                 "}catch(e){}})();",
-            true, true
+            true, true, desc = "Pretty-print raw JSON responses"
         ),
         Extension(
             "builtin-ryd", "Return YouTube Dislike", "*youtube.com*",
@@ -105,7 +105,7 @@ class ExtensionStore(context: Context) {
                 "if(!s){s=document.createElement('span');s.id='aekant-dislikes';" +
                 "s.style.cssText='margin-left:10px;font-weight:600';host.appendChild(s);}" +
                 "s.textContent='Dislikes: '+d.dislikes;}).catch(function(){});}catch(e){}})();",
-            false, true
+            false, true, desc = "Show the dislike count again on YouTube"
         ),
         Extension(
             "builtin-media", "Media sniffer", "*",
@@ -117,7 +117,7 @@ class ExtensionStore(context: Context) {
                 "if(/\\.(mp4|webm|m4a|mp3|ogg|m3u8|mpd|mov)(\\?|$)/i.test(h)){try{r(new URL(h,location.href).href,'link');}catch(e){}}});" +
                 "}catch(e){}}" +
                 "s();document.addEventListener('loadeddata',s,true);setInterval(s,5000);})();",
-            true, true
+            true, true, desc = "Detect video and audio files on the page"
         ),
         Extension(
             "builtin-bgplay", "Background playback (YouTube)", "*youtube.com*,*youtu.be*",
@@ -127,13 +127,54 @@ class ExtensionStore(context: Context) {
                 "['visibilitychange','webkitvisibilitychange','blur','pagehide'].forEach(function(ev){" +
                 "window.addEventListener(ev,function(e){e.stopImmediatePropagation();},true);" +
                 "document.addEventListener(ev,function(e){e.stopImmediatePropagation();},true);});}catch(e){}",
-            true, true
+            true, true, desc = "Keep YouTube playing when you leave the tab"
         ),
         Extension(
             "builtin-target", "Open links in same tab", "*",
             "try{document.querySelectorAll('a[target=_blank]').forEach(function(a){a.removeAttribute('target');});}catch(e){}",
-            false, true
+            false, true, desc = "Rewrite target=\"_blank\" links to open in the same tab"
         )
+    )
+
+    /** Bundled catalogue shown under "Recommended"; installing copies it into the list. */
+    fun catalog(): List<Extension> = listOf(
+        Extension("cat-shorts", "Hide YouTube Shorts", "*youtube.com*",
+            "try{var s=document.createElement('style');" +
+                "s.textContent='ytd-reel-shelf-renderer,ytd-rich-shelf-renderer[is-shorts]{display:none!important}';" +
+                "document.documentElement.appendChild(s);}catch(e){}",
+            false, false, "Remove the Shorts shelves from YouTube"),
+        Extension("cat-ytad", "Skip YouTube ads", "*youtube.com*",
+            "(function(){setInterval(function(){try{var b=document.querySelector(" +
+                "'.ytp-ad-skip-button,.ytp-skip-ad-button,.ytp-ad-skip-button-modern');if(b)b.click();}catch(e){}},1500);})();",
+            false, false, "Click the Skip button as soon as it appears"),
+        Extension("cat-noautoplay", "Stop video autoplay", "*",
+            "(function(){setInterval(function(){try{document.querySelectorAll('video').forEach(function(v){" +
+                "if(!v.paused&&v.currentTime<0.5){v.pause();}});}catch(e){}},2000);})();",
+            false, false, "Pause videos that start playing by themselves"),
+        Extension("cat-widegh", "Wide GitHub", "*github.com*",
+            "try{var s=document.createElement('style');" +
+                "s.textContent='.container-xl{max-width:100%!important}';" +
+                "document.documentElement.appendChild(s);}catch(e){}",
+            false, false, "Use the full window width on GitHub"),
+        Extension("cat-sticky", "Unstick sticky headers", "*",
+            "try{var s=document.createElement('style');" +
+                "s.textContent='header{position:static!important}';" +
+                "document.documentElement.appendChild(s);}catch(e){}",
+            false, false, "Stop headers following you down the page"),
+        Extension("cat-wiki", "Clean Wikipedia", "*wikipedia.org*",
+            "try{var s=document.createElement('style');" +
+                "s.textContent='.vector-column-start,.vector-column-end,#mw-panel{display:none!important}';" +
+                "document.documentElement.appendChild(s);}catch(e){}",
+            false, false, "Hide the sidebars on Wikipedia articles"),
+        Extension("cat-read", "Bigger article text", "*",
+            "try{var s=document.createElement('style');" +
+                "s.textContent='article p,main p{font-size:18px!important;line-height:1.7!important}';" +
+                "document.documentElement.appendChild(s);}catch(e){}",
+            false, false, "Make article paragraphs larger and airier"),
+        Extension("cat-gray", "Grayscale images", "*",
+            "try{var s=document.createElement('style');s.textContent='img{filter:grayscale(1)!important}';" +
+                "document.documentElement.appendChild(s);}catch(e){}",
+            false, false, "Render every image in black and white")
     )
 
     companion object {

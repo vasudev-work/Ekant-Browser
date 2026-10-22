@@ -602,6 +602,13 @@
     <string name="tabs_search_yours">Search your tabs</string>
     <string name="tabs_select">Select tabs</string>
     <string name="tabs_select_note">Multi-select is not available yet</string>
+    <string name="ext_recommended">Recommended</string>
+    <string name="ext_find_more">Find more extensions</string>
+    <string name="ext_find_more_sum">How to get more scripts</string>
+    <string name="ext_find_note">This browser runs userscripts, not Chrome or Firefox extensions - those need a Chromium engine. The bundled catalogue above is a good starting point, and you can add or upload any script of your own. More examples live in the project repository.</string>
+    <string name="ext_open_repo">Open the repository</string>
+    <string name="ext_installed_toast">Added %1$s</string>
+    <string name="ext_uploaded_desc">Script you uploaded</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>
