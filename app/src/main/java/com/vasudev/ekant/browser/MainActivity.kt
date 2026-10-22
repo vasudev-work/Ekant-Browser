@@ -178,6 +178,7 @@ document.open();document.write(h);document.close();
             if (!t.isNullOrBlank()) go(t)
         }
     }
+    private var switching = false
     private var updateTag: String? = null
     private var updateChecked = false
     private var kiosk = false
@@ -632,19 +633,32 @@ document.open();document.write(h);document.close();
 
     // ---------- containers ----------
     private fun loadContainer(c: Container) {
-        active = c
-        store.activeContainerId = c.id
-        for (t in tabs) { val wp = wrappers.remove(t); container.removeView(wp ?: t); t.destroy() }
-        tabs.clear()
-        current = -1
-        val saved = if (prefs.getBoolean("restore_tabs", true)) store.getTabs(c.id) else emptyList()
-        if (saved.isEmpty()) {
-            newTab(ntpUrl())
-        } else {
-            for (s in saved) newTab(s.url, select = false)
-            showTab(0)
+        switching = true
+        try {
+            active = c
+            store.activeContainerId = c.id
+            for (t in tabs.toList()) {
+                val wp = wrappers.remove(t)
+                try { container.removeView(wp ?: t) } catch (_: Exception) { }
+                try { t.destroy() } catch (_: Exception) { }
+            }
+            tabs.clear()
+            current = -1
+            val saved = if (prefs.getBoolean("restore_tabs", true)) store.getTabs(c.id) else emptyList()
+            if (saved.isEmpty()) {
+                newTab(ntpUrl())
+            } else {
+                for (s in saved) {
+                    try { newTab(s.url, select = false) } catch (_: Exception) { }
+                }
+                if (tabs.isEmpty()) newTab(ntpUrl()) else showTab(0)
+            }
+            updateContainerUi()
+        } catch (_: Exception) {
+            try { if (tabs.isEmpty()) newTab(ntpUrl()) } catch (_: Exception) { }
+        } finally {
+            switching = false
         }
-        updateContainerUi()
     }
 
     private fun saveTabs() {
@@ -667,17 +681,25 @@ document.open();document.write(h);document.close();
         for (i in containers.indices) {
             val c = containers[i]
             val mark = if (c.id == active?.id) "\u2713 " else ""
-            s.item(mark + c.name, i) { switchContainer(containers[it]) }
+            s.item(mark + c.name, i) {
+                val target = containers[it]
+                afterSheet { switchContainer(target) }
+            }
         }
-        s.action(getString(R.string.new_container)) { promptNewContainer() }
-        s.action(getString(R.string.delete_current_container)) { deleteCurrentContainer() }
+        s.action(getString(R.string.new_container)) { afterSheet { promptNewContainer() } }
+        s.action(getString(R.string.delete_current_container)) { afterSheet { deleteCurrentContainer() } }
         s.show()
     }
 
     private fun switchContainer(c: Container) {
         if (c.id == active?.id) return
-        saveTabs()
+        try { saveTabs() } catch (_: Exception) { }
         loadContainer(c)
+    }
+
+    /** Run after the sheet's dismiss animation so the view tree is not touched twice at once. */
+    private fun afterSheet(block: () -> Unit) {
+        try { window.decorView.postDelayed(block, 220) } catch (_: Exception) { block() }
     }
 
     private fun promptNewContainer() {
@@ -890,7 +912,7 @@ document.open();document.write(h);document.close();
         if (wrap != null) container.removeView(wrap) else container.removeView(w)
         w.destroy()
         if (tabs.isEmpty()) {
-            if (closeOnLast) finishAffinity() else newTab(ntpUrl())
+            if (closeOnLast && !switching) finishAffinity() else newTab(ntpUrl())
         } else {
             showTab(Math.max(0, Math.min(i, tabs.size - 1)))
         }
@@ -1996,7 +2018,7 @@ document.open();document.write(h);document.close();
         }
         item(getString(R.string.m_new_tab)) { newTab(ntpUrl()) }
         item(getString(R.string.m_new_incognito)) { openIncognito() }
-        item(getString(R.string.m_add_group)) { showContainers() }
+        item(getString(R.string.m_add_group)) { afterSheet { showContainers() } }
         item(getString(R.string.d_close_all_tabs)) { closeAllTabs() }
         item(getString(R.string.tabs_select)) { toast(getString(R.string.tabs_select_note)) }
         item(getString(R.string.m_delete_data)) { startActivity(Intent(this, PrivacyActivity::class.java)) }
