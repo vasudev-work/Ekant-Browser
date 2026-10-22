@@ -532,7 +532,7 @@ document.open();document.write(h);document.close();
         super.onPause()
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent?.getStringExtra("show") == "containers") {
             intent.removeExtra("show")

@@ -14,7 +14,7 @@ class SettingsActivity : BaseSettingsActivity() {
     private var query = ""
     private var searchAdded = false
 
-    private data class Item(val label: String, val run: () -> Unit)
+    private data class Item(val label: String, val action: () -> Unit)
 
     private fun sections(): List<Pair<String, List<Item>>> = listOf(
         getString(R.string.sec_general) to listOf(
@@ -118,11 +118,11 @@ class SettingsActivity : BaseSettingsActivity() {
             val card = b.card()
             var first = true
             for ((_, items) in sections()) {
-                for (it in items) {
-                    if (!it.label.contains(query, true)) continue
+                for (item in items) {
+                    if (!item.label.contains(query, true)) continue
                     if (!first) b.divider(card)
                     first = false
-                    b.navRow(card, it.label, null) { it.run() }
+                    b.navRow(card, item.label, null, android.view.View.OnClickListener { item.action() })
                 }
             }
             if (first) b.note(getString(R.string.d_empty))
@@ -131,20 +131,21 @@ class SettingsActivity : BaseSettingsActivity() {
 
         b.section(getString(R.string.st_modes))
         val m = b.card()
-        b.navRow(m, getString(R.string.st_manage_modes), containerName()) {
-            try {
-                startActivity(Intent(this, MainActivity::class.java)
-                    .putExtra("show", "containers")
-                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
-            } catch (_: Exception) { }
-        }
+        b.navRow(m, getString(R.string.st_manage_modes), containerName(),
+            android.view.View.OnClickListener {
+                try {
+                    startActivity(Intent(this, MainActivity::class.java)
+                        .putExtra("show", "containers")
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                } catch (_: Exception) { }
+            })
 
         for ((title, items) in sections()) {
             b.section(title)
             val card = b.card()
-            for ((i, it) in items.withIndex()) {
+            for ((i, item) in items.withIndex()) {
                 if (i > 0) b.divider(card)
-                b.navRow(card, it.label, null) { it.run() }
+                b.navRow(card, item.label, null, android.view.View.OnClickListener { item.action() })
             }
         }
 
