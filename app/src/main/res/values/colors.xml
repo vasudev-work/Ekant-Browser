@@ -32,6 +32,12 @@
     <color name="qn_light_muted">#FF747C75</color>
     <color name="qn_light_brand">#FF245C46</color>
 
+    <!-- True black for the AMOLED interface -->
+    <color name="amoled_bg">#FF000000</color>
+    <color name="amoled_surface">#FF0D0E12</color>
+    <color name="amoled_surface2">#FF1C1D22</color>
+    <color name="amoled_divider">#FF24262C</color>
+
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
 </resources>

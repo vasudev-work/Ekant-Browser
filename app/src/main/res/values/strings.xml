@@ -561,6 +561,12 @@
     <string name="voice_unavailable">Voice search is not available on this device</string>
     <string name="muted">Muted</string>
     <string name="unmuted">Sound on</string>
+    <string name="st_search">Search settings</string>
+    <string name="st_search_results">Results</string>
+    <string name="st_modes">Modes</string>
+    <string name="st_manage_modes">Manage Modes</string>
+    <string name="ap_amoled_ui">AMOLED black interface</string>
+    <string name="ap_amoled_ui_sum">Use pure black for the app itself, not just websites</string>
     <string name="r_extensions">Extensions</string>
     <string name="ext_installed">Installed</string>
     <string name="ext_none">No extensions yet. Add one below.</string>

@@ -91,4 +91,46 @@
         <item name="brandColor">@color/qn_light_brand</item>
         <item name="brand2Color">@color/qn_light_brand</item>
     </style>
+    <!-- ================= AMOLED (true black) ================= -->
+    <style name="Theme.Aekant.Amoled" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/brand_orange</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSecondary">@color/brand_green</item>
+        <item name="colorSurface">@color/amoled_surface</item>
+        <item name="android:colorBackground">@color/amoled_bg</item>
+        <item name="android:windowBackground">@color/amoled_bg</item>
+        <item name="android:statusBarColor">@color/amoled_bg</item>
+        <item name="android:navigationBarColor">@color/amoled_bg</item>
+        <item name="barColor">@color/amoled_surface</item>
+        <item name="mutedColor">@color/text_secondary</item>
+        <item name="textPrimaryColor">@color/text_primary</item>
+        <item name="textSecondaryColor">@color/text_secondary</item>
+        <item name="bgColor">@color/amoled_bg</item>
+        <item name="surfaceColor">@color/amoled_surface</item>
+        <item name="surface2Color">@color/amoled_surface2</item>
+        <item name="dividerColor">@color/amoled_divider</item>
+        <item name="brandColor">@color/brand_orange</item>
+        <item name="brand2Color">@color/brand_green</item>
+    </style>
+
+    <style name="Theme.Aekant.QuietAmoled" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/qn_dark_brand</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSecondary">@color/qn_dark_brand</item>
+        <item name="colorSurface">@color/amoled_surface</item>
+        <item name="android:colorBackground">@color/amoled_bg</item>
+        <item name="android:windowBackground">@color/amoled_bg</item>
+        <item name="android:statusBarColor">@color/amoled_bg</item>
+        <item name="android:navigationBarColor">@color/amoled_bg</item>
+        <item name="barColor">@color/amoled_surface</item>
+        <item name="mutedColor">@color/qn_dark_muted</item>
+        <item name="textPrimaryColor">@color/qn_dark_text</item>
+        <item name="textSecondaryColor">@color/qn_dark_muted</item>
+        <item name="bgColor">@color/amoled_bg</item>
+        <item name="surfaceColor">@color/amoled_surface</item>
+        <item name="surface2Color">@color/amoled_surface2</item>
+        <item name="dividerColor">@color/amoled_divider</item>
+        <item name="brandColor">@color/qn_dark_brand</item>
+        <item name="brand2Color">@color/qn_dark_brand</item>
+    </style>
 </resources>

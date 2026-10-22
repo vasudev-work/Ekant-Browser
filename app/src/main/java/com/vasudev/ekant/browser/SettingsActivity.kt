@@ -6,94 +6,158 @@ import android.net.Uri
 import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 
-/** Settings hub, grouped the way the design blueprint asks for. */
+/** Settings hub with a search box and a Manage Modes card, as the design asks. */
 class SettingsActivity : BaseSettingsActivity() {
 
     override val titleRes = R.string.settings_title
 
+    private var query = ""
+    private var searchAdded = false
+
+    private data class Item(val label: String, val run: () -> Unit)
+
+    private fun sections(): List<Pair<String, List<Item>>> = listOf(
+        getString(R.string.sec_general) to listOf(
+            Item(getString(R.string.s_appearance)) { go(AppearanceActivity::class.java) },
+            Item(getString(R.string.s_homepage)) { go(HomeShortcutsActivity::class.java) },
+            Item(getString(R.string.s_search_engine)) { go(SearchEngineActivity::class.java) },
+            Item(getString(R.string.s_toolbar_nav)) { go(ToolbarActivity::class.java) }
+        ),
+        getString(R.string.sec_browsing) to listOf(
+            Item(getString(R.string.s_tabs)) { go(TabsActivity::class.java) },
+            Item(getString(R.string.s_bookmarks)) { go(BookmarksActivity::class.java) },
+            Item(getString(R.string.s_history)) { go(HistoryActivity::class.java) },
+            Item(getString(R.string.rl_title)) { go(ReadingListActivity::class.java) },
+            Item(getString(R.string.fl_title)) { go(FilesActivity::class.java) },
+            Item(getString(R.string.s_downloads)) {
+                try { startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)) } catch (_: Exception) { }
+            },
+            Item(getString(R.string.s_website_settings)) { go(AdvancedActivity::class.java) },
+            Item(getString(R.string.rd_title)) { go(ReadingActivity::class.java) }
+        ),
+        getString(R.string.sec_privacy) to listOf(
+            Item(getString(R.string.r_privacy_dashboard)) { go(PrivacyActivity::class.java) },
+            Item(getString(R.string.ab_title)) { go(AdBlockActivity::class.java) },
+            Item(getString(R.string.s_tracking)) { go(ShieldsActivity::class.java) },
+            Item(getString(R.string.s_cookies)) { go(ShieldsActivity::class.java) },
+            Item(getString(R.string.s_permissions)) { go(SitePermissionsActivity::class.java) },
+            Item(getString(R.string.pf_title)) { go(ProfilesActivity::class.java) },
+            Item(getString(R.string.s_passwords)) { go(PasswordsActivity::class.java) },
+            Item(getString(R.string.r_autofill)) { go(AutofillActivity::class.java) },
+            Item(getString(R.string.s_clear_data)) { go(PrivacyActivity::class.java) }
+        ),
+        getString(R.string.sec_performance) to listOf(
+            Item(getString(R.string.s_data_usage)) { go(ShieldsActivity::class.java) },
+            Item(getString(R.string.s_cache)) { go(PrivacyActivity::class.java) },
+            Item(getString(R.string.s_background)) { go(AdvancedActivity::class.java) }
+        ),
+        getString(R.string.sec_accessibility) to listOf(
+            Item(getString(R.string.s_text_size)) { go(AppearanceActivity::class.java) },
+            Item(getString(R.string.s_reader_translate)) {
+                showDialog(getString(R.string.s_reader_translate), getString(R.string.reader_note))
+            },
+            Item(getString(R.string.s_accessibility)) { go(AppearanceActivity::class.java) }
+        ),
+        getString(R.string.sec_advanced) to listOf(
+            Item(getString(R.string.s_backup)) { go(BackupActivity::class.java) },
+            Item(getString(R.string.s_developer)) { go(AdvancedActivity::class.java) },
+            Item(getString(R.string.dg_title)) { go(DiagnosticsActivity::class.java) },
+            Item(getString(R.string.nl_title)) { go(NetLogActivity::class.java) },
+            Item(getString(R.string.uf_title)) { go(UrlFiltersActivity::class.java) },
+            Item(getString(R.string.s_experimental)) {
+                showDialog(getString(R.string.s_experimental), getString(R.string.exp_note))
+            },
+            Item(getString(R.string.r_extensions)) { go(ExtensionsActivity::class.java) },
+            Item(getString(R.string.us_title)) { go(UserStylesActivity::class.java) }
+        ),
+        getString(R.string.sec_about) to listOf(
+            Item(getString(R.string.s_webview_version)) {
+                showDialog(getString(R.string.s_webview_version), webViewVersion())
+            },
+            Item(getString(R.string.s_licences)) {
+                showDialog(getString(R.string.s_licences), getString(R.string.licences_note))
+            },
+            Item(getString(R.string.s_privacy_policy)) {
+                showDialog(getString(R.string.s_privacy_policy), getString(R.string.policy_note))
+            },
+            Item(getString(R.string.s_feedback)) { feedback() },
+            Item(getString(R.string.s_updates)) {
+                showDialog(getString(R.string.s_updates), getString(R.string.updates_note))
+            },
+            Item(getString(R.string.r_about)) { go(AboutActivity::class.java) }
+        )
+    )
+
     override fun build(b: SettingsBuilder, content: LinearLayout) {
-        // ---------------- GENERAL ----------------
-        b.section(getString(R.string.sec_general))
-        val g = b.card()
-        b.navRow(g, getString(R.string.s_appearance), null) { go(AppearanceActivity::class.java) }; b.divider(g)
-        b.navRow(g, getString(R.string.s_homepage), null) { go(HomeShortcutsActivity::class.java) }; b.divider(g)
-        b.navRow(g, getString(R.string.s_search_engine), null) { go(SearchEngineActivity::class.java) }; b.divider(g)
-        b.navRow(g, getString(R.string.s_toolbar_nav), null) { go(ToolbarActivity::class.java) }
+        if (!searchAdded) {
+            searchAdded = true
+            val et = android.widget.EditText(this)
+            et.hint = getString(R.string.st_search)
+            et.isSingleLine = true
+            et.setTextColor(attr(R.attr.textPrimaryColor))
+            et.setHintTextColor(attr(R.attr.textSecondaryColor))
+            val bg = android.graphics.drawable.GradientDrawable()
+            bg.cornerRadius = dp(20).toFloat()
+            bg.setColor(attr(R.attr.surface2Color))
+            et.background = bg
+            et.setPadding(dp(16), dp(11), dp(16), dp(11))
+            et.layoutParams = LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            et.addTextChangedListener(object : android.text.TextWatcher {
+                override fun afterTextChanged(s: android.text.Editable?) { query = s?.toString() ?: ""; rebuild() }
+                override fun beforeTextChanged(s: CharSequence?, a: Int, b2: Int, c: Int) { }
+                override fun onTextChanged(s: CharSequence?, a: Int, b2: Int, c: Int) { }
+            })
+            val box = LinearLayout(this)
+            box.setPadding(dp(14), dp(10), dp(14), dp(2))
+            box.addView(et)
+            addTopView(box)
+        }
 
-        // ---------------- BROWSING ----------------
-        b.section(getString(R.string.sec_browsing))
-        val br = b.card()
-        b.navRow(br, getString(R.string.s_tabs), null) { go(TabsActivity::class.java) }; b.divider(br)
-        b.navRow(br, getString(R.string.s_bookmarks), null) { go(BookmarksActivity::class.java) }; b.divider(br)
-        b.navRow(br, getString(R.string.s_history), null) { go(HistoryActivity::class.java) }; b.divider(br)
-        b.navRow(br, getString(R.string.rl_title), null) { go(ReadingListActivity::class.java) }; b.divider(br)
-        b.navRow(br, getString(R.string.fl_title), null) { go(FilesActivity::class.java) }; b.divider(br)
-        b.navRow(br, getString(R.string.s_downloads), null) {
-            try { startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)) } catch (_: Exception) { }
-        }; b.divider(br)
-        b.navRow(br, getString(R.string.s_website_settings), null) { go(AdvancedActivity::class.java) }; b.divider(br)
-        b.navRow(br, getString(R.string.rd_title), null) { go(ReadingActivity::class.java) }
+        if (query.isNotBlank()) {
+            b.section(getString(R.string.st_search_results))
+            val card = b.card()
+            var first = true
+            for ((_, items) in sections()) {
+                for (it in items) {
+                    if (!it.label.contains(query, true)) continue
+                    if (!first) b.divider(card)
+                    first = false
+                    b.navRow(card, it.label, null) { it.run() }
+                }
+            }
+            if (first) b.note(getString(R.string.d_empty))
+            return
+        }
 
-        // ---------------- PRIVACY & SECURITY ----------------
-        b.section(getString(R.string.sec_privacy))
-        val p = b.card()
-        b.navRow(p, getString(R.string.r_privacy_dashboard), null) { go(PrivacyActivity::class.java) }; b.divider(p)
-        b.navRow(p, getString(R.string.ab_title), null) { go(AdBlockActivity::class.java) }; b.divider(p)
-        b.navRow(p, getString(R.string.s_tracking), null) { go(ShieldsActivity::class.java) }; b.divider(p)
-        b.navRow(p, getString(R.string.s_cookies), null) { go(ShieldsActivity::class.java) }; b.divider(p)
-        b.navRow(p, getString(R.string.s_permissions), null) { go(SitePermissionsActivity::class.java) }; b.divider(p)
-        b.navRow(p, getString(R.string.pf_title), null) { go(ProfilesActivity::class.java) }; b.divider(p)
-        b.navRow(p, getString(R.string.s_passwords), null) { go(PasswordsActivity::class.java) }; b.divider(p)
-        b.navRow(p, getString(R.string.s_clear_data), null) { go(PrivacyActivity::class.java) }
+        b.section(getString(R.string.st_modes))
+        val m = b.card()
+        b.navRow(m, getString(R.string.st_manage_modes), containerName()) {
+            try {
+                startActivity(Intent(this, MainActivity::class.java)
+                    .putExtra("show", "containers")
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+            } catch (_: Exception) { }
+        }
 
-        // ---------------- PERFORMANCE ----------------
-        b.section(getString(R.string.sec_performance))
-        val pf = b.card()
-        b.navRow(pf, getString(R.string.s_data_usage), null) { go(ShieldsActivity::class.java) }; b.divider(pf)
-        b.navRow(pf, getString(R.string.s_cache), null) { go(PrivacyActivity::class.java) }; b.divider(pf)
-        b.navRow(pf, getString(R.string.s_background), null) { go(AdvancedActivity::class.java) }
+        for ((title, items) in sections()) {
+            b.section(title)
+            val card = b.card()
+            for ((i, it) in items.withIndex()) {
+                if (i > 0) b.divider(card)
+                b.navRow(card, it.label, null) { it.run() }
+            }
+        }
 
-        // ---------------- ACCESSIBILITY ----------------
-        b.section(getString(R.string.sec_accessibility))
-        val ac = b.card()
-        b.navRow(ac, getString(R.string.s_text_size), null) { go(AppearanceActivity::class.java) }; b.divider(ac)
-        b.navRow(ac, getString(R.string.s_reader_translate), null) {
-            showDialog(getString(R.string.s_reader_translate), getString(R.string.reader_note))
-        }; b.divider(ac)
-        b.navRow(ac, getString(R.string.s_accessibility), null) { go(AppearanceActivity::class.java) }
-
-        // ---------------- ADVANCED ----------------
-        b.section(getString(R.string.sec_advanced))
-        val ad = b.card()
-        b.navRow(ad, getString(R.string.s_backup), null) { go(BackupActivity::class.java) }; b.divider(ad)
-        b.navRow(ad, getString(R.string.s_developer), null) { go(AdvancedActivity::class.java) }; b.divider(ad)
-        b.navRow(ad, getString(R.string.dg_title), null) { go(DiagnosticsActivity::class.java) }; b.divider(ad)
-        b.navRow(ad, getString(R.string.nl_title), null) { go(NetLogActivity::class.java) }; b.divider(ad)
-        b.navRow(ad, getString(R.string.uf_title), null) { go(UrlFiltersActivity::class.java) }; b.divider(ad)
-        b.navRow(ad, getString(R.string.s_experimental), null) {
-            showDialog(getString(R.string.s_experimental), getString(R.string.exp_note))
-        }; b.divider(ad)
-        b.navRow(ad, getString(R.string.r_extensions), null) { go(ExtensionsActivity::class.java) }
-
-        // ---------------- ABOUT ----------------
         b.section(getString(R.string.sec_about))
-        val ab = b.card()
-        b.valueRow(ab, getString(R.string.s_app_version), appVersion(), null); b.divider(ab)
-        b.navRow(ab, getString(R.string.s_webview_version), null) {
-            showDialog(getString(R.string.s_webview_version), webViewVersion())
-        }; b.divider(ab)
-        b.navRow(ab, getString(R.string.s_licences), null) {
-            showDialog(getString(R.string.s_licences), getString(R.string.licences_note))
-        }; b.divider(ab)
-        b.navRow(ab, getString(R.string.s_privacy_policy), null) {
-            showDialog(getString(R.string.s_privacy_policy), getString(R.string.policy_note))
-        }; b.divider(ab)
-        b.navRow(ab, getString(R.string.s_feedback), null) { feedback() }; b.divider(ab)
-        b.navRow(ab, getString(R.string.s_updates), null) {
-            showDialog(getString(R.string.s_updates), getString(R.string.updates_note))
-        }; b.divider(ab)
-        b.navRow(ab, getString(R.string.r_about), null) { go(AboutActivity::class.java) }
+        val av = b.card()
+        b.valueRow(av, getString(R.string.s_app_version), appVersion(), null)
     }
+
+    private fun containerName(): String = try {
+        val s = ContainerStore(this)
+        val id = s.activeContainerId
+        s.getContainers().firstOrNull { it.id == id }?.name ?: "Personal"
+    } catch (_: Exception) { "Personal" }
 
     private fun go(cls: Class<*>) { startActivity(Intent(this, cls)) }
 

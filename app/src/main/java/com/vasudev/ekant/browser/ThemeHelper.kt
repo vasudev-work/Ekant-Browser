@@ -20,10 +20,16 @@ object ThemeHelper {
     fun isQuiet(context: Context): Boolean =
         (prefs(context).getString("theme_brand", "aekant") ?: "aekant") == "quiet"
 
+    fun isAmoled(context: Context): Boolean =
+        prefs(context).getBoolean("amoled_ui", false)
+
     fun res(context: Context): Int {
         val dark = isDark(context)
         val quiet = isQuiet(context)
+        val amoled = isAmoled(context) && dark
         return when {
+            amoled && quiet -> R.style.Theme_Aekant_QuietAmoled
+            amoled -> R.style.Theme_Aekant_Amoled
             quiet && dark -> R.style.Theme_Aekant_QuietDark
             quiet -> R.style.Theme_Aekant_QuietLight
             dark -> R.style.Theme_Aekant

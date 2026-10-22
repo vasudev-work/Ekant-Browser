@@ -94,6 +94,13 @@ class AppearanceActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("volume_scroll", on).apply()
         }
 
+        b.divider(c0)
+        b.switchRow(c0, getString(R.string.ap_amoled_ui), getString(R.string.ap_amoled_ui_sum),
+            prefs.getBoolean("amoled_ui", false)) { _, on ->
+            prefs.edit().putBoolean("amoled_ui", on).apply()
+            recreate()
+        }
+
         b.section(getString(R.string.ap_text))
         val c2 = b.card()
         val cur = prefs.getInt("zoom", 100)

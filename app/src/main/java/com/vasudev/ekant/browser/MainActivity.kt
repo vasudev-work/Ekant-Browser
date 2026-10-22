@@ -280,6 +280,11 @@ document.open();document.write(h);document.close();
         })
 
         loadContainer(active!!)
+
+        if (intent?.getStringExtra("show") == "containers") {
+            intent.removeExtra("show")
+            try { showContainers() } catch (_: Exception) { }
+        }
     }
 
     private fun readPrefs() {
@@ -525,6 +530,14 @@ document.open();document.write(h);document.close();
             for (t in tabs) { try { t.onPause() } catch (_: Exception) { } }
         }
         super.onPause()
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        if (intent?.getStringExtra("show") == "containers") {
+            intent.removeExtra("show")
+            try { showContainers() } catch (_: Exception) { }
+        }
     }
 
     override fun onDestroy() {
