@@ -125,12 +125,20 @@ class SettingsBuilder(private val a: Context, private val root: LinearLayout) {
         r.isClickable = l != null
     }
 
-    fun iconRow(card: LinearLayout, iconRes: Int, title: String, summary: String?,
-                l: View.OnClickListener?, chevron: Boolean = true) {
+    fun iconRow(card: LinearLayout, iconRes: Int, title: String, summary: String?, l: View.OnClickListener?) {
         val r = rowBase(card)
         addIcon(r, iconRes)
         textCol(r, title, summary, textColor)
-        if (chevron) addChevron(r)
+        addChevron(r)
+        r.setOnClickListener(l)
+        r.isClickable = l != null
+    }
+
+    /** Same as iconRow but without the trailing chevron, for the floating menu card. */
+    fun menuRow(card: LinearLayout, iconRes: Int, title: String, summary: String?, l: View.OnClickListener?) {
+        val r = rowBase(card)
+        addIcon(r, iconRes)
+        textCol(r, title, summary, textColor)
         r.setOnClickListener(l)
         r.isClickable = l != null
     }
