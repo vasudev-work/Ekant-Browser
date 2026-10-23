@@ -17,6 +17,22 @@ Written in **Java + XML** (no Kotlin, no Compose), `minSdk 21`, `targetSdk 34`.
 | 5 | Pull to refresh | `SwipeRefreshLayout` + `onPageFinished` |
 | 6 | Offline screen with Retry | `isOnline()` / `loadIfOnline()` / `onReceivedError` |
 
+## Search engines
+
+A chip row sits above the page with six engines: **Qmamu, Google, Bing,
+DuckDuckGo, Brave and Yandex**. Pick one, type a query and press Go (or the
+keyboard's search key).
+
+Whatever you pick, the results always open on the **Qmamu search page**:
+
+```
+https://qmamu.com/search?q=<your query>&engine=<chosen engine id>
+```
+
+The `engine` parameter carries your choice so qmamu.com can use it. Typing
+something that looks like a host name (e.g. `example.com`) opens that site
+directly instead of searching.
+
 ## Speed
 
 The app is built to show the search page as quickly as possible:
