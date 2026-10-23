@@ -1,0 +1,33 @@
+# Qmamu meta-search: SearXNG does the keyless multi-engine fetching,
+# the Qmamu server merges the results and serves the Qmamu frontend.
+#
+#   docker compose up -d
+#   open http://localhost:8080
+services:
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: qmamu-searxng
+    restart: unless-stopped
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8080/
+      - SEARXNG_SECRET=change-this-to-a-long-random-string
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETGID, SETUID]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  qmamu:
+    build: ./server
+    container_name: qmamu-server
+    restart: unless-stopped
+    depends_on: [searxng]
+    environment:
+      - PORT=8080
+      - SEARXNG_URL=http://searxng:8080
+      - CACHE_MS=60000
+    ports:
+      - "8080:8080"
