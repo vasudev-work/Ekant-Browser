@@ -144,6 +144,7 @@ document.open();document.write(h);document.close();
     private var dark = true
     private var desktop = false
     private var incognito = false
+    private val privateTabs = HashSet<WebView>()
     private var js = true
     private var cookies = true
     private var images = true
@@ -754,6 +755,7 @@ document.open();document.write(h);document.close();
             (if (sc.isNotBlank()) "&shortcuts=" + Uri.encode(sc) else "") +
             (if (rec.isNotBlank()) "&recent=" + Uri.encode(rec) else "") +
             "&greet=" + (if (prefs.getBoolean("greeting", true)) "1" else "0") +
+            "&incognito=" + (if (incognito) "1" else "0") +
             "&mode=" + Uri.encode(active?.name ?: "Personal") +
             "&tabs=" + tabs.size +
             "&tbg=" + Uri.encode(hex(attr(R.attr.bgColor))) +
@@ -891,6 +893,7 @@ document.open();document.write(h);document.close();
         }
         for (k in tabs.indices) (wrappers[tabs[k]] ?: tabs[k]).visibility = if (k == i) View.VISIBLE else View.GONE
         current = i
+        incognito = privateTabs.contains(tabs[i])
         if (prefs.getBoolean("memory_saver", true)) {
             try { tabs[i].onResume() } catch (_: Exception) { }
         }
@@ -907,6 +910,7 @@ document.open();document.write(h);document.close();
         }
         if (prefs.getBoolean("clear_on_close", false) && u != null) clearSiteData(u)
         pinned.remove(w)
+        privateTabs.remove(w)
         favicons.remove(w)
         val wrap = wrappers.remove(w)
         if (wrap != null) container.removeView(wrap) else container.removeView(w)
@@ -1368,7 +1372,7 @@ document.open();document.write(h);document.close();
                 progress.visibility = View.GONE
                 updateUrl()
             }
-            if (!incognito && url != null && url.startsWith("http")) {
+            if (v != null && !privateTabs.contains(v) && url != null && url.startsWith("http")) {
                 addEntry("history", v?.title, url, 300, false)
             }
             if (url != null) {
@@ -1487,8 +1491,9 @@ document.open();document.write(h);document.close();
     }
 
     private fun doOpenIncognito() {
+        val w = newTab(ntpUrl())
+        privateTabs.add(w)
         incognito = true
-        newTab(ntpUrl())
         toast(getString(R.string.t_incognito))
     }
 
@@ -2089,7 +2094,7 @@ document.open();document.write(h);document.close();
             .setItems(actions) { _, which ->
                 when (which) {
                     0 -> newTab(url)
-                    1 -> { incognito = true; newTab(url) }
+                    1 -> { val pw = newTab(url); privateTabs.add(pw); incognito = true }
                     2 -> copyToClipboard(url)
                     3 -> shareText(url)
                     4 -> downloadUrl(url)

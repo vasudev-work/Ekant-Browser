@@ -40,6 +40,17 @@
   .rec a{text-decoration:none;font-size:13px;background:var(--surf);border:1px solid var(--line);
     border-radius:14px;padding:11px 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .stats{display:none}
+  body{animation:in .22s ease both}
+  @keyframes in{from{opacity:0}to{opacity:1}}
+  body.incognito{background:#000}
+  body.incognito .avatar{background:#1F1F2A}
+  body.incognito .pill{border-color:#7C4DFF;background:#1F1F2A;color:#fff}
+  body.incognito .search{background:#16171D}
+  .notice{background:#1C1D24;border-radius:20px;padding:24px 18px 18px;margin:20px 16px 8px;text-align:center}
+  .notice h3{color:#fff;font-size:17px;margin:14px 0 14px;font-weight:700}
+  .notice ul{list-style:none;padding:0;margin:0;text-align:left}
+  .notice li{color:#A0A0A0;font-size:13px;line-height:1.6;margin:0 0 11px;padding-left:18px;position:relative}
+  .notice li:before{content:"\2022";position:absolute;left:2px;color:#7C4DFF;font-size:16px;line-height:1}
 </style></head>
 <body>
   <div class="top">
@@ -92,6 +103,20 @@
     </div>
   </form>
 
+  <div class="notice" id="incog" style="display:none">
+    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#7C4DFF" stroke-width="1.6"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 7h16"/><path d="M7 7V5.5A1.5 1.5 0 0 1 8.5 4h7A1.5 1.5 0 0 1 17 5.5V7"/>
+      <circle cx="8" cy="13" r="2.6"/><circle cx="16" cy="13" r="2.6"/><path d="M10.6 13h2.8"/>
+    </svg>
+    <h3>You&rsquo;ve gone Incognito</h3>
+    <ul>
+      <li>Your browsing history, search history and cookies will not be saved on this device.</li>
+      <li>Downloads and bookmarks will still be saved.</li>
+      <li>Your activity might still be visible to websites you visit, your employer or school, and your internet service provider.</li>
+    </ul>
+  </div>
+
   <div class="sc" id="topsites">
     <a href="aekant://open?u=https%3A%2F%2Fwww.google.com"><span class="tile">G</span><span class="lab">Google</span></a>
     <a href="aekant://open?u=https%3A%2F%2Fwww.youtube.com"><span class="tile">&#9654;</span><span class="lab">YouTube</span></a>
@@ -116,11 +141,26 @@
     setv('--bg', 'tbg'); setv('--surf', 'tsurf'); setv('--fg', 'tfg');
     setv('--mut', 'tmut'); setv('--brand', 'tbrand'); setv('--line', 'tmut');
 
+    if (p.get('incognito') === '1') {
+      document.body.classList.add('incognito');
+      document.getElementById('greet').style.display = 'none';
+      document.getElementById('topsites').style.display = 'none';
+      document.getElementById('incog').style.display = 'block';
+      var q = document.getElementById('q');
+      if (q) q.placeholder = 'Search privately or type URL';
+      document.getElementById('modename').textContent = 'Private Browsing';
+      document.getElementById('avatar').innerHTML =
+        '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7C4DFF" stroke-width="1.6"' +
+        ' stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M4 7h16"/><path d="M7 7V5.5A1.5 1.5 0 0 1 8.5 4h7A1.5 1.5 0 0 1 17 5.5V7"/>' +
+        '<circle cx="8" cy="13" r="2.6"/><circle cx="16" cy="13" r="2.6"/><path d="M10.6 13h2.8"/></svg>';
+    }
     var mode = p.get('mode'); if (mode) {
       document.getElementById('modename').textContent = mode;
       document.getElementById('avatar').textContent = (mode.charAt(0) || 'A').toUpperCase();
     }
     var tc = p.get('tabs'); if (tc) document.getElementById('tabcount').textContent = tc;
+    if (p.get('incognito') === '1') document.getElementById('modename').textContent = 'Private Browsing';
 
     if (p.get('greet') !== '0') {
       var hr = new Date().getHours();
