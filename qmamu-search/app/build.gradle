@@ -27,6 +27,18 @@ android {
 }
 
 dependencies {
+    // Kotlin 1.8 merged the jdk7/jdk8 artefacts into the main stdlib, so mixing
+    // kotlin-stdlib 1.8.x with kotlin-stdlib-jdk8 1.6.x trips the duplicate-class
+    // check. The BOM keeps all three on one version.
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+}
+
+configurations.all {
+    resolutionStrategy {
+        force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+    }
 }
