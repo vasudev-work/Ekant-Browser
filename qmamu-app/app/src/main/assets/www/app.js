@@ -6,6 +6,53 @@
   // injected (the Android app sets window.QMAMU_API), then same-origin.
   var API = localStorage.getItem('qmamu_api') || window.QMAMU_API || '/api/search';
 
+  // The page speaks two dialects: the Qmamu server's own endpoint, and a plain
+  // SearXNG JSON endpoint. Point it at either one.
+  function isSearx() {
+    return /format=json/.test(API) || (!/\/api\//.test(API) && /searx|\/search/i.test(API));
+  }
+
+  function buildUrl(q, engines, cat, page) {
+    var sep = API.indexOf('?') >= 0 ? '&' : '?';
+    if (isSearx()) {
+      var u = API + sep + 'q=' + encodeURIComponent(q) + '&format=json&pageno=' + page;
+      if (cat && cat !== 'general') u += '&categories=' + encodeURIComponent(cat);
+      return u;
+    }
+    var parts = [
+      'q=' + encodeURIComponent(q),
+      'category=' + encodeURIComponent(cat),
+      'page=' + page
+    ];
+    if (engines.length) parts.push('engines=' + encodeURIComponent(engines.join(',')));
+    return API + sep + parts.join('&');
+  }
+
+  /** Accept a raw SearXNG payload as well as the Qmamu one. */
+  function normalise(d) {
+    if (d && d.results && typeof d.merged === 'undefined') {
+      return {
+        query: d.query || state.q,
+        results: d.results.map(function (r) {
+          return {
+            title: r.title || r.url,
+            url: r.url,
+            snippet: r.content || r.snippet || '',
+            thumbnail: r.thumbnail || r.img_src || '',
+            engines: r.engines || (r.engine ? [r.engine] : [])
+          };
+        }),
+        raw: d.results.length,
+        merged: d.results.length,
+        perEngine: {},
+        tookMs: 0,
+        page: state.page,
+        answers: d.answers || []
+      };
+    }
+    return d;
+  }
+
   var ENGINES = [
     { id: 'google',    label: 'Google' },
     { id: 'bing',      label: 'Bing' },
@@ -127,22 +174,20 @@
     show(el.meta, false);
     show(el.pages, false);
 
-    var url = API + '?q=' + encodeURIComponent(state.q) +
-      '&category=' + encodeURIComponent(state.cat) +
-      '&page=' + state.page +
-      (state.engines.length ? '&engines=' + encodeURIComponent(state.engines.join(',')) : '');
-
-    fetch(url, { headers: { 'Accept': 'application/json' } })
+    fetch(buildUrl(state.q, state.engines, state.cat, state.page),
+          { headers: { 'Accept': 'application/json' } })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
       .then(function (res) {
         if (mine !== seq) return;             // a newer search took over
         if (!res.ok) throw new Error(res.body.error || 'search failed');
-        render(res.body);
+        render(normalise(res.body));
       })
       .catch(function (err) {
         if (mine !== seq) return;
         setStatus('Could not reach the search backend.<br><small>' + String(err.message) +
-          ' — check that the Qmamu server and its SearXNG container are running.</small>', true);
+          '</small><br><button class="inline" id="fixBackend">Set the backend address</button>', true);
+        var btn = document.getElementById('fixBackend');
+        if (btn) btn.onclick = openSheet;
       });
   }
 
@@ -274,7 +319,7 @@
 
   // ---------------------------------------------------------------- settings
   function paintApiNow() {
-    el.apiNow.textContent = 'In use: ' + API;
+    el.apiNow.textContent = 'In use: ' + API + (isSearx() ? '  (SearXNG endpoint)' : '  (Qmamu server)');
   }
   function openSheet() {
     el.api.value = API;
