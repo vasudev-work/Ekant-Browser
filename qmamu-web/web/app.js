@@ -45,7 +45,8 @@
     apiSave: document.getElementById('apiSave'),
     apiReset: document.getElementById('apiReset'),
     apiClose: document.getElementById('apiClose'),
-    apiNow: document.getElementById('apiNow')
+    apiNow: document.getElementById('apiNow'),
+    home: document.getElementById('home')
   };
 
   // ---- state, seeded from the URL so ?q= and ?engine= work when linked to ----
@@ -245,6 +246,16 @@
     try { history.replaceState(null, '', p.toString() ? '?' + p.toString() : location.pathname); } catch (e) { }
     search();
   }
+
+  // the logo resets the page without navigating anywhere
+  el.home.addEventListener('click', function (ev) {
+    ev.preventDefault();
+    state.q = '';
+    state.page = 1;
+    el.q.value = '';
+    sync();
+    el.q.focus();
+  });
 
   el.form.addEventListener('submit', function (ev) {
     ev.preventDefault();
