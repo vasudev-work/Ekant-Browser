@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Qmamu</string>
+    <string name="setup_title">Qmamu could not start</string>
+    <string name="setup_message">The search page is bundled with the app, so this is unusual. Tap Retry, or reinstall the app.</string>
+    <string name="retry">Retry</string>
+</resources>

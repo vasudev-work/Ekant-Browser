@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qmamu Search</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+</head>
+<body>
+
+<header class="bar">
+  <a class="brand" href="/" title="Qmamu">
+    <span class="mark">Q</span><span class="word">Qmamu</span>
+  </a>
+
+  <form class="find" id="form" autocomplete="off">
+    <input id="q" name="q" type="search" placeholder="Search the web, privately" aria-label="Search">
+    <button type="submit" aria-label="Search">Go</button>
+  </form>
+
+  <button class="icon" id="filters" aria-label="Filters">⚙</button>
+</header>
+
+<nav class="chips" id="chips" aria-label="Search engines">
+  <!-- engine chips are rendered here -->
+</nav>
+
+<nav class="tabs" id="tabs" aria-label="Result types">
+  <!-- category tabs are rendered here -->
+</nav>
+
+<div class="sheet" id="sheet" hidden>
+  <h2>Backend</h2>
+  <p class="hint">The Qmamu server that merges results from every engine. Point this at your own
+     deployment, for example <code>https://your-host/api/search</code>.</p>
+  <input id="api" type="url" spellcheck="false" placeholder="https://your-host/api/search">
+  <div class="row">
+    <button id="apiSave" class="primary">Save</button>
+    <button id="apiReset">Reset</button>
+    <button id="apiClose">Close</button>
+  </div>
+  <p class="hint" id="apiNow"></p>
+</div>
+
+<main id="main">
+  <section class="status" id="status" hidden></section>
+  <section class="meta" id="meta" hidden></section>
+  <ol class="results" id="results"></ol>
+  <nav class="pages" id="pages" hidden>
+    <button id="prev">Previous</button>
+    <span id="pageLabel">Page 1</span>
+    <button id="next">Next</button>
+  </nav>
+</main>
+
+<footer class="foot">
+  <span id="footNote">Qmamu aggregates results from several engines and merges duplicates.</span>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

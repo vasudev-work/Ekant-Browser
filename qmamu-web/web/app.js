@@ -2,7 +2,9 @@
 (function () {
   'use strict';
 
-  var API = window.QMAMU_API || '/api/search';
+  // Backend resolution order: what the user saved here, then what the host page
+  // injected (the Android app sets window.QMAMU_API), then same-origin.
+  var API = localStorage.getItem('qmamu_api') || window.QMAMU_API || '/api/search';
 
   var ENGINES = [
     { id: 'google',    label: 'Google' },
@@ -36,7 +38,14 @@
     prev: document.getElementById('prev'),
     next: document.getElementById('next'),
     pageLabel: document.getElementById('pageLabel'),
-    footNote: document.getElementById('footNote')
+    footNote: document.getElementById('footNote'),
+    filters: document.getElementById('filters'),
+    sheet: document.getElementById('sheet'),
+    api: document.getElementById('api'),
+    apiSave: document.getElementById('apiSave'),
+    apiReset: document.getElementById('apiReset'),
+    apiClose: document.getElementById('apiClose'),
+    apiNow: document.getElementById('apiNow')
   };
 
   // ---- state, seeded from the URL so ?q= and ?engine= work when linked to ----
@@ -251,6 +260,34 @@
     if (ev.key === '/' && document.activeElement !== el.q) { ev.preventDefault(); el.q.focus(); }
     if (ev.key === 'Escape') el.q.blur();
   });
+
+  // ---------------------------------------------------------------- settings
+  function paintApiNow() {
+    el.apiNow.textContent = 'In use: ' + API;
+  }
+  function openSheet() {
+    el.api.value = API;
+    el.sheet.hidden = false;
+    paintApiNow();
+  }
+  el.filters.onclick = function () { if (el.sheet.hidden) openSheet(); else el.sheet.hidden = true; };
+  el.apiClose.onclick = function () { el.sheet.hidden = true; };
+  el.apiSave.onclick = function () {
+    var v = el.api.value.trim();
+    if (!v) return;
+    localStorage.setItem('qmamu_api', v);
+    API = v;
+    el.sheet.hidden = true;
+    paintApiNow();
+    if (state.q) sync(); else setStatus('Backend saved: ' + API);
+  };
+  el.apiReset.onclick = function () {
+    localStorage.removeItem('qmamu_api');
+    API = window.QMAMU_API || '/api/search';
+    el.api.value = API;
+    paintApiNow();
+  };
+  paintApiNow();
 
   el.q.value = state.q;
   if (state.q) { sync(); } else { renderChips(); renderTabs(); el.q.focus(); }

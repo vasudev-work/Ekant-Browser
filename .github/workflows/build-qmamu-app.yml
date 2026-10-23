@@ -1,0 +1,69 @@
+name: Build Qmamu App APK
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'qmamu-app/**'
+      - '.github/workflows/build-qmamu-app.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: qmamu-app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Accept SDK licenses and install packages
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          SDKMGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMGR" --licenses > /dev/null 2>&1 || true
+          "$SDKMGR" "platform-tools" "platforms;android-34" "build-tools;34.0.0" > /dev/null 2>&1 || true
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Name the APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/Qmamu-debug.apk"
+
+      - name: Upload debug APK (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: qmamu-app-debug-apk
+          path: Qmamu-debug.apk
+          if-no-files-found: error
+
+      - name: Publish / update the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: qmamu-app-latest
+          name: Qmamu app (latest)
+          make_latest: false
+          body: |
+            The Qmamu meta-search frontend as an app: bundled page, engine chips,
+            merged results, and a gear button to point it at your own backend.
+
+            ## Install
+            ```
+            adb install Qmamu-debug.apk
+            ```
+
+            Debug-signed build for sideloading/testing.
+          files: Qmamu-debug.apk

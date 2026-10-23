@@ -30,6 +30,19 @@
   <!-- category tabs are rendered here -->
 </nav>
 
+<div class="sheet" id="sheet" hidden>
+  <h2>Backend</h2>
+  <p class="hint">The Qmamu server that merges results from every engine. Point this at your own
+     deployment, for example <code>https://your-host/api/search</code>.</p>
+  <input id="api" type="url" spellcheck="false" placeholder="https://your-host/api/search">
+  <div class="row">
+    <button id="apiSave" class="primary">Save</button>
+    <button id="apiReset">Reset</button>
+    <button id="apiClose">Close</button>
+  </div>
+  <p class="hint" id="apiNow"></p>
+</div>
+
 <main id="main">
   <section class="status" id="status" hidden></section>
   <section class="meta" id="meta" hidden></section>
