@@ -17,6 +17,21 @@ Written in **Java + XML** (no Kotlin, no Compose), `minSdk 21`, `targetSdk 34`.
 | 5 | Pull to refresh | `SwipeRefreshLayout` + `onPageFinished` |
 | 6 | Offline screen with Retry | `isOnline()` / `loadIfOnline()` / `onReceivedError` |
 
+## Speed
+
+The app is built to show the search page as quickly as possible:
+
+- **The load starts in `onCreate`**, without waiting for a connectivity probe. The
+  offline screen only appears if the page really fails (`onReceivedError`).
+- **Cache-first first paint.** The initial load uses
+  `LOAD_CACHE_ELSE_NETWORK`, so a repeat launch paints the cached page instantly;
+  as soon as it is on screen the mode flips to `LOAD_DEFAULT` so every search is
+  current.
+- **DNS warm-up.** The host name is resolved on a low-priority background thread
+  while the WebView engine boots.
+- **No WebView rebuild.** `configChanges` keeps the instance across rotation, and
+  hardware acceleration is on.
+
 ## Build
 
 ```bash
