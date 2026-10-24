@@ -112,7 +112,9 @@ class ExtensionsActivity : BaseSettingsActivity() {
         nm.textSize = 15f
         nm.setTypeface(null, Typeface.BOLD)
         val ds = TextView(this)
-        ds.text = if (e.desc.isNotBlank()) e.desc else e.pattern
+        ds.text = (if (e.desc.isNotBlank()) e.desc else e.pattern) +
+            (if (e.isStart()) "  \u00b7  runs first" else "") +
+            (if (e.grants.any { it != "none" }) "  \u00b7  GM" else "")
         ds.setTextColor(attr(R.attr.textSecondaryColor))
         ds.textSize = 12f
         ds.maxLines = 2
@@ -159,6 +161,18 @@ class ExtensionsActivity : BaseSettingsActivity() {
         return t
     }
 
+    /** Pull the userscript metadata block out and use it for anything not given. */
+    private fun withMeta(name: String, pattern: String, code: String, desc: String): Extension {
+        val m = UserScriptMeta.parse(code)
+        val p = if (pattern.isBlank() || pattern == "*") m.pattern.ifBlank { "*" } else pattern
+        return Extension.new(
+            name.ifBlank { m.name ?: "Extension" },
+            p, code,
+            desc.ifBlank { m.desc ?: "" },
+            m.runAt, m.grants
+        )
+    }
+
     // ---------- remote ----------
     private fun shortBase(): String {
         val b = storeBase()
@@ -185,11 +199,14 @@ class ExtensionsActivity : BaseSettingsActivity() {
         ExtStore.fetchScript(storeBase(), r.file) { code, err ->
             runOnUiThread {
                 if (code == null) { toast(err ?: getString(R.string.ext_load_failed)); return@runOnUiThread }
+                val meta = UserScriptMeta.parse(code)
                 store.add(
                     Extension(
-                        id = r.id, name = r.name, pattern = r.pattern.ifBlank { "*" },
+                        id = r.id, name = r.name,
+                        pattern = r.pattern.ifBlank { meta.pattern.ifBlank { "*" } },
                         code = code, enabled = true, builtIn = false,
-                        desc = r.desc.ifBlank { getString(R.string.ext_from_github) })
+                        desc = r.desc.ifBlank { meta.desc ?: getString(R.string.ext_from_github) },
+                        runAt = meta.runAt, grants = meta.grants)
                 )
                 toast(getString(R.string.ext_installed_toast, r.name))
                 rebuild()
@@ -221,8 +238,8 @@ class ExtensionsActivity : BaseSettingsActivity() {
                             val code = c.inputStream.bufferedReader().readText()
                             runOnUiThread {
                                 if (code.isBlank()) { toast(getString(R.string.ext_empty)); return@runOnUiThread }
-                                store.add(Extension.new(nm, pattern.text.toString().trim().ifEmpty { "*" }, code,
-                                    getString(R.string.ext_from_url)))
+                                store.add(withMeta(nm, pattern.text.toString().trim(),
+                                    code, getString(R.string.ext_from_url)))
                                 toast(getString(R.string.ext_installed_toast, nm))
                                 rebuild()
                             }
@@ -327,13 +344,14 @@ class ExtensionsActivity : BaseSettingsActivity() {
         val name = EditText(this).apply { hint = getString(R.string.ext_name) }
         val pattern = EditText(this).apply { hint = getString(R.string.ext_pattern); setText("*") }
         val code = EditText(this).apply { hint = getString(R.string.ext_code); minLines = 4 }
-        box.addView(name); box.addView(pattern); box.addView(code)
+        val earlyAdd = android.widget.CheckBox(this).apply { text = getString(R.string.ext_run_start) }
+        box.addView(name); box.addView(pattern); box.addView(code); box.addView(earlyAdd)
 
         AlertDialog.Builder(this).setTitle(R.string.ext_add_manual).setView(box)
             .setPositiveButton(R.string.ext_save) { _, _ ->
-                val n = name.text.toString().trim().ifEmpty { "Extension" }
-                store.add(Extension.new(n, pattern.text.toString().trim().ifEmpty { "*" },
-                    code.text.toString()))
+                val n = name.text.toString().trim()
+                store.add(withMeta(n, pattern.text.toString().trim(), code.text.toString(), "")
+                    .copy(runAt = if (earlyAdd.isChecked) Extension.RUN_START else Extension.RUN_END))
                 toast(getString(R.string.ext_saved))
                 rebuild()
             }
@@ -346,14 +364,21 @@ class ExtensionsActivity : BaseSettingsActivity() {
         val name = EditText(this).apply { hint = getString(R.string.ext_name); setText(e.name) }
         val pattern = EditText(this).apply { hint = getString(R.string.ext_pattern); setText(e.pattern) }
         val code = EditText(this).apply { hint = getString(R.string.ext_code); setText(e.code); minLines = 4 }
-        box.addView(name); box.addView(pattern); box.addView(code)
+        val earlyEdit = android.widget.CheckBox(this).apply {
+            text = getString(R.string.ext_run_start); isChecked = e.isStart()
+        }
+        box.addView(name); box.addView(pattern); box.addView(code); box.addView(earlyEdit)
 
         AlertDialog.Builder(this).setTitle(R.string.ext_edit).setView(box)
             .setPositiveButton(R.string.ext_save) { _, _ ->
+                val m = UserScriptMeta.parse(code.text.toString())
                 store.update(e.copy(
                     name = name.text.toString().trim().ifEmpty { e.name },
-                    pattern = pattern.text.toString().trim().ifEmpty { "*" },
-                    code = code.text.toString()))
+                    pattern = pattern.text.toString().trim().ifEmpty { m.pattern.ifBlank { "*" } },
+                    code = code.text.toString(),
+                    desc = e.desc.ifBlank { m.desc ?: "" },
+                    grants = if (m.grants.isEmpty()) e.grants else m.grants,
+                    runAt = if (earlyEdit.isChecked) Extension.RUN_START else Extension.RUN_END))
                 toast(getString(R.string.ext_saved))
                 rebuild()
             }
@@ -384,7 +409,7 @@ class ExtensionsActivity : BaseSettingsActivity() {
             }
             if (text.isBlank()) { toast(getString(R.string.ext_empty)); return }
             val name = fname.substringBeforeLast(".").ifEmpty { "Script" }
-            store.add(Extension.new(name, "*", text, getString(R.string.ext_uploaded_desc)))
+            store.add(withMeta(name, "", text, getString(R.string.ext_uploaded_desc)))
             toast(getString(R.string.ext_loaded))
             rebuild()
         } catch (_: Exception) {

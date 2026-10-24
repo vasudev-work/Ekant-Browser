@@ -25,6 +25,14 @@ class AekantApp : Application() {
         c.cornerRadiusDp = 20
         SettingsConfig.install(c)
 
+        // Material You, when the device and the user both want it
+        try {
+            val p = getSharedPreferences("aekant", MODE_PRIVATE)
+            if (p.getBoolean("dynamic_color", false) && android.os.Build.VERSION.SDK_INT >= 31) {
+                com.google.android.material.color.DynamicColors.applyToActivitiesIfAvailable(this)
+            }
+        } catch (_: Exception) { }
+
         val prev = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
             try {

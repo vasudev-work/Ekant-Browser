@@ -62,9 +62,90 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val PREFS = "aekant"
+
+        /** Drop history entries older than the retention period. */
+        fun pruneHistory(ctx: Context) {
+            try {
+                val p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                val keep = p.getString("history_keep", "unlimited") ?: "unlimited"
+                val raw = p.getString("history", "") ?: ""
+                if (raw.isEmpty()) return
+                if (keep == "none") { p.edit().remove("history").apply(); return }
+                val days = when (keep) {
+                    "day" -> 1L
+                    "week" -> 7L
+                    "month" -> 30L
+                    "6month" -> 182L
+                    "year" -> 365L
+                    else -> 0L
+                }
+                if (days == 0L) return
+                val cut = System.currentTimeMillis() - days * 24L * 3600L * 1000L
+                val kept = raw.split("\n").filter { line ->
+                    val ts = line.substringAfterLast('\u0001').toLongOrNull() ?: 0L
+                    ts >= cut
+                }
+                p.edit().putString("history", kept.joinToString("\n")).apply()
+            } catch (_: Exception) { }
+        }
         const val HOME_ASSET = "file:///android_asset/ntp.html"
         const val UA_DESKTOP =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        const val PICKER_JS = """(function(){try{
+if(window.__aekantPick){window.__aekantPick=0;return;}
+window.__aekantPick=1;
+var box=document.createElement('div');
+box.style.cssText='position:fixed;z-index:2147483647;pointer-events:none;border:2px solid #FF6600;background:rgba(255,102,0,.18);border-radius:4px';
+document.documentElement.appendChild(box);
+function esc(s){return (window.CSS&&CSS.escape)?CSS.escape(s):String(s).replace(/[^a-zA-Z0-9_-]/g,'_');}
+function sel(el){
+ if(el.id)return '#'+esc(el.id);
+ var parts=[];
+ while(el&&el.nodeType===1&&parts.length<4){
+  var p=el.nodeName.toLowerCase();
+  if(el.className&&typeof el.className==='string'){
+   var c=el.className.trim().split(/[ ]+/).filter(function(x){return x&&x.length<25&&!/^[0-9]/.test(x);}).slice(0,2);
+   if(c.length)p+='.'+c.map(esc).join('.');
+  }
+  var par=el.parentNode;
+  if(par){
+   var same=[];
+   for(var i=0;i<par.children.length;i++){if(par.children[i].nodeName===el.nodeName)same.push(par.children[i]);}
+   if(same.length>1)p+=':nth-of-type('+(same.indexOf(el)+1)+')';
+  }
+  parts.unshift(p);
+  el=par;
+ }
+ return parts.join(' > ');
+}
+function move(e){
+ var t=e.touches?e.touches[0]:e;
+ var el=document.elementFromPoint(t.clientX,t.clientY);
+ if(!el||el===box)return;
+ var r=el.getBoundingClientRect();
+ box.style.left=r.left+'px';box.style.top=r.top+'px';box.style.width=r.width+'px';box.style.height=r.height+'px';
+}
+function done(e){
+ var t=e.changedTouches?e.changedTouches[0]:e;
+ var el=document.elementFromPoint(t.clientX,t.clientY);
+ if(el&&el!==box&&window.AekantBlock){try{window.AekantBlock.add(location.hostname,sel(el));}catch(x){}}
+ cleanup();
+ if(e.cancelable)e.preventDefault();
+}
+function cleanup(){
+ window.__aekantPick=0;
+ try{box.remove();}catch(x){}
+ document.removeEventListener('mousemove',move,true);
+ document.removeEventListener('touchmove',move,true);
+ document.removeEventListener('click',done,true);
+ document.removeEventListener('touchend',done,true);
+}
+document.addEventListener('mousemove',move,true);
+document.addEventListener('touchmove',move,true);
+document.addEventListener('click',done,true);
+document.addEventListener('touchend',done,true);
+}catch(e){}})()"""
+
         const val EXTRACT_JS = "(function(){try{var el=document.querySelector('article')||document.querySelector('main')||document.body;var t=(el&&el.innerText)||'';t=t.replace(/\\s+/g,' ').trim();return t.slice(0,200000);}catch(e){return '';}})()"
 
         const val READER_JS = """(function(){try{
@@ -116,6 +197,25 @@ document.open();document.write(h);document.close();
 
         const val REQ_UNLOCK = 42
         const val FP_SCRIPT = "(function(){try{var g=CanvasRenderingContext2D.prototype.getImageData;CanvasRenderingContext2D.prototype.getImageData=function(){var d=g.apply(this,arguments);try{for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}}catch(e){}return d;};}catch(e){}try{var t=HTMLCanvasElement.prototype.toDataURL;HTMLCanvasElement.prototype.toDataURL=function(){try{var c=this.getContext('2d');if(c){var d=c.getImageData(0,0,this.width,this.height);for(var i=0;i<d.data.length;i+=997){d.data[i]=d.data[i]^1;}c.putImageData(d,0,0);}}catch(e){}return t.apply(this,arguments);};}catch(e){}try{if(window.AudioBuffer){var p=AudioBuffer.prototype.getChannelData;AudioBuffer.prototype.getChannelData=function(){var a=p.apply(this,arguments);try{for(var i=0;i<a.length;i+=1000){a[i]=a[i]+(Math.random()-0.5)*1e-6;}}catch(e){}return a;};}}catch(e){}try{Object.defineProperty(navigator,'hardwareConcurrency',{get:function(){return 2+Math.floor(Math.random()*7);}});}catch(e){}try{Object.defineProperty(navigator,'deviceMemory',{get:function(){return [4,8][Math.floor(Math.random()*2)];}});}catch(e){}})();"
+        /** WebGL joins the canvas and audio noise, so the GPU is not a giveaway either. */
+        const val FP_WEBGL = "try{var gp=WebGLRenderingContext.prototype.getParameter;" +
+            "WebGLRenderingContext.prototype.getParameter=function(p){" +
+            "if(p===37445)return 'Google Inc. (Aekant)';" +
+            "if(p===37446)return 'ANGLE (Aekant, Aekant Graphics)';" +
+            "return gp.apply(this,arguments);};}catch(e){}" +
+            "try{var rp=WebGLRenderingContext.prototype.readPixels;" +
+            "WebGLRenderingContext.prototype.readPixels=function(){" +
+            "var r=rp.apply(this,arguments);try{var b=arguments[6];" +
+            "if(b&&b.length)b[0]=b[0]^1;}catch(e){}return r;};}catch(e){}"
+
+        /** Stops WebRTC handing out the local address. Off by default: some calls break. */
+        const val WEBRTC_JS = "(function(){try{var S=function(){throw new Error('WebRTC is disabled');};" +
+            "window.RTCPeerConnection=S;window.webkitRTCPeerConnection=S;" +
+            "window.RTCDataChannel=S;" +
+            "try{Object.defineProperty(navigator,'mediaDevices'," +
+            "{get:function(){return undefined;}});}catch(e){}" +
+            "}catch(e){}})();"
+
         val SE_NAMES = arrayOf("Google", "DuckDuckGo", "Bing")
         val SE_URLS = arrayOf(
             "https://www.google.com/search?q=",
@@ -145,6 +245,8 @@ document.open();document.write(h);document.close();
     private var desktop = false
     private var incognito = false
     private val privateTabs = HashSet<WebView>()
+    private var lastBackAt = 0L
+    private val gmCalls = java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection>()
     private var js = true
     private var cookies = true
     private var images = true
@@ -280,6 +382,16 @@ document.open();document.write(h);document.close();
                 val v = cur()
                 if (v != null && v.canGoBack()) v.goBack()
                 else if (tabs.size > 1) closeTab(current)
+                else if (prefs.getBoolean("double_back", false)) {
+                    val now = System.currentTimeMillis()
+                    if (now - lastBackAt < 2000) {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    } else {
+                        lastBackAt = now
+                        toast(getString(R.string.press_again_exit))
+                    }
+                }
                 else { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
             }
         })
@@ -365,6 +477,65 @@ document.open();document.write(h);document.close();
                 }
             } catch (_: Exception) { }
         }.start()
+    }
+
+    /** The colour layer that sits over every page. */
+    private fun applyScreenFilter() {
+        try {
+            val v = findViewById<View>(R.id.screen_filter) ?: return
+            val night = prefs.getBoolean("screen_filter_night", false)
+            val on = prefs.getBoolean("screen_filter", false) && (!night || dark)
+            if (!on) { v.visibility = View.GONE; return }
+            val hex = prefs.getString("screen_filter_color", "#FF9800") ?: "#FF9800"
+            val a = prefs.getInt("screen_filter_alpha", 40).coerceIn(0, 120) * 255 / 100
+            val base = try { Color.parseColor(hex) } catch (_: Exception) { 0xFFFF9800.toInt() }
+            v.setBackgroundColor(Color.argb(a, Color.red(base), Color.green(base), Color.blue(base)))
+            v.visibility = View.VISIBLE
+        } catch (_: Exception) { }
+    }
+
+    /** Turn a Google AMP result link back into the publisher's own address. */
+    private fun deAmp(url: String): String? = try {
+        val u = Uri.parse(url)
+        val h = u.host ?: ""
+        val path = u.path ?: ""
+        if (h.startsWith("google.") && path.startsWith("/amp/s/")) {
+            val rest = path.substring("/amp/s/".length)
+            if (rest.isBlank()) null
+            else "https://" + rest + (if (u.query.isNullOrEmpty()) "" else "?" + u.query)
+        } else null
+    } catch (_: Exception) { null }
+
+    /** Let the user tap something on the page and block it for good. */
+    private fun startElementPicker() {
+        val w = cur() ?: return
+        hideMenuPanel()
+        toast(getString(R.string.pick_element_hint))
+        try { w.evaluateJavascript(PICKER_JS, null) } catch (_: Exception) { }
+    }
+
+    /** Applies one picked selector straight away, without a reload. */
+    private fun applyElementCss(host: String) {
+        val w = cur() ?: return
+        val css = ElementBlocks.cssFor(this, host)
+        val js = "try{var s=document.getElementById('aekant-elem');" +
+            "if(!s){s=document.createElement('style');s.id='aekant-elem';document.documentElement.appendChild(s);}" +
+            "s.textContent=" + org.json.JSONObject.quote(css) + ";}catch(e){}"
+        try { w.evaluateJavascript(js, null) } catch (_: Exception) { }
+    }
+
+    /** Bridge the picker calls back into. */
+    inner class BlockBridge {
+        @android.webkit.JavascriptInterface
+        fun add(host: String, selector: String) {
+            try {
+                ElementBlocks.add(this@MainActivity, host, selector)
+                runOnUiThread {
+                    toast(getString(R.string.element_blocked))
+                    applyElementCss(host)
+                }
+            } catch (_: Exception) { }
+        }
     }
 
     /** Forget this site: cookies, storage and the fingerprint seed. */
@@ -552,6 +723,8 @@ document.open();document.write(h);document.close();
         applySecureScreen()
         applyImmersive()
         applyKeepScreenOn()
+        applyScreenFilter()
+        pruneHistory(this)
         val wasDark = dark
         readPrefs()
         adBlocker.blockAds = prefs.getBoolean("block_ads", true)
@@ -687,6 +860,7 @@ document.open();document.write(h);document.close();
                 afterSheet { switchContainer(target) }
             }
         }
+        s.action(getString(R.string.container_ua)) { afterSheet { promptContainerUa() } }
         s.action(getString(R.string.new_container)) { afterSheet { promptNewContainer() } }
         s.action(getString(R.string.delete_current_container)) { afterSheet { deleteCurrentContainer() } }
         s.show()
@@ -701,6 +875,45 @@ document.open();document.write(h);document.close();
     /** Run after the sheet's dismiss animation so the view tree is not touched twice at once. */
     private fun afterSheet(block: () -> Unit) {
         try { window.decorView.postDelayed(block, 220) } catch (_: Exception) { block() }
+    }
+
+    private fun promptContainerUa() {
+        val c = active ?: return
+        val options = arrayOf(
+            getString(R.string.ua_mobile), getString(R.string.ua_desktop), getString(R.string.ua_custom))
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.container_ua) + " \u00b7 " + c.name)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> setContainerUa(c, "")
+                    1 -> setContainerUa(c, UA_DESKTOP)
+                    else -> {
+                        val e = EditText(this)
+                        e.setText(c.ua)
+                        e.hint = "Mozilla/5.0 ..."
+                        AlertDialog.Builder(this)
+                            .setTitle(R.string.ua_custom).setView(e)
+                            .setPositiveButton(android.R.string.ok) { _, _ ->
+                                setContainerUa(c, e.text.toString().trim())
+                            }
+                            .setNegativeButton(android.R.string.cancel, null).show()
+                    }
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun setContainerUa(c: Container, ua: String) {
+        val updated = c.copy(ua = ua)
+        store.saveContainers(containers.map { if (it.id == c.id) updated else it })
+        containers = store.getContainers().toMutableList()
+        if (active?.id == c.id) {
+            active = updated
+            for (tab in tabs) applyUa(tab.settings)
+            toast(getString(R.string.ua_saved))
+            try { cur()?.reload() } catch (_: Exception) { }
+        }
     }
 
     private fun promptNewContainer() {
@@ -814,6 +1027,8 @@ document.open();document.write(h);document.close();
     private fun newTab(u: String, select: Boolean = true): WebView {
         val w = AekantWebView(this)
         try { w.addJavascriptInterface(MediaBridge(), "AekantMedia") } catch (_: Exception) { }
+        try { w.addJavascriptInterface(BlockBridge(), "AekantBlock") } catch (_: Exception) { }
+        try { w.addJavascriptInterface(GmBridge(), "AekantGM") } catch (_: Exception) { }
         w.layoutParams = FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         val s = w.settings
@@ -873,9 +1088,11 @@ document.open();document.write(h);document.close();
 
     private fun applyUa(s: WebSettings) {
         val custom = prefs.getString("ua_custom", "") ?: ""
+        val cu = active?.ua ?: ""
         val desk = desktop || prefs.getBoolean("desktop_default", false)
         s.userAgentString = when {
             custom.isNotBlank() -> custom
+            cu.isNotBlank() -> cu
             desk -> UA_DESKTOP
             else -> null
         }
@@ -939,14 +1156,187 @@ document.open();document.write(h);document.close();
     }
 
     /** Run every enabled extension whose pattern matches this URL. */
-    private fun injectExtensions(wv: WebView?, url: String) {
+    private fun injectExtensions(wv: WebView?, url: String, start: Boolean) {
         val w = wv ?: return
+        val host = try { Uri.parse(url).host ?: "" } catch (_: Exception) { "" }
+        val blocked = blockedExts(host)
         for (e in extStore.getEnabled()) {
-            if (e.matches(url)) {
-                try { w.evaluateJavascript(e.code, null) } catch (_: Exception) { }
-            }
+            if (blocked.contains(e.id)) continue
+            if (!e.matches(url)) continue
+            if (e.isStart() != start) continue
+            try {
+                if (e.wantsGm()) w.evaluateJavascript(gmShim(e), null)
+                w.evaluateJavascript(e.code, null)
+            } catch (_: Exception) { }
         }
     }
+
+    /**
+     * The GM_* helpers Tampermonkey scripts expect. Storage lands in this app's
+     * preferences; network calls go through native code, so a script is not held
+     * back by the page's own cross-origin rules.
+     */
+    private fun gmShim(e: Extension): String {
+        val id = org.json.JSONObject.quote(e.id)
+        val nm = org.json.JSONObject.quote(e.name)
+        val ds = org.json.JSONObject.quote(e.desc)
+        return "(function(){var ID=" + id + ";" +
+            "function J(v){try{return JSON.stringify(v);}catch(x){return 'null';}}" +
+            "window.GM_setValue=function(k,v){try{AekantGM.setValue(ID,String(k),J(v));}catch(x){}};" +
+            "window.GM_getValue=function(k,d){try{var s=AekantGM.getValue(ID,String(k));" +
+            "if(s===null||s===undefined||s==='')return d;return JSON.parse(s);}catch(x){return d;}};" +
+            "window.GM_deleteValue=function(k){try{AekantGM.deleteValue(ID,String(k));}catch(x){}};" +
+            "window.GM_listValues=function(){try{return JSON.parse(AekantGM.listValues(ID));}catch(x){return [];}};" +
+            "window.GM_log=function(){try{AekantGM.log(ID,Array.prototype.slice.call(arguments).join(' '));}catch(x){}};" +
+            "window.GM_addStyle=function(css){try{var s=document.createElement('style');s.textContent=css;" +
+            "(document.head||document.documentElement).appendChild(s);return s;}catch(x){return null;}};" +
+            "window.GM_info={script:{name:" + nm + ",description:" + ds + "},scriptHandler:'Aekant',version:'2.0'};" +
+            "window.__gmPending=window.__gmPending||{};window.__gmSeq=window.__gmSeq||0;" +
+            "window.GM_xmlhttpRequest=function(o){try{var rid='r'+(++window.__gmSeq);" +
+            "window.__gmPending[rid]=o;var h=o.headers?JSON.stringify(o.headers):'{}';" +
+            "AekantGM.request(ID,rid,(o.method||'GET'),o.url,h,o.data||'');" +
+            "return {abort:function(){try{AekantGM.abort(rid);}catch(x){}}};}catch(x){return null;}};" +
+            "window.__aekantGMResponse=function(rid,status,text,finalUrl){" +
+            "var o=window.__gmPending[rid];if(!o)return;delete window.__gmPending[rid];" +
+            "var r={readyState:4,status:status,responseText:text,response:text,finalUrl:finalUrl};" +
+            "try{if(status>=200&&status<300){if(o.onload)o.onload(r);}else{if(o.onerror)o.onerror(r);}}catch(x){}};" +
+            "})();"
+    }
+
+    /** Extensions the user switched off for one host. */
+    private fun blockedExts(host: String): MutableSet<String> {
+        if (host.isBlank()) return HashSet()
+        val raw = prefs.getString("ext_block", "") ?: ""
+        val set = HashSet<String>()
+        for (line in raw.split("\n")) {
+            if (line.startsWith(host.lowercase() + "\u0001")) set.add(line.substringAfter("\u0001"))
+        }
+        return set
+    }
+
+    private fun saveBlockedExts(host: String, ids: Set<String>) {
+        if (host.isBlank()) return
+        val raw = prefs.getString("ext_block", "") ?: ""
+        val keep = raw.split("\n").filter { it.isNotBlank() && !it.startsWith(host.lowercase() + "\u0001") }
+        val add = ids.map { host.lowercase() + "\u0001" + it }
+        prefs.edit().putString("ext_block", (keep + add).joinToString("\n")).apply()
+    }
+
+    /** Which scripts are running here, and a switch for each. */
+    private fun showPageScripts() {
+        hideMenuPanel()
+        val w = cur() ?: return
+        val url = w.url ?: return
+        val host = try { Uri.parse(url).host ?: "" } catch (_: Exception) { "" }
+        val blocked = blockedExts(host)
+        val here = extStore.getEnabled().filter { it.matches(url) }
+
+        val s = Sheet.build(this, getString(R.string.m_page_scripts))
+        if (here.isEmpty()) {
+            val tv = TextView(this)
+            tv.text = getString(R.string.scripts_none)
+            tv.setTextColor(attr(R.attr.textSecondaryColor))
+            tv.textSize = 13f
+            tv.setPadding(dp(20), dp(16), dp(20), dp(16))
+            s.content(tv)
+        }
+        for (e in here) {
+            val on = !blocked.contains(e.id)
+            s.item((if (on) "\u2713  " else "\u2715  ") + e.name, 0) {
+                if (on) blocked.add(e.id) else blocked.remove(e.id)
+                saveBlockedExts(host, blocked)
+                toast(if (on) getString(R.string.script_off) else getString(R.string.script_on))
+                try { cur()?.reload() } catch (_: Exception) { }
+            }
+        }
+        s.action(getString(R.string.r_extensions)) {
+            startActivity(Intent(this, ExtensionsActivity::class.java))
+        }
+        s.show()
+    }
+
+    /** Native half of GM_xmlhttpRequest. */
+    inner class GmBridge {
+        @android.webkit.JavascriptInterface
+        fun setValue(extId: String, key: String, value: String) {
+            try { gmPrefs(extId).edit().putString(key, value).apply() } catch (_: Exception) { }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun getValue(extId: String, key: String): String? =
+            try { gmPrefs(extId).getString(key, null) } catch (_: Exception) { null }
+
+        @android.webkit.JavascriptInterface
+        fun deleteValue(extId: String, key: String) {
+            try { gmPrefs(extId).edit().remove(key).apply() } catch (_: Exception) { }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun listValues(extId: String): String =
+            try { org.json.JSONArray(gmPrefs(extId).all.keys.toList()).toString() }
+            catch (_: Exception) { "[]" }
+
+        @android.webkit.JavascriptInterface
+        fun log(extId: String, message: String) {
+            android.util.Log.i("AekantGM", "[" + extId + "] " + message)
+        }
+
+        @android.webkit.JavascriptInterface
+        fun abort(reqId: String) {
+            try { gmCalls.remove(reqId)?.disconnect() } catch (_: Exception) { }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun request(extId: String, reqId: String, method: String, url: String, headersJson: String, body: String) {
+            val w = cur() ?: return
+            Thread {
+                var conn: java.net.HttpURLConnection? = null
+                try {
+                    val c = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+                    conn = c
+                    c.requestMethod = if (method.isBlank()) "GET" else method.uppercase()
+                    c.connectTimeout = 15000
+                    c.readTimeout = 20000
+                    c.instanceFollowRedirects = true
+                    c.setRequestProperty("User-Agent", "Aekant/2.0")
+                    try {
+                        val h = org.json.JSONObject(headersJson)
+                        for (k in h.keys()) c.setRequestProperty(k, h.optString(k))
+                    } catch (_: Exception) { }
+                    if (body.isNotEmpty() && c.requestMethod != "GET") {
+                        c.doOutput = true
+                        c.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+                    }
+                    val status = c.responseCode
+                    val stream = if (status >= 400) c.errorStream else c.inputStream
+                    val text = try { stream?.bufferedReader()?.readText() ?: "" } catch (_: Exception) { "" }
+                    val finalUrl = c.url?.toString() ?: url
+                    gmCalls.remove(reqId)
+                    w.post {
+                        try {
+                            w.evaluateJavascript(
+                                "window.__aekantGMResponse(" + org.json.JSONObject.quote(reqId) + "," +
+                                    status + "," + org.json.JSONObject.quote(text) + "," +
+                                    org.json.JSONObject.quote(finalUrl) + ")", null)
+                        } catch (_: Exception) { }
+                    }
+                } catch (_: Exception) {
+                    try { conn?.disconnect() } catch (_: Exception) { }
+                    gmCalls.remove(reqId)
+                    w.post {
+                        try {
+                            w.evaluateJavascript(
+                                "window.__aekantGMResponse(" + org.json.JSONObject.quote(reqId) +
+                                    ",0,''," + org.json.JSONObject.quote(url) + ")", null)
+                        } catch (_: Exception) { }
+                    }
+                }
+            }.start()
+        }
+    }
+
+    private fun gmPrefs(extId: String) =
+        getSharedPreferences("gm_" + extId, MODE_PRIVATE)
 
     private var mediaPlaying = false
 
@@ -1183,7 +1573,7 @@ document.open();document.write(h);document.close();
     private fun injectCosmetic(wv: WebView?, url: String) {
         val w = wv ?: return
         val host = try { Uri.parse(url).host ?: return } catch (_: Exception) { return }
-        val css = AdFilterEngine.cosmeticCss(host)
+        val css = AdFilterEngine.cosmeticCss(host) + ElementBlocks.cssFor(this, host)
         if (css.isEmpty()) return
         val js = "try{var s=document.getElementById('aekant-cosmetic');" +
             "if(!s){s=document.createElement('style');s.id='aekant-cosmetic';document.documentElement.appendChild(s);}" +
@@ -1191,11 +1581,16 @@ document.open();document.write(h);document.close();
         try { w.evaluateJavascript(js, null) } catch (_: Exception) { }
     }
 
-    /** Best-effort canvas / audio fingerprint noise, injected on page load. */
+    /** Best-effort canvas / WebGL / audio fingerprint noise, injected on page load. */
     private fun injectProtection(wv: WebView?) {
-        if (!prefs.getBoolean("fingerprint", true)) return
         val w = wv ?: return
-        try { w.evaluateJavascript(FP_SCRIPT, null) } catch (_: Exception) { }
+        if (prefs.getBoolean("fingerprint", true)) {
+            try { w.evaluateJavascript(FP_SCRIPT, null) } catch (_: Exception) { }
+            try { w.evaluateJavascript(FP_WEBGL, null) } catch (_: Exception) { }
+        }
+        if (prefs.getBoolean("webrtc_block", false)) {
+            try { w.evaluateJavascript(WEBRTC_JS, null) } catch (_: Exception) { }
+        }
     }
 
     /** Edge-style horizontal swipe to go back / forward (opt-in). */
@@ -1353,6 +1748,7 @@ document.open();document.write(h);document.close();
     private inner class BrowserClient : WebViewClient() {
         override fun onPageStarted(v: WebView?, url: String?, fav: android.graphics.Bitmap?) {
             if (v == cur()) progress.visibility = View.VISIBLE
+            if (url != null) injectExtensions(v, url, true)
         }
 
         override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
@@ -1377,7 +1773,7 @@ document.open();document.write(h);document.close();
             }
             if (url != null) {
                 injectProtection(v)
-                injectExtensions(v, url)
+                injectExtensions(v, url, false)
                 injectCosmetic(v, url)
                 injectMediaListener(v)
                 injectUserStyles(v, url)
@@ -1413,6 +1809,10 @@ document.open();document.write(h);document.close();
         override fun shouldOverrideUrlLoading(v: WebView?, request: WebResourceRequest?): Boolean {
             val url = request?.url?.toString() ?: return false
             if (url.startsWith("aekant://")) { handleScheme(url); return true }
+            if (prefs.getBoolean("block_amp", false)) {
+                val canon = deAmp(url)
+                if (canon != null) { v?.loadUrl(canon); return true }
+            }
             if (urlFiltered(url)) {
                 val html = "<html><body style='background:" + hex(attr(R.attr.bgColor)) +
                     ";color:" + hex(attr(R.attr.textPrimaryColor)) + ";font-family:sans-serif;text-align:center;padding:60px 24px'>" +
@@ -1423,6 +1823,10 @@ document.open();document.write(h);document.close();
             }
             val scheme = Uri.parse(url).scheme?.lowercase() ?: ""
             if (EXTERNAL_SCHEMES.contains(scheme)) {
+                if (prefs.getBoolean("block_app_launch", false)) {
+                    toast(getString(R.string.app_launch_blocked))
+                    return true
+                }
                 return try {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))); true
                 } catch (_: Exception) { true }
@@ -1615,6 +2019,8 @@ document.open();document.write(h);document.close();
         b.menuRow(c, R.drawable.ic_info, getString(R.string.m_help), null, act(30)); b.divider(c)
         b.menuRow(c, R.drawable.ic_logo, getString(R.string.m_about), null, act(26)); b.divider(c)
         b.menuRow(c, R.drawable.ic_find, getString(R.string.m_find), null, act(7)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_lock, getString(R.string.m_block_element), null, act(31)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_ext, getString(R.string.m_page_scripts), null, act(32)); b.divider(c)
         b.menuRow(c, R.drawable.ic_share, getString(R.string.m_share), null, act(8)); b.divider(c)
         b.menuRow(c, R.drawable.ic_translate, getString(R.string.m_translate), null, act(9)); b.divider(c)
         b.iconValueRow(c, R.drawable.ic_desktop, getString(R.string.m_desktop), if (desktop) "On" else "Off", act(10)); b.divider(c)
@@ -1680,6 +2086,8 @@ document.open();document.write(h);document.close();
             28 -> { go("https://github.com/vasudev-work/Ekant-Browser/releases/latest"); hideMenuPanel() }
             29 -> { startActivity(Intent(this, PrivacyActivity::class.java)); hideMenuPanel() }
             30 -> { feedback(); hideMenuPanel() }
+            31 -> startElementPicker()
+            32 -> showPageScripts()
         }
     }
 
@@ -2114,14 +2522,30 @@ document.open();document.write(h);document.close();
 
     /** Enqueue a download, honouring the background-download setting. */
     private fun startDownload(url: String, name: String, cd: String?, mime: String?) {
+        val fname = if (name.isBlank()) URLUtil.guessFileName(url, cd, mime) else name
+        if (prefs.getBoolean("fast_download", true) && url.startsWith("http")) {
+            toast(getString(R.string.ctx_downloading))
+            Thread {
+                val cookie = try { CookieManager.getInstance().getCookie(url) } catch (_: Exception) { null }
+                val total = FastDownloader.probe(url, cookie)
+                runOnUiThread {
+                    if (total > 0) FastDownloader.start(this, url, fname, mime, cookie, total)
+                    else enqueueSystemDownload(url, fname)
+                }
+            }.start()
+            return
+        }
+        enqueueSystemDownload(url, fname)
+    }
+
+    private fun enqueueSystemDownload(url: String, name: String) {
         try {
             val r = DownloadManager.Request(Uri.parse(url))
             r.setNotificationVisibility(
                 if (prefs.getBoolean("bg_download", true))
                     DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
                 else DownloadManager.Request.VISIBILITY_HIDDEN)
-            r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
-                if (name.isBlank()) URLUtil.guessFileName(url, cd, mime) else name)
+            r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
             (getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(r)
             toast(getString(R.string.ctx_downloading))
         } catch (_: Exception) {

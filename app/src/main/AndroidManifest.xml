@@ -59,6 +59,8 @@
         <service android:name=".MediaPlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
         <activity android:name=".HomepageActivity" android:exported="false" android:label="@string/hp_title" />
         <activity android:name=".DownloadSettingsActivity" android:exported="false" android:label="@string/dls_title" />
+        <activity android:name=".ScreenFilterActivity" android:exported="false" android:label="@string/sf_title" />
+        <activity android:name=".HistorySettingsActivity" android:exported="false" android:label="@string/hs_title" />
         <activity android:name=".ProfilesActivity" android:exported="false" android:label="@string/pf_title" />
         <activity android:name=".NetLogActivity" android:exported="false" android:label="@string/nl_title" />
         <activity android:name=".UrlFiltersActivity" android:exported="false" android:label="@string/uf_title" />
@@ -69,6 +71,9 @@
         <activity android:name=".UserStylesActivity" android:exported="false" android:label="@string/us_title" />
         <activity android:name=".MediaActivity" android:exported="false" android:label="@string/m_media" />
         <activity android:name=".ReadingListActivity" android:exported="false" android:label="@string/rl_title" />
+        <receiver
+            android:name=".DownloadActionReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

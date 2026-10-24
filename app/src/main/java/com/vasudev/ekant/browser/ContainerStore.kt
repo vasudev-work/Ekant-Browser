@@ -24,7 +24,8 @@ class ContainerStore(context: Context) {
                 val arr = JSONArray(raw)
                 for (i in 0 until arr.length()) {
                     val o = arr.getJSONObject(i)
-                    list.add(Container(o.getString("id"), o.getString("name"), o.getString("color")))
+                    list.add(Container(o.getString("id"), o.getString("name"), o.getString("color"),
+                        o.optString("ua", "")))
                 }
             } catch (_: Exception) {
                 list.clear()
@@ -41,7 +42,7 @@ class ContainerStore(context: Context) {
     fun saveContainers(containers: List<Container>) {
         val arr = JSONArray()
         for (c in containers) {
-            arr.put(JSONObject().put("id", c.id).put("name", c.name).put("color", c.color))
+            arr.put(JSONObject().put("id", c.id).put("name", c.name).put("color", c.color).put("ua", c.ua))
         }
         prefs.edit().putString(KEY_CONTAINERS, arr.toString()).apply()
     }

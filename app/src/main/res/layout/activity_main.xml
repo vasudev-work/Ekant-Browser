@@ -312,5 +312,13 @@
                     android:paddingBottom="12dp" />
             </com.vasudev.ekant.browser.MaxHeightScrollView>
         </LinearLayout>
-    </FrameLayout>
+        <!-- colour layer over every page (Screen filter) -->
+    <View
+        android:id="@+id/screen_filter"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false"
+        android:visibility="gone" />
+</FrameLayout>
 </FrameLayout>

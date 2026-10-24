@@ -50,6 +50,16 @@ class ShieldsActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("popups", on).apply()
         }
         b.divider(c)
+        b.switchRow(c, getString(R.string.sh_webrtc), getString(R.string.sh_webrtc_sum),
+            prefs.getBoolean("webrtc_block", false)) { _, on ->
+            prefs.edit().putBoolean("webrtc_block", on).apply()
+        }
+        b.divider(c)
+        b.switchRow(c, getString(R.string.sh_app_launch), getString(R.string.sh_app_launch_sum),
+            prefs.getBoolean("block_app_launch", false)) { _, on ->
+            prefs.edit().putBoolean("block_app_launch", on).apply()
+        }
+        b.divider(c)
         b.switchRow(c, getString(R.string.sh_safe_browsing), getString(R.string.sh_safe_browsing_sum),
             prefs.getBoolean("safe_browsing", true)) { _, on ->
             prefs.edit().putBoolean("safe_browsing", on).apply()

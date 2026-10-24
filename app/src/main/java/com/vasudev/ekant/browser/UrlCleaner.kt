@@ -15,7 +15,12 @@ object UrlCleaner {
         "ad_id", "adset_id", "adgroup_id", "adv", "_ga", "_gl", "ga_source", "ga_medium", "ga_term",
         "ga_content", "ga_campaign", "yclid", "_openstat", "spm", "scm", "ref_src", "ref_url", "trk",
         "trkcampaign", "tracked", "trackingid", "trackid", "wickedid", "epik", "s_kwcid",
-        "oly_enc_id", "sc_cid", "irclickid", "aff_id", "affid", "partner", "pid", "clickid"
+        "oly_enc_id", "sc_cid", "irclickid", "aff_id", "affid", "partner", "pid", "clickid",
+        "mibextid", "igsh", "igshid", "share_id", "trk_contact", "trk_msg", "trk_module",
+        "trk_sid", "_branch_match_id", "_branch_referrer", "guccounter", "guce_referrer",
+        "guce_referrer_sig", "ocid", "cid", "campaignid", "sourceid", "elqTrackId",
+        "elqTrack", "assetType", "assetId", "campaignId", "siteId", "mc_cid", "bsft_uid",
+        "bsft_clkid", "vero_conv", "vero_id", "wickedid", "dm_i", "epik", "spm_plm"
     )
 
     private val YT_ONLY = hashSetOf("si", "feature", "pp", "ab_channel")

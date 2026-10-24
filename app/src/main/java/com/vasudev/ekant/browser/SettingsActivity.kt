@@ -28,6 +28,7 @@ class SettingsActivity : BaseSettingsActivity() {
             Item(getString(R.string.s_tabs)) { go(TabsActivity::class.java) },
             Item(getString(R.string.s_bookmarks)) { go(BookmarksActivity::class.java) },
             Item(getString(R.string.s_history)) { go(HistoryActivity::class.java) },
+            Item(getString(R.string.hs_title)) { go(HistorySettingsActivity::class.java) },
             Item(getString(R.string.rl_title)) { go(ReadingListActivity::class.java) },
             Item(getString(R.string.fl_title)) { go(FilesActivity::class.java) },
             Item(getString(R.string.s_downloads)) {
@@ -58,7 +59,8 @@ class SettingsActivity : BaseSettingsActivity() {
             Item(getString(R.string.s_reader_translate)) {
                 showDialog(getString(R.string.s_reader_translate), getString(R.string.reader_note))
             },
-            Item(getString(R.string.s_accessibility)) { go(AppearanceActivity::class.java) }
+            Item(getString(R.string.s_accessibility)) { go(AppearanceActivity::class.java) },
+            Item(getString(R.string.sf_title)) { go(ScreenFilterActivity::class.java) }
         ),
         getString(R.string.sec_advanced) to listOf(
             Item(getString(R.string.s_backup)) { go(BackupActivity::class.java) },

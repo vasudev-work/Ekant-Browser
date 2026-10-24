@@ -99,6 +99,13 @@ class AppearanceActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("volume_scroll", on).apply()
         }
 
+        if (android.os.Build.VERSION.SDK_INT >= 31) {
+            b.divider(c0)
+            b.switchRow(c0, getString(R.string.ap_dynamic), getString(R.string.ap_dynamic_sum),
+                prefs.getBoolean("dynamic_color", false)) { _, on ->
+                prefs.edit().putBoolean("dynamic_color", on).apply()
+            }
+        }
         b.divider(c0)
         b.switchRow(c0, getString(R.string.ap_amoled_ui), getString(R.string.ap_amoled_ui_sum),
             prefs.getBoolean("amoled_ui", false)) { _, on ->

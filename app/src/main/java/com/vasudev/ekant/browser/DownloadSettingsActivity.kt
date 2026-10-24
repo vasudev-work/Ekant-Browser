@@ -15,6 +15,11 @@ class DownloadSettingsActivity : BaseSettingsActivity() {
         val c = b.card()
         b.valueRow(c, getString(R.string.dls_save_to), savePath(), null)
         b.divider(c)
+        b.switchRow(c, getString(R.string.dl_fast), getString(R.string.dl_fast_sum),
+            prefs.getBoolean("fast_download", true)) { _, on ->
+            prefs.edit().putBoolean("fast_download", on).apply()
+        }
+        b.divider(c)
         b.switchRow(c, getString(R.string.dl_ask), getString(R.string.dl_ask_sum),
             prefs.getBoolean("ask_download", false)) { _, on ->
             prefs.edit().putBoolean("ask_download", on).apply()

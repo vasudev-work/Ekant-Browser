@@ -17,6 +17,16 @@ class AdvancedActivity : BaseSettingsActivity() {
             prefs.edit().putBoolean("memory_saver", on).apply()
         }
         b.divider(c1)
+        b.switchRow(c1, getString(R.string.adv_amp), getString(R.string.adv_amp_sum),
+            prefs.getBoolean("block_amp", false)) { _, on ->
+            prefs.edit().putBoolean("block_amp", on).apply()
+        }
+        b.divider(c1)
+        b.switchRow(c1, getString(R.string.adv_double_back), getString(R.string.adv_double_back_sum),
+            prefs.getBoolean("double_back", false)) { _, on ->
+            prefs.edit().putBoolean("double_back", on).apply()
+        }
+        b.divider(c1)
         b.switchRow(c1, getString(R.string.adv_https), getString(R.string.adv_https_sum),
             prefs.getBoolean("https_only", true)) { _, on ->
             prefs.edit().putBoolean("https_only", on).apply()
