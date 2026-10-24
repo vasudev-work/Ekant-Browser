@@ -158,7 +158,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/nav_home"
                     android:textColor="?attr/textSecondaryColor"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -182,7 +182,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/nav_bookmarks"
                     android:textColor="?attr/textSecondaryColor"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -206,7 +206,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/nav_downloads"
                     android:textColor="?attr/textSecondaryColor"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -230,7 +230,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/nav_tabs"
                     android:textColor="?attr/textSecondaryColor"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

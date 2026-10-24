@@ -116,7 +116,7 @@ class ExtensionsActivity : BaseSettingsActivity() {
             (if (e.isStart()) "  \u00b7  runs first" else "") +
             (if (e.grants.any { it != "none" }) "  \u00b7  GM" else "")
         ds.setTextColor(attr(R.attr.textSecondaryColor))
-        ds.textSize = 12f
+        ds.textSize = 13f
         ds.maxLines = 2
         col.addView(nm)
         col.addView(ds)
@@ -152,10 +152,10 @@ class ExtensionsActivity : BaseSettingsActivity() {
         t.text = (name.trim().firstOrNull() ?: '?').uppercase()
         t.gravity = Gravity.CENTER
         t.setTextColor(Color.WHITE)
-        t.textSize = 16f
+        t.textSize = 18f
         t.setTypeface(null, Typeface.BOLD)
         val d = GradientDrawable()
-        d.cornerRadius = dp(11).toFloat()
+        d.cornerRadius = dp(12).toFloat()
         d.setColor(palette[Math.abs(name.hashCode()) % palette.size])
         t.background = d
         return t
@@ -287,7 +287,7 @@ class ExtensionsActivity : BaseSettingsActivity() {
         val ds = TextView(this)
         ds.text = (if (r.desc.isNotBlank()) r.desc else r.pattern) + "  \u00b7  v" + r.version
         ds.setTextColor(attr(R.attr.textSecondaryColor))
-        ds.textSize = 12f
+        ds.textSize = 13f
         ds.maxLines = 2
         col.addView(nm); col.addView(ds)
         val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)

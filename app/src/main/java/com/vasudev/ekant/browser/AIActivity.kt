@@ -60,7 +60,7 @@ class AIActivity : AppCompatActivity() {
     private fun bubble(text: String, user: Boolean) {
         val t = TextView(this)
         t.text = text
-        t.textSize = 14f
+        t.textSize = 15f
         t.setTextColor(if (user) attr(R.attr.bgColor) else attr(R.attr.textPrimaryColor))
         t.setBackgroundResource(if (user) R.drawable.bubble_user else R.drawable.bubble_bot)
         val p = dp(12)

@@ -62,7 +62,7 @@ class Sheet private constructor(private val a: AppCompatActivity) {
         val t = TextView(a)
         t.text = label
         t.setTextColor(attr(R.attr.brandColor))
-        t.textSize = 14f
+        t.textSize = 15f
         t.setTypeface(null, android.graphics.Typeface.BOLD)
         t.setPadding(dp(22), dp(16), dp(22), dp(16))
         t.setOnClickListener { dismiss(); r?.run() }

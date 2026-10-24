@@ -431,6 +431,25 @@ document.open();document.write(h);document.close();
     private fun isNtp(u: String?): Boolean = u != null && u.contains("ntp.html")
 
     /** The start page provides its own chrome, so hide the native bars there. */
+    /** Tints the bottom bar so it is obvious which section is showing. */
+    private fun markNav(activeId: Int) {
+        val items = intArrayOf(R.id.nav_home, R.id.nav_bookmarks, R.id.nav_downloads, R.id.nav_tabs)
+        for (id in items) {
+            val cell = findViewById<View>(id) ?: continue
+            val on = id == activeId
+            (cell as? android.view.ViewGroup)?.let { g ->
+                for (i in 0 until g.childCount) {
+                    when (val ch = g.getChildAt(i)) {
+                        is ImageView -> ch.setColorFilter(if (on) attr(R.attr.brandColor)
+                            else attr(R.attr.textPrimaryColor))
+                        is TextView -> ch.setTextColor(if (on) attr(R.attr.brandColor)
+                            else attr(R.attr.textSecondaryColor))
+                    }
+                }
+            }
+        }
+    }
+
     private fun applyChrome() {
         try {
             val hide = kiosk || isNtp(cur()?.url)
@@ -1389,7 +1408,7 @@ document.open();document.write(h);document.close();
     private fun barButton(label: String, cb: () -> Unit): TextView {
         val t = TextView(this)
         t.text = label
-        t.textSize = 16f
+        t.textSize = 18f
         t.setPadding(dp(12), dp(6), dp(12), dp(6))
         t.setTextColor(attr(R.attr.brandColor))
         t.setOnClickListener { cb() }
@@ -1404,7 +1423,7 @@ document.open();document.write(h);document.close();
             bar.setPadding(dp(10), dp(6), dp(10), dp(6))
             bar.setBackgroundColor(attr(R.attr.surfaceColor))
             listenText = TextView(this)
-            listenText?.textSize = 12f
+            listenText?.textSize = 13f
             listenText?.maxLines = 2
             listenText?.ellipsize = TextUtils.TruncateAt.END
             listenText?.setTextColor(attr(R.attr.textPrimaryColor))
@@ -1941,8 +1960,10 @@ document.open();document.write(h);document.close();
 
     private fun showMenuPanel() {
         if (!menuBuilt) buildMenu()
+        val screen = resources.displayMetrics.widthPixels
+        val cardW = minOf(dp(320), screen - dp(24))
         val lp = FrameLayout.LayoutParams(
-            dp(310), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.END)
+            cardW, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.END)
         lp.topMargin = dp(62)
         lp.rightMargin = dp(12)
         panel.layoutParams = lp
@@ -1969,6 +1990,8 @@ document.open();document.write(h);document.close();
         c.orientation = LinearLayout.VERTICAL
         c.gravity = Gravity.CENTER_HORIZONTAL
         c.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        c.minimumHeight = dp(48)
+        c.gravity = Gravity.CENTER
         val ic = ImageView(this)
         ic.setImageResource(iconRes)
         ic.setColorFilter(attr(R.attr.textPrimaryColor))
@@ -2005,39 +2028,39 @@ document.open();document.write(h);document.close();
         val b = SettingsBuilder(this, menuList)
         val c = b.card()
         if (updateTag != null) {
-            b.menuRow(c, R.drawable.ic_info, getString(R.string.m_update), getString(R.string.m_update_sum), act(28)); b.divider(c)
+            b.menuRow(c, R.drawable.ic_update, getString(R.string.m_update), getString(R.string.m_update_sum), act(28)); b.divider(c)
         }
         b.menuRow(c, R.drawable.ic_new_tab, getString(R.string.m_new_tab), null, act(0)); b.divider(c)
         b.menuRow(c, R.drawable.ic_incognito, getString(R.string.m_new_incognito), null, act(1)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_ext, getString(R.string.m_add_group), null, act(3)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_tabs, getString(R.string.m_add_group), null, act(3)); b.divider(c)
         b.menuRow(c, R.drawable.ic_history, getString(R.string.m_history), null, act(4)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_exit, getString(R.string.m_delete_data), null, act(29)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_delete, getString(R.string.m_delete_data), null, act(29)); b.divider(c)
         b.menuRow(c, R.drawable.ic_download, getString(R.string.m_downloads), null, act(6)); b.divider(c)
         b.menuRow(c, R.drawable.ic_bookmark, getString(R.string.m_bookmarks), null, act(5)); b.divider(c)
         b.menuRow(c, R.drawable.ic_tabs, getString(R.string.m_recent), null, act(2)); b.divider(c)
         b.menuRow(c, R.drawable.ic_settings, getString(R.string.m_settings), null, act(25)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_info, getString(R.string.m_help), null, act(30)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_help, getString(R.string.m_help), null, act(30)); b.divider(c)
         b.menuRow(c, R.drawable.ic_logo, getString(R.string.m_about), null, act(26)); b.divider(c)
         b.menuRow(c, R.drawable.ic_find, getString(R.string.m_find), null, act(7)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_lock, getString(R.string.m_block_element), null, act(31)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_ext, getString(R.string.m_page_scripts), null, act(32)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_select, getString(R.string.m_block_element), null, act(31)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_code, getString(R.string.m_page_scripts), null, act(32)); b.divider(c)
         b.menuRow(c, R.drawable.ic_share, getString(R.string.m_share), null, act(8)); b.divider(c)
         b.menuRow(c, R.drawable.ic_translate, getString(R.string.m_translate), null, act(9)); b.divider(c)
         b.iconValueRow(c, R.drawable.ic_desktop, getString(R.string.m_desktop), if (desktop) "On" else "Off", act(10)); b.divider(c)
         b.iconValueRow(c, R.drawable.ic_zoom, getString(R.string.m_zoom), "$textZoom%", act(11)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_download, getString(R.string.m_save_pdf), null, act(12)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_folder, getString(R.string.m_save_page), null, act(13)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_find, getString(R.string.m_reader), null, act(14)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_pdf, getString(R.string.m_save_pdf), null, act(12)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_save, getString(R.string.m_save_page), null, act(13)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_book, getString(R.string.m_reader), null, act(14)); b.divider(c)
         b.menuRow(c, R.drawable.ic_ai, getString(R.string.m_summary), null, act(15)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_star, getString(R.string.m_save_later), null, act(16)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_download, getString(R.string.m_media), null, act(17)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_ai, getString(R.string.m_listen), null, act(18)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_ext, getString(R.string.m_tools), null, act(19)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_bookmarkadd, getString(R.string.m_save_later), null, act(16)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_movie, getString(R.string.m_media), null, act(17)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_speak, getString(R.string.m_listen), null, act(18)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_tools, getString(R.string.m_tools), null, act(19)); b.divider(c)
         b.menuRow(c, R.drawable.ic_lock, getString(R.string.kiosk_title), null, act(20)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_download, getString(R.string.m_screenshot), null, act(21)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_star, getString(R.string.m_pin), null, act(22)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_camera, getString(R.string.m_screenshot), null, act(21)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_pin, getString(R.string.m_pin), null, act(22)); b.divider(c)
         b.menuRow(c, R.drawable.ic_ai, getString(R.string.ai_title), null, act(23)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_ext, getString(R.string.m_extensions), null, act(24)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_extension, getString(R.string.m_extensions), null, act(24)); b.divider(c)
         b.menuRow(c, R.drawable.ic_exit, getString(R.string.m_exit), null, act(27)); b.divider(c)
     }
 
@@ -2130,7 +2153,7 @@ document.open();document.write(h);document.close();
         val url = v.url ?: ""
         t.text = "$title\n\n$url"
         t.setTextColor(attr(R.attr.textSecondaryColor))
-        t.textSize = 14f
+        t.textSize = 15f
         t.setPadding(dp(20), dp(4), dp(20), dp(12))
         Sheet.build(this, getString(R.string.q_info)).content(t)
             .action(getString(R.string.d_close), null).show()
@@ -2231,7 +2254,7 @@ document.open();document.write(h);document.close();
         plus.gravity = Gravity.CENTER
         plus.setTextColor(attr(R.attr.bgColor))
         val pbg = GradientDrawable()
-        pbg.cornerRadius = dp(14).toFloat()
+        pbg.cornerRadius = dp(16).toFloat()
         pbg.setColor(attr(R.attr.brandColor))
         plus.background = pbg
         plus.layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
@@ -2244,7 +2267,7 @@ document.open();document.write(h);document.close();
 
         val count = TextView(this)
         count.text = "" + tabs.size
-        count.textSize = 14f
+        count.textSize = 15f
         count.gravity = Gravity.CENTER
         count.setTextColor(attr(R.attr.textPrimaryColor))
         val cbg = GradientDrawable()
@@ -2252,7 +2275,7 @@ document.open();document.write(h);document.close();
         cbg.setStroke(dp(2), attr(R.attr.textPrimaryColor))
         cbg.setColor(0x00000000)
         count.background = cbg
-        count.layoutParams = LinearLayout.LayoutParams(dp(44), dp(36))
+        count.layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
         top.addView(count)
 
         val toggle = TextView(this)
@@ -2280,7 +2303,7 @@ document.open();document.write(h);document.close();
         search.setTextColor(attr(R.attr.textPrimaryColor))
         search.setHintTextColor(attr(R.attr.textSecondaryColor))
         val sbg = GradientDrawable()
-        sbg.cornerRadius = dp(22).toFloat()
+        sbg.cornerRadius = dp(28).toFloat()
         sbg.setColor(attr(R.attr.surface2Color))
         search.background = sbg
         search.setPadding(dp(18), dp(13), dp(18), dp(13))
@@ -2350,7 +2373,7 @@ document.open();document.write(h);document.close();
 
             val close = TextView(this)
             close.text = "\u2715"
-            close.textSize = 16f
+            close.textSize = 18f
             close.setTextColor(attr(R.attr.textSecondaryColor))
             close.setPadding(dp(8), dp(2), dp(4), dp(2))
             close.setOnClickListener { closeTab(i); dlg.dismiss(); showTabs() }
@@ -2363,7 +2386,7 @@ document.open();document.write(h);document.close();
                 val bmp = thumbOf(wv)
                 if (bmp != null) prev.setImageBitmap(bmp) else {
                     val ph = GradientDrawable()
-                    ph.cornerRadius = dp(10).toFloat()
+                    ph.cornerRadius = dp(12).toFloat()
                     ph.setColor(attr(R.attr.surface2Color))
                     prev.setBackground(ph)
                     prev.setImageResource(R.drawable.ic_logo)
@@ -2767,6 +2790,7 @@ document.open();document.write(h);document.close();
         col.addView(web)
         if (addrBottom) col.addView(topBar)
         if (!navTop) col.addView(nav)
+        markNav(R.id.nav_home)
     }
 
     private fun sharePage() {

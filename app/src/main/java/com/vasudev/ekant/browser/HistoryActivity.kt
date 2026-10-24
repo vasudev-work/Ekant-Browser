@@ -28,7 +28,7 @@ class HistoryActivity : BaseSettingsActivity() {
             et.setTextColor(attr(R.attr.textPrimaryColor))
             et.setHintTextColor(attr(R.attr.textSecondaryColor))
             val bg = GradientDrawable()
-            bg.cornerRadius = dp(18).toFloat()
+            bg.cornerRadius = dp(20).toFloat()
             bg.setColor(attr(R.attr.surface2Color))
             et.background = bg
             et.setPadding(dp(14), dp(10), dp(14), dp(10))

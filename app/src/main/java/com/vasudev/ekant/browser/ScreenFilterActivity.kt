@@ -64,7 +64,7 @@ class ScreenFilterActivity : BaseSettingsActivity() {
         box.setPadding(dp(16), dp(12), dp(16), dp(14))
         val label = TextView(this)
         label.setTextColor(attr(R.attr.textSecondaryColor))
-        label.textSize = 12f
+        label.textSize = 13f
         box.addView(label)
         val bar = SeekBar(this)
         bar.max = 120
