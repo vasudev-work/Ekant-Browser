@@ -1,4 +1,4 @@
-package com.aekant.kit
+package com.aekantkit
 
 import android.content.Context
 import java.io.BufferedReader

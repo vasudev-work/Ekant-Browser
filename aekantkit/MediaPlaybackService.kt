@@ -1,4 +1,4 @@
-package com.aekant.kit
+package com.aekantkit
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -13,10 +13,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 
-/**
- * Foreground service that keeps audio alive while the app is backgrounded or the
- * screen is off. Self-contained: uses only system resources.
- */
+/** Keeps audio/video playing while the app is in the background or the screen is off. */
 class MediaPlaybackService : Service() {
 
     private var wake: PowerManager.WakeLock? = null
@@ -24,17 +21,24 @@ class MediaPlaybackService : Service() {
     override fun onCreate() {
         super.onCreate()
         createChannel()
-        val stop = PendingIntent.getService(this, 1,
-            Intent(this, MediaPlaybackService::class.java).setAction(ACTION_STOP),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        fun pi(id: Int, action: String) = PendingIntent.getService(this, id,
+            Intent(this, MediaPlaybackService::class.java).setAction(action), flags)
+        val stop = pi(1, ACTION_STOP)
+        val prev = pi(2, ACTION_PREV)
+        val toggle = pi(3, ACTION_TOGGLE)
+        val next = pi(4, ACTION_NEXT)
+        val icon = Icon.createWithResource(this, android.R.drawable.ic_media_play)
+        running = true
         val notif: Notification = Notification.Builder(this, CHANNEL)
-            .setContentTitle("Audio playing")
-            .setContentText("Background playback is on")
+            .setContentTitle(TITLE)
+            .setContentText(SUBTITLE)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setOngoing(true)
-            .addAction(Notification.Action.Builder(
-                Icon.createWithResource(this, android.R.drawable.ic_menu_close_clear_cancel),
-                "Stop", stop).build())
+            .addAction(Notification.Action.Builder(icon, "Previous", prev).build())
+            .addAction(Notification.Action.Builder(icon, "Play / pause", toggle).build())
+            .addAction(Notification.Action.Builder(icon, "Next", next).build())
+            .addAction(Notification.Action.Builder(icon, "Stop", stop).build())
             .build()
         try {
             if (Build.VERSION.SDK_INT >= 29) {
@@ -47,19 +51,25 @@ class MediaPlaybackService : Service() {
         }
         try {
             val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
-            wake = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "aekantkit:media")
+            wake = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "aekant:media")
             wake?.acquire()
         } catch (_: Exception) { }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) { stopSelf(); return START_NOT_STICKY }
+        when (intent?.action) {
+            ACTION_STOP -> { stopSelf(); return START_NOT_STICKY }
+            ACTION_TOGGLE -> try { actions?.toggle() } catch (_: Exception) { }
+            ACTION_NEXT -> try { actions?.next() } catch (_: Exception) { }
+            ACTION_PREV -> try { actions?.prev() } catch (_: Exception) { }
+        }
         return START_STICKY
     }
 
     override fun onDestroy() {
         try { wake?.let { if (it.isHeld) it.release() } } catch (_: Exception) { }
         wake = null
+        running = false
         super.onDestroy()
     }
 
@@ -70,24 +80,36 @@ class MediaPlaybackService : Service() {
             try {
                 val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 if (nm.getNotificationChannel(CHANNEL) == null) {
-                    nm.createNotificationChannel(
-                        NotificationChannel(CHANNEL, "Media playback", NotificationManager.IMPORTANCE_LOW))
+                    nm.createNotificationChannel(NotificationChannel(
+                        CHANNEL, "Playback", NotificationManager.IMPORTANCE_LOW))
                 }
             } catch (_: Exception) { }
         }
     }
 
-    companion object {
-        const val CHANNEL = "aekant_media"
-        const val ACTION_STOP = "com.aekant.kit.STOP_MEDIA"
+    /** Point these at your own player, or leave them null. */
+    interface Actions {
+        fun toggle()
+        fun next()
+        fun prev()
+    }
 
+    companion object {
+        const val TITLE = "Playing in the background"
+        const val SUBTITLE = "Tap to return to the app"
+        @Volatile var actions: Actions? = null
+        @Volatile var running: Boolean = false
+        const val CHANNEL = "aekantkit_media"
+        const val ACTION_STOP = "com.aekantkit.STOP"
+        const val ACTION_TOGGLE = "com.aekantkit.TOGGLE"
+        const val ACTION_NEXT = "com.aekantkit.NEXT"
+        const val ACTION_PREV = "com.aekantkit.PREV"
         fun start(c: Context) {
             try {
                 val i = Intent(c, MediaPlaybackService::class.java)
                 if (Build.VERSION.SDK_INT >= 26) c.startForegroundService(i) else c.startService(i)
             } catch (_: Exception) { }
         }
-
         fun stop(c: Context) {
             try { c.stopService(Intent(c, MediaPlaybackService::class.java)) } catch (_: Exception) { }
         }

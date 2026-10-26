@@ -1,84 +1,71 @@
-# AekantKit - ad-blocking + background audio, in three calls
+# AekantKit
 
-A self-contained drop-in for any Android app that shows web content in a WebView.
-No NDK, no third-party SDK, no Gradle module to wire up.
+The reusable half of the Aekant browser, in about 2,000 lines of Kotlin with **no
+dependencies**. Drop the folder into any Android app and you get ad blocking,
+background media, a fast downloader and a few smaller tools.
 
-## What you get
+## Install
 
-- **Ad and tracker blocking** - EasyList / uBlock / AdGuard filter syntax, ~133k
-  network rules plus ~25k cosmetic rules, bundled offline.
-- **Cosmetic filtering** - hides ad containers with injected CSS (chunked, so one
-  bad selector cannot break the whole sheet).
-- **Link cleaning** - strips `utm_*`, `fbclid`, `gclid`, `igshid` and friends.
-- **Background audio** - a foreground service with a wake lock plus a
-  near-silent keep-alive loop, so audio keeps playing with the screen off.
+1. Copy the `aekantkit` folder into your project, for example
+   `app/src/main/java/com/aekantkit/`, and the `assets/` files into
+   `app/src/main/assets/`.
+2. Add the service from `manifest-snippet.xml` to your `AndroidManifest.xml`.
+3. Nothing else. `build.gradle-snippet.txt` explains why: there is nothing to add.
 
-## Install in 3 steps
+Requires `minSdk 24` and Kotlin 1.9+. Works with Java too, since every entry point
+is a plain object or class.
 
-### 1. Copy two folders
-
-```
-aekantkit/*.kt        ->  app/src/main/java/com/aekant/kit/
-aekantkit/assets/*    ->  app/src/main/assets/
-```
-
-(Keep the `.gz` file names exactly as they are.)
-
-### 2. Add the manifest bits
-
-See `manifest-snippet.xml` - four permissions and one `<service>` element.
-
-### 3. Call it
+## The two calls that matter
 
 ```kotlin
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        AekantKit.install(this)                                   // load the lists once
+// Application.onCreate()
+AekantKit.init(this)
 
-        val web = WebView(this)
-        web.settings.javaScriptEnabled = true
-        web.settings.domStorageEnabled = true
-        web.webViewClient = AekantKit.client(this, myOwnClient)   // ad-block + cosmetic
-        AekantKit.enableBackgroundAudio(web, this)                // optional
-        web.loadUrl("https://example.com")
-    }
-
-    override fun onPause() {
-        // Do NOT call web.onPause() if you want background audio to continue.
-        super.onPause()
-    }
-}
+// for each WebView you create
+webView.webViewClient = AekantKit.blockingClient(yourOwnClient)
 ```
 
-`myOwnClient` can be your existing `WebViewClient` or `null`. AekantKit wraps it
-and forwards every other callback to it.
+`blockingClient` drops requests that match the filter lists and hands everything
+else to your own `WebViewClient`, so your page callbacks keep working.
 
-## API
+## What is in the box
 
-| Call | What it does |
-|---|---|
-| `AekantKit.install(context)` | loads the filter lists on a background thread; call once |
-| `AekantKit.setAdBlocking(on)` | turn filtering on/off at runtime |
-| `AekantKit.client(context, base)` | a `WebViewClient` with blocking + cosmetic CSS |
-| `AekantKit.enableBackgroundAudio(webView, context)` | keep audio alive in the background |
-| `AekantKit.stopBackgroundAudio(context)` | stop the service and the keep-alive loop |
-| `AekantKit.cleanUrl(url)` | strip tracking parameters from a link |
-| `AekantKit.ruleCount()` | how many network rules are loaded |
+| Module | File | What it gives you |
+|---|---|---|
+| **Ad + tracker blocking** | `AdFilterEngine.kt`, `AdBlocker.kt` | ~133,000 network rules and ~25,000 cosmetic rules from EasyList, EasyPrivacy, uBlock, AdGuard, StevenBlack and 1Hosts, shipped gzipped. Host matching, per-site allowlist, blocking stats. |
+| **Cosmetic hiding** | `AekantKit.applyCosmetic(webView, host)` | The CSS that removes ad containers, injected into the page. |
+| **Tracker stripping** | `UrlCleaner.kt` | Removes `utm_*`, `fbclid`, `gclid`, `mc_eid`, `igshid` and ~90 more from any URL before it loads. |
+| **Background music / video** | `MediaPlaybackService.kt` | A foreground service with a media notification (previous / play-pause / next / stop), a wake lock and the right `foregroundServiceType`, so audio keeps playing when your app is in the background or the screen is off. |
+| **Audio session keep-alive** | `KeepAlive.kt` | Holds the audio session open with a bundled silent loop. |
+| **Media sniffer** | `MediaSniffer.kt` | Collects every media URL a page reveals (video, audio, HLS), deduplicated, per host. |
+| **Fast downloader** | `FastDownloader.kt` | Splits a file into four ranged requests, runs them in parallel, with pause, resume, cancel and a progress notification. Falls back cleanly when the server does not support ranges. |
+| **Element blocker** | `ElementPicker.kt`, `ElementBlocks.kt` | Tap an element on the page, get a CSS selector, store it per host, hide it from then on. |
 
-## Requirements
+## Wiring the media bits
 
-- Kotlin, `minSdk 24`, `compileSdk 34`, AndroidX.
-- Nothing else. `androidx.webkit` is only needed if you also want the engine's
-  algorithmic dark mode, which is not part of this kit.
+```kotlin
+// keep audio alive while the page plays
+AekantKit.startBackgroundPlayback(this)
+AekantKit.setPlaybackActions(object : MediaPlaybackService.Actions {
+    override fun toggle() { myPlayer.pauseOrResume() }
+    override fun next()   { myPlayer.next() }
+    override fun prev()   { myPlayer.previous() }
+})
+
+// element blocker: register the bridge, start the picker, re-apply on load
+webView.addJavascriptInterface(ElementPicker.PickerBridge(this), "AekantBlock")
+ElementPicker.start(webView)                      // when the user taps "block an element"
+ElementPicker.apply(webView, this, host)          // on every page load
+
+// downloads
+val total = AekantKit.canSplit(url)               // -1 means: use DownloadManager
+if (total > 0) AekantKit.downloadInParts(this, url, name, mime, null, total)
+```
 
 ## Notes
 
-- The lists cost roughly 10-15 MB of RAM once parsed; they load off the main
-  thread.
-- The Android build expands `.gz` files in `assets/` and drops the extension, so
-  the engine tries the `.gz` name first and falls back to the plain name.
-- WebView cannot run Chrome or Firefox extensions; this kit is the native
-  equivalent for blocking, and userscripts cover the rest.
-- Rebuild the two list files periodically from `easylist/easylist`,
-  `ublockorigin/uAssets` and `AdguardTeam/AdguardFilters`.
+- The filter lists live in `assets/` and are read once on first use. Android's
+  build step expands `.gz` files, so the engine tries the compressed name first
+  and then the plain one — keep both paths working if you rename them.
+- Nothing here phones home, needs an API key, or includes analytics.
+- `FEATURES.md` lists what was deliberately left out of the kit, and why.

@@ -1,0 +1,4 @@
+// The kit is plain Kotlin against the Android framework: no dependencies at all.
+// Nothing to add to build.gradle, nothing to add to settings.gradle.
+//
+// Requirements: minSdk 24 or higher, Kotlin 1.9+.

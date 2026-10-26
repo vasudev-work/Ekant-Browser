@@ -1,12 +1,12 @@
-<!-- Add these inside <manifest> ... </manifest> -->
-
-<uses-permission android:name="android.permission.WAKE_LOCK" />
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-<!-- Add this inside <application> ... </application> -->
+<!-- Add the service for background playback. Nothing else is required. -->
 <service
-    android:name="com.aekant.kit.MediaPlaybackService"
+    android:name="com.aekantkit.MediaPlaybackService"
     android:exported="false"
     android:foregroundServiceType="mediaPlayback" />
+
+<!-- Permissions the kit uses -->
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+<uses-permission android:name="android.permission.WAKE_LOCK" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

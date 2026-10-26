@@ -1,7 +1,6 @@
-package com.aekant.kit
+package com.aekantkit
 
 import android.content.Context
-import android.net.Uri
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -9,109 +8,109 @@ import android.webkit.WebViewClient
 import java.io.ByteArrayInputStream
 
 /**
- * Drop-in browser kit: EasyList/uBlock ad-blocking, cosmetic filtering and
- * background audio, in three calls.
+ * One entry point for everything in this kit.
  *
- *   AekantKit.install(this)                                    // once
- *   webView.webViewClient = AekantKit.client(this, myClient)   // per WebView
- *   AekantKit.enableBackgroundAudio(webView, this)             // optional
+ *     // in Application.onCreate()
+ *     AekantKit.init(this)
+ *
+ *     // on each new WebView
+ *     webView.webViewClient = AekantKit.blockingClient(myOwnClient)
+ *
+ * That is enough for ad and tracker blocking. Everything else is opt-in.
  */
 object AekantKit {
 
-    /** Load the bundled filter lists (on a background thread). Call once. */
-    @JvmStatic
-    fun install(context: Context) {
-        AdFilterEngine.enabled = true
-        AdFilterEngine.ensureLoaded(context.applicationContext)
+    @Volatile private var blocker: AdBlocker? = null
+
+    /** Loads the filter lists once. Safe to call more than once. */
+    fun init(context: Context) {
+        if (blocker != null) return
+        val c = context.applicationContext
+        try { AdFilterEngine.ensureLoaded(c) } catch (_: Exception) { }
+        blocker = try { AdBlocker(c) } catch (_: Exception) { null }
     }
 
-    /** Turn network + cosmetic filtering on or off at runtime. */
-    @JvmStatic
-    fun setAdBlocking(on: Boolean) { AdFilterEngine.enabled = on }
+    // ---------------------------------------------------------------- ad blocking
+    /** True when a request should be dropped. */
+    fun isAd(url: String): Boolean = blocker?.isBlocked(url) ?: false
 
-    /** How many network rules are loaded (handy for a settings screen). */
-    @JvmStatic
+    fun blockAds(on: Boolean) { blocker?.blockAds = on }
+
+    fun blockTrackers(on: Boolean) { blocker?.blockTrackers = on }
+
+    fun isAllowed(host: String): Boolean = AdFilterEngine.isAllowed(host)
+
+    fun allow(host: String, on: Boolean) = AdFilterEngine.allow(host, on)
+
     fun ruleCount(): Int = AdFilterEngine.ruleCount()
 
-    /** Remove tracking parameters (utm_*, fbclid, gclid, ...) from a link. */
-    @JvmStatic
-    fun cleanUrl(url: String): String = UrlCleaner.clean(url)
+    fun blockedCount(): Int = AdFilterEngine.blockedCount
 
     /**
-     * Wrap your own WebViewClient (or pass null) to get ad-blocking, cosmetic
-     * filtering and the media listener for background audio.
+     * A client that drops blocked requests and delegates everything else to
+     * yours, so you keep your own page callbacks.
      */
-    @JvmStatic
-    @JvmOverloads
-    fun client(context: Context, base: WebViewClient? = null): WebViewClient =
-        KitClient(context.applicationContext, base)
-
-    /** Keep audio playing when the app is backgrounded or the screen is off. */
-    @JvmStatic
-    fun enableBackgroundAudio(webView: WebView, context: Context) {
-        webView.settings.mediaPlaybackRequiresUserGesture = false
-        try { webView.addJavascriptInterface(KitBridge(context.applicationContext), "AekantMedia") } catch (_: Exception) { }
-    }
-
-    /** Stop the service and the keep-alive loop. */
-    @JvmStatic
-    fun stopBackgroundAudio(context: Context) {
-        MediaPlaybackService.stop(context)
-        KeepAlive.stop()
-    }
-}
-
-private class KitBridge(private val context: Context) {
-    @android.webkit.JavascriptInterface
-    fun playing(on: Boolean) {
-        if (on) {
-            MediaPlaybackService.start(context)
-            KeepAlive.start(context)
-        } else {
-            MediaPlaybackService.stop(context)
-            KeepAlive.stop()
+    fun blockingClient(delegate: WebViewClient? = null): WebViewClient =
+        object : WebViewClient() {
+            override fun shouldInterceptRequest(
+                view: WebView?, request: WebResourceRequest?
+            ): WebResourceResponse? {
+                val u = request?.url?.toString()
+                if (u != null && isAd(u)) {
+                    return WebResourceResponse("text/plain", "utf-8",
+                        ByteArrayInputStream(ByteArray(0)))
+                }
+                return delegate?.shouldInterceptRequest(view, request)
+            }
         }
-    }
-}
 
-private class KitClient(
-    private val context: Context,
-    private val base: WebViewClient?
-) : WebViewClient() {
-
-    override fun shouldInterceptRequest(v: WebView?, r: WebResourceRequest?): WebResourceResponse? {
-        val url = r?.url?.toString()
-        if (url != null && AdFilterEngine.isBlocked(url)) {
-            return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
-        }
-        return base?.shouldInterceptRequest(v, r)
-    }
-
-    override fun shouldOverrideUrlLoading(v: WebView?, r: WebResourceRequest?): Boolean =
-        base?.shouldOverrideUrlLoading(v, r) ?: false
-
-    override fun onPageFinished(v: WebView?, url: String?) {
-        base?.onPageFinished(v, url)
-        val w = v ?: return
-        val host = try { Uri.parse(url ?: return).host ?: return } catch (_: Exception) { return }
+    /** Injects the cosmetic rules for one host (hides ad containers). */
+    fun applyCosmetic(webView: WebView, host: String) {
         val css = AdFilterEngine.cosmeticCss(host)
-        if (css.isNotEmpty()) {
-            try {
-                w.evaluateJavascript(
-                    "try{var s=document.getElementById('aekantkit');" +
-                        "if(!s){s=document.createElement('style');s.id='aekantkit';" +
-                        "document.documentElement.appendChild(s);}s.textContent=" +
-                        org.json.JSONObject.quote(css) + ";}catch(e){}", null)
-            } catch (_: Exception) { }
-        }
-        try { w.evaluateJavascript(MEDIA_LISTENER_JS, null) } catch (_: Exception) { }
+        if (css.isEmpty()) return
+        val js = "try{var s=document.getElementById('aekantkit-cosmetic');" +
+            "if(!s){s=document.createElement('style');s.id='aekantkit-cosmetic';" +
+            "document.documentElement.appendChild(s);}" +
+            "s.textContent=" + org.json.JSONObject.quote(css) + ";}catch(e){}"
+        try { webView.evaluateJavascript(js, null) } catch (_: Exception) { }
     }
 
-    companion object {
-        const val MEDIA_LISTENER_JS =
-            "(function(){if(window.__aekantkitMedia){return;}window.__aekantkitMedia=1;" +
-                "function n(p){try{window.AekantMedia&&window.AekantMedia.playing(p);}catch(e){}}" +
-                "['play','playing'].forEach(function(e){document.addEventListener(e,function(){n(true);},true);});" +
-                "['pause','ended','emptied'].forEach(function(e){document.addEventListener(e,function(){n(false);},true);});})();"
+    // ---------------------------------------------------------------- privacy
+    /** Strips utm_*, fbclid, gclid and friends from a URL. */
+    fun cleanUrl(url: String): String = UrlCleaner.clean(url)
+
+    // ---------------------------------------------------------------- media
+    /** Start the foreground service that keeps audio playing in the background. */
+    fun startBackgroundPlayback(context: Context) = MediaPlaybackService.start(context)
+
+    fun stopBackgroundPlayback(context: Context) = MediaPlaybackService.stop(context)
+
+    fun isPlayingInBackground(): Boolean = MediaPlaybackService.running
+
+    /** Wire the notification's play / next / previous buttons to your player. */
+    fun setPlaybackActions(actions: MediaPlaybackService.Actions?) {
+        MediaPlaybackService.actions = actions
     }
+
+    /** Holds the audio session open with a silent loop. */
+    fun startKeepAlive(context: Context) = KeepAlive.start(context)
+
+    fun stopKeepAlive() = KeepAlive.stop()
+
+    /** Every media file the page has revealed so far. */
+    fun mediaFound(): List<Pair<String, String>> = MediaSniffer.all()
+
+    fun mediaReset(host: String) = MediaSniffer.reset(host)
+
+    // ---------------------------------------------------------------- downloads
+    /**
+     * Downloads in four parallel ranges when the server allows it, otherwise the
+     * caller should fall back to DownloadManager. [probe] tells you which.
+     */
+    fun canSplit(url: String, cookie: String? = null): Long = FastDownloader.probe(url, cookie)
+
+    fun downloadInParts(
+        context: Context, url: String, name: String, mime: String?,
+        cookie: String? = null, total: Long
+    ) = FastDownloader.start(context, url, name, mime, cookie, total)
 }

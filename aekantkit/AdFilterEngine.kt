@@ -1,4 +1,4 @@
-package com.aekant.kit
+package com.aekantkit
 
 import android.content.Context
 import java.util.concurrent.atomic.AtomicBoolean
@@ -14,6 +14,10 @@ object AdFilterEngine {
 
     @Volatile var enabled: Boolean = true
     @Volatile private var ready: Boolean = false
+    @Volatile private var appCtx: android.content.Context? = null
+    @Volatile var blockedCount: Int = 0
+    @Volatile var savedBytes: Long = 0L
+    @Volatile private var allowSet: Set<String> = emptySet()
     private val started = AtomicBoolean(false)
 
     private val blockHosts = HashSet<String>()
@@ -30,6 +34,8 @@ object AdFilterEngine {
     private const val MAX_GLOBAL_CSS = 200000
 
     fun ensureLoaded(context: Context) {
+        appCtx = context.applicationContext
+        loadStats()
         if (!started.compareAndSet(false, true)) return
         Thread {
             try {
@@ -109,10 +115,61 @@ object AdFilterEngine {
         }
     }
 
+    private fun prefs() = appCtx?.getSharedPreferences("aekantkit", Context.MODE_PRIVATE)
+
+    private fun loadStats() {
+        try {
+            val p = prefs() ?: return
+            blockedCount = p.getInt("ab_count", 0)
+            savedBytes = p.getLong("ab_bytes", 0L)
+            allowSet = (p.getString("ab_allow", "") ?: "").split("\n")
+                .map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toHashSet()
+        } catch (_: Exception) { }
+    }
+
+    /** Sites where blocking is switched off. */
+    fun allow(host: String, on: Boolean) {
+        val h = host.trim().lowercase()
+        if (h.isEmpty()) return
+        val s = allowSet.toMutableSet()
+        if (on) s.add(h) else s.remove(h)
+        allowSet = s
+        try { prefs()?.edit()?.putString("ab_allow", s.joinToString("\n"))?.apply() } catch (_: Exception) { }
+    }
+
+    fun allowList(): List<String> = allowSet.sorted()
+    fun isAllowed(host: String): Boolean = allowSet.contains(host.trim().lowercase())
+
+    /** Called for every request the engine blocks. */
+    fun recordBlocked() {
+        blockedCount++
+        savedBytes += 20000L
+        if (blockedCount % 10 == 0) saveStats()
+    }
+
+    fun saveStats() {
+        try { prefs()?.edit()?.putInt("ab_count", blockedCount)?.putLong("ab_bytes", savedBytes)?.apply() } catch (_: Exception) { }
+    }
+
+    fun resetStats() {
+        blockedCount = 0
+        savedBytes = 0L
+        saveStats()
+    }
+
     fun isBlocked(url: String): Boolean {
         if (!enabled || !ready) return false
         val u = url.lowercase()
         val host = hostOf(u) ?: return false
+        if (allowSet.isNotEmpty()) {
+            var ah = host
+            while (true) {
+                if (allowSet.contains(ah)) return false
+                val ai = ah.indexOf('.')
+                if (ai < 0) break
+                ah = ah.substring(ai + 1)
+            }
+        }
         if (allowHosts.isNotEmpty() && matchesHost(allowHosts, host)) return false
         for (s in allowSubs) if (u.contains(s)) return false
         if (matchesHost(blockHosts, host)) return true
