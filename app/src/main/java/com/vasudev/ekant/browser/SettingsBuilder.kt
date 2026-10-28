@@ -18,18 +18,17 @@ class SettingsBuilder(private val a: Context, private val root: LinearLayout) {
     private val mutedColor: Int = attr(R.attr.textSecondaryColor)
     private val accentColor: Int = attr(R.attr.brandColor)
 
-    init { seedIcons() }
-
 
     /**
      * Settings rows used to be plain text, 183 of them. Rather than pass an icon
      * at every call site, the builder looks the title up here, so one table gives
      * every screen its icons.
      */
-    private val iconByTitle = HashMap<String, Int>()
+    private val iconByTitle: HashMap<String, Int> = buildIcons()
 
-    private fun seedIcons() {
-        fun put(id: Int, icon: Int) { iconByTitle[a.getString(id)] = icon }
+    private fun buildIcons(): HashMap<String, Int> {
+        val map = HashMap<String, Int>()
+        fun put(id: Int, icon: Int) { map[a.getString(id)] = icon }
 
         // the settings hub
         put(R.string.s_appearance, R.drawable.ic_palette)
@@ -218,6 +217,7 @@ class SettingsBuilder(private val a: Context, private val root: LinearLayout) {
                 R.string.hs_style_minimal)) {
             put(id, R.drawable.ic_home)
         }
+        return map
     }
 
     /** Adds the leading icon for a row, if this title has one. */
