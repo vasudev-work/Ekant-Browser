@@ -41,7 +41,7 @@ this repository actually ships today. Honest labels only: **Done**, **Partial**,
 ## Engine note
 
 Desktop Aekant is a Gecko (Firefox) build. Android's system WebView cannot run Chrome
-extensions or provide true per-tab process isolation, so `spike-geckoview/` explores
+extensions or provide true per-tab process isolation; a GeckoView spike explored
 Mozilla GeckoView as the engine for a future non-Chromium build.
 
 ## Roadmap (next)

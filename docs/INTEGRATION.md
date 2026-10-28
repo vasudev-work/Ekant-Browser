@@ -257,7 +257,7 @@ override fun onPause() {
 ## 4. What is not here (and why)
 
 - **Chrome/Firefox extension support** - needs a Chromium or Gecko engine, not
-  WebView. This repo keeps a GeckoView spike in `spike-geckoview/` for that
+  WebView. A GeckoView spike was built during development and is no longer part of this repo; for that
   road.
 - **Scriptlet / procedural filter support** - would need a JS injection
   pipeline with per-rule matching; not implemented.

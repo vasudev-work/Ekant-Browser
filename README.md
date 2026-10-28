@@ -44,12 +44,6 @@ Or copy `Aekant-debug.apk` to the phone, open it and allow "install unknown apps
 
 Requirements: JDK 17 and Android SDK 34 (compileSdk 34, minSdk 24).
 
-### GeckoView (non-Chromium) build
-
-`spike-geckoview/` is a separate Gradle project that renders with Mozilla's Gecko engine
-instead of WebView. Build it with `gradle -p spike-geckoview assembleDebug`; its APK is
-produced by the separate CI workflow.
-
 ## What's in the merged app
 
 **Aekant side**
