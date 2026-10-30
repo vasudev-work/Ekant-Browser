@@ -372,6 +372,10 @@ document.open();document.write(h);document.close();
         findViewById<View>(R.id.nav_home).setOnClickListener { goHome() }
         findViewById<View>(R.id.nav_bookmarks).setOnClickListener { showBookmarks() }
         findViewById<View>(R.id.nav_downloads).setOnClickListener { openDownloads() }
+        findViewById<View>(R.id.nav_ai).setOnClickListener {
+            markNav(R.id.nav_ai)
+            try { startActivity(Intent(this, AIActivity::class.java)) } catch (_: Exception) { }
+        }
         findViewById<View>(R.id.nav_tabs).setOnClickListener { showTabs() }
         applyLayoutPrefs()
 
@@ -433,7 +437,7 @@ document.open();document.write(h);document.close();
     /** The start page provides its own chrome, so hide the native bars there. */
     /** Tints the bottom bar so it is obvious which section is showing. */
     private fun markNav(activeId: Int) {
-        val items = intArrayOf(R.id.nav_home, R.id.nav_bookmarks, R.id.nav_downloads, R.id.nav_tabs)
+        val items = intArrayOf(R.id.nav_home, R.id.nav_bookmarks, R.id.nav_ai, R.id.nav_downloads, R.id.nav_tabs)
         for (id in items) {
             val cell = findViewById<View>(id) ?: continue
             val on = id == activeId
@@ -1728,7 +1732,13 @@ document.open();document.write(h);document.close();
         }
 
         override fun onGeolocationPermissionsShowPrompt(origin: String?, callback: GeolocationPermissions.Callback?) {
-            callback?.invoke(origin, !prefs.getBoolean("block_perms", true), false)
+            val cb = callback ?: return
+            val host = try { Uri.parse(origin ?: "").host ?: "" } catch (_: Exception) { "" }
+            when (permState(host, "location")) {
+                "allow" -> cb.invoke(origin, true, false)
+                "block" -> cb.invoke(origin, false, false)
+                else -> askPerm(host, "location") { ok -> cb.invoke(origin, ok, false) }
+            }
         }
 
 
@@ -1748,9 +1758,12 @@ document.open();document.write(h);document.close();
         override fun onPermissionRequest(request: PermissionRequest?) {
             val r = request ?: return
             val host = try { Uri.parse(r.origin.toString()).host ?: "" } catch (_: Exception) { "" }
-            val allowed = (prefs.getString("site_allow", "") ?: "")
-                .split("\n").any { it.equals(host, true) }
-            if (prefs.getBoolean("block_perms", true) && !allowed) r.deny() else r.grant(r.resources)
+            val kind = permKind(r.resources)
+            when (permState(host, kind)) {
+                "allow" -> r.grant(r.resources)
+                "block" -> r.deny()
+                else -> askPerm(host, kind) { ok -> if (ok) r.grant(r.resources) else r.deny() }
+            }
         }
 
         override fun onReceivedIcon(view: WebView?, icon: Bitmap?) {
@@ -2455,6 +2468,7 @@ document.open();document.write(h);document.close();
         item(getString(R.string.m_new_tab)) { newTab(ntpUrl()) }
         item(getString(R.string.m_new_incognito)) { openIncognito() }
         item(getString(R.string.m_add_group)) { afterSheet { showContainers() } }
+        item(getString(R.string.d_close_others)) { closeOthers() }
         item(getString(R.string.d_close_all_tabs)) { closeAllTabs() }
         item(getString(R.string.tabs_select)) { toast(getString(R.string.tabs_select_note)) }
         item(getString(R.string.m_delete_data)) { startActivity(Intent(this, PrivacyActivity::class.java)) }
@@ -2605,6 +2619,62 @@ document.open();document.write(h);document.close();
         val w = tabs.getOrNull(i) ?: return
         if (pinned.contains(w)) { pinned.remove(w); toast(getString(R.string.tabs_unpinned)) }
         else { pinned.add(w); toast(getString(R.string.tabs_pinned)) }
+    }
+
+    /** Closes every tab except the one in front; pinned tabs stay. */
+    private fun permKind(resources: Array<String>): String = when {
+        resources.any { it.contains("VIDEO_CAPTURE") } -> "camera"
+        resources.any { it.contains("AUDIO_CAPTURE") } -> "microphone"
+        else -> "other"
+    }
+
+    /** The site's own decision first, then the global switch. */
+    private fun permState(host: String, kind: String): String {
+        val v = prefs.getString("perm_" + host + "_" + kind, "") ?: ""
+        if (v.isNotBlank()) return v
+        return if (prefs.getBoolean("block_perms", true)) "block" else "ask"
+    }
+
+    private fun askPerm(host: String, kind: String, then: (Boolean) -> Unit) {
+        val label = when (kind) {
+            "camera" -> getString(R.string.sp_camera)
+            "microphone" -> getString(R.string.sp_mic)
+            "location" -> getString(R.string.sp_location)
+            else -> kind
+        }
+        try {
+            AlertDialog.Builder(this)
+                .setTitle(host.ifBlank { getString(R.string.s_permissions) })
+                .setMessage(getString(R.string.sp_ask_msg, label))
+                .setPositiveButton(R.string.sp_allow_once) { _, _ -> then(true) }
+                .setNeutralButton(R.string.sp_remember) { _, _ ->
+                    prefs.edit().putString("perm_" + host + "_" + kind, "allow").apply()
+                    then(true)
+                }
+                .setNegativeButton(R.string.sp_block) { _, _ ->
+                    prefs.edit().putString("perm_" + host + "_" + kind, "block").apply()
+                    then(false)
+                }
+                .show()
+        } catch (_: Exception) { then(false) }
+    }
+
+    private fun closeOthers() {
+        val keep = cur()
+        val survivors = ArrayList<WebView>()
+        for (t in ArrayList(tabs)) {
+            if (t === keep || pinned.contains(t)) { survivors.add(t); continue }
+            val wp = wrappers.remove(t)
+            container.removeView(wp ?: t)
+            t.destroy()
+            favicons.remove(t)
+            privateTabs.remove(t)
+        }
+        tabs.clear()
+        tabs.addAll(survivors)
+        val idx = survivors.indexOf(keep)
+        current = -1
+        if (survivors.isEmpty()) newTab(ntpUrl()) else showTab(if (idx >= 0) idx else 0)
     }
 
     private fun closeAllTabs() {

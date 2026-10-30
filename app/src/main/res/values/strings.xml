@@ -705,4 +705,16 @@
     <string name="love">Aekant is a privacy-first, local-only browser. Thank you for using it \u2014 it is kept alive by your support and feedback.</string>
     <string name="copy_upi">Tap to copy UPI ID</string>
     <string name="email_us">Tap to email us</string>
+    <string name="nav_ai">AI</string>
+    <string name="sp_camera">Camera</string>
+    <string name="sp_mic">Microphone</string>
+    <string name="sp_location">Location</string>
+    <string name="sp_allow">Allow</string>
+    <string name="sp_ask">Ask</string>
+    <string name="sp_block">Block</string>
+    <string name="sp_reset">Reset</string>
+    <string name="sp_ask_msg">%1$s permission requested by this site</string>
+    <string name="sp_remember">Always allow</string>
+    <string name="sp_allow_once">Allow once</string>
+    <string name="d_close_others">Close other tabs</string>
 </resources>

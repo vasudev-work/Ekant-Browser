@@ -5,10 +5,23 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 
-/** Global permission blocking plus a per-site allow list. */
+/**
+ * Permissions, per site.
+ *
+ * The global switch stays as the default for sites nobody has decided about.
+ * Every site you have visited then gets its own matrix: camera, microphone and
+ * location each set to Allow, Ask or Block. Ask means the page's request comes
+ * to you as a dialog, which is what a browser should do by default.
+ */
 class SitePermissionsActivity : BaseSettingsActivity() {
 
     override val titleRes = R.string.s_permissions
+
+    private val kinds = listOf(
+        "camera" to R.string.sp_camera,
+        "microphone" to R.string.sp_mic,
+        "location" to R.string.sp_location
+    )
 
     override fun build(b: SettingsBuilder, content: LinearLayout) {
         b.section(getString(R.string.sp_global))
@@ -16,6 +29,7 @@ class SitePermissionsActivity : BaseSettingsActivity() {
         b.switchRow(g, getString(R.string.adv_perms), getString(R.string.adv_perms_sum),
             prefs.getBoolean("block_perms", true)) { _, on ->
             prefs.edit().putBoolean("block_perms", on).apply()
+            rebuild()
         }
         b.note(getString(R.string.sp_note))
 
@@ -26,7 +40,7 @@ class SitePermissionsActivity : BaseSettingsActivity() {
         } else {
             for (h in hosts) {
                 val c = b.card()
-                b.switchRow(c, h, null, allowlist().contains(h)) { _, on -> setAllow(h, on) }
+                b.navRow(c, h, summary(h)) { matrixDialog(h) }
             }
         }
 
@@ -35,14 +49,50 @@ class SitePermissionsActivity : BaseSettingsActivity() {
         b.navRow(a, getString(R.string.sp_add), getString(R.string.sp_add_sum)) { addDialog() }
     }
 
-    private fun allowlist(): MutableList<String> =
-        (prefs.getString("site_allow", "") ?: "").split("\n").filter { it.isNotBlank() }.toMutableList()
+    private fun state(host: String, kind: String): String {
+        val v = prefs.getString("perm_" + host + "_" + kind, "") ?: ""
+        if (v.isNotBlank()) return v
+        return if (prefs.getBoolean("block_perms", true)) "block" else "ask"
+    }
 
-    private fun setAllow(host: String, on: Boolean) {
-        val l = allowlist()
-        if (on) { if (!l.contains(host)) l.add(host) } else l.remove(host)
-        prefs.edit().putString("site_allow", l.joinToString("\n")).apply()
-        rebuild()
+    private fun setState(host: String, kind: String, value: String) {
+        prefs.edit().putString("perm_" + host + "_" + kind, value).apply()
+    }
+
+    private fun label(v: String): String = getString(
+        when (v) {
+            "allow" -> R.string.sp_allow
+            "block" -> R.string.sp_block
+            else -> R.string.sp_ask
+        })
+
+    private fun summary(host: String): String {
+        val parts = kinds.map { label(state(host, it.first)) }
+        return parts.joinToString(" · ")
+    }
+
+    /** Tap a row to cycle it: Allow -> Ask -> Block -> Allow. */
+    private fun matrixDialog(host: String) {
+        val labels = kinds.map { getString(it.second) + "  —  " + label(state(host, it.first)) }
+        AlertDialog.Builder(this)
+            .setTitle(host)
+            .setItems(labels.toTypedArray()) { _, which ->
+                val kind = kinds[which].first
+                val next = when (state(host, kind)) {
+                    "allow" -> "ask"
+                    "ask" -> "block"
+                    else -> "allow"
+                }
+                setState(host, kind, next)
+                rebuild()
+                matrixDialog(host)
+            }
+            .setNeutralButton(getString(R.string.sp_reset)) { _, _ ->
+                for (k in kinds) prefs.edit().remove("perm_" + host + "_" + k.first).apply()
+                rebuild()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun knownHosts(): List<String> {
@@ -56,8 +106,15 @@ class SitePermissionsActivity : BaseSettingsActivity() {
             } catch (_: Exception) { }
             if (set.size >= 40) break
         }
-        set.addAll(allowlist())
-        return set.toList()
+        for (k in prefs.all.keys) {
+            if (!k.startsWith("perm_")) continue
+            val rest = k.removePrefix("perm_")
+            for (kind in kinds) {
+                val suffix = "_" + kind.first
+                if (rest.endsWith(suffix)) set.add(rest.removeSuffix(suffix))
+            }
+        }
+        return set.toList().sorted()
     }
 
     private fun addDialog() {
@@ -67,7 +124,7 @@ class SitePermissionsActivity : BaseSettingsActivity() {
         AlertDialog.Builder(this).setTitle(R.string.sp_add).setView(e)
             .setPositiveButton(R.string.ext_save) { _, _ ->
                 val h = e.text.toString().trim().lowercase()
-                if (h.isNotEmpty()) setAllow(h, true)
+                if (h.isNotEmpty()) { setState(h, "camera", "ask"); rebuild(); matrixDialog(h) }
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
