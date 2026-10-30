@@ -1,16 +1,16 @@
-/* Aekant extension: hide the Shorts shelves on YouTube. */
+/* Nijatva extension: hide the Shorts shelves on YouTube. */
 (function () {
   try {
-    if (window.__aekantHideShorts) return;
-    window.__aekantHideShorts = 1;
+    if (window.__nijatvaHideShorts) return;
+    window.__nijatvaHideShorts = 1;
     var css = 'ytd-reel-shelf-renderer,ytd-rich-shelf-renderer[is-shorts],' +
               'ytd-guide-entry-renderer a[title="Shorts"],ytm-reel-shelf-renderer{display:none!important}';
     var add = function () {
       if (!document.body) return;
-      var s = document.getElementById('aekant-hide-shorts');
+      var s = document.getElementById('nijatva-hide-shorts');
       if (!s) {
         s = document.createElement('style');
-        s.id = 'aekant-hide-shorts';
+        s.id = 'nijatva-hide-shorts';
         s.textContent = css;
         document.documentElement.appendChild(s);
       }

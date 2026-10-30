@@ -2,11 +2,27 @@
   "version": 1,
   "extensions": [
     {
+      "id": "cosmetic-cleanup",
+      "name": "Remove blank ad boxes",
+      "desc": "Delete the empty rectangles left behind after ads are blocked",
+      "pattern": "*",
+      "file": "cosmetic-cleanup.js",
+      "version": "1.0"
+    },
+    {
       "id": "hide-shorts",
       "name": "Hide YouTube Shorts",
       "desc": "Remove the Shorts shelves from YouTube",
       "pattern": "*youtube.com*",
       "file": "hide-shorts.js",
+      "version": "1.0"
+    },
+    {
+      "id": "stop-autoplay",
+      "name": "Stop video autoplay",
+      "desc": "Pause videos that start on their own; a tap still plays them",
+      "pattern": "*",
+      "file": "stop-autoplay.js",
       "version": "1.0"
     },
     {
