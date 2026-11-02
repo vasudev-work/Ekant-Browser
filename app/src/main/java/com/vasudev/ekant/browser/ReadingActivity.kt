@@ -36,8 +36,8 @@ class ReadingActivity : BaseSettingsActivity() {
     override fun build(b: SettingsBuilder, content: LinearLayout) {
         b.section(getString(R.string.rd_title))
         val c = b.card()
-                b.navRow(card, getString(R.string.sleep_title) + ": " + sleepName(), null) { pickSleep() }
-        b.divider(card)
+                b.navRow(v, getString(R.string.sleep_title) + ": " + sleepName(), null) { pickSleep() }
+        b.divider(v)
 b.switchRow(c, getString(R.string.rd_bionic), getString(R.string.rd_bionic_sum),
             prefs.getBoolean("bionic", false)) { _, on ->
             prefs.edit().putBoolean("bionic", on).apply()
