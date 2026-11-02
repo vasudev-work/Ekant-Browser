@@ -37,7 +37,7 @@ class AppearanceActivity : BaseSettingsActivity() {
         b.section(getString(R.string.ap_theme))
         val c0 = b.card()
         val mode = prefs.getString("theme_mode", "dark")
-        b.themeCards(c0, mode) { setThemeMode(it) }
+        b.themeCards(c0, mode ?: "dark") { setThemeMode(it) }
 
         b.section(getString(R.string.ap_sites))
         val c3 = b.card()
