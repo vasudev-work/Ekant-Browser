@@ -196,7 +196,7 @@ class ExtensionsActivity : BaseSettingsActivity() {
     private fun installRemote(r: ExtStore.Remote, already: Boolean) {
         if (already) { toast(getString(R.string.ext_already)); return }
         toast(getString(R.string.ext_downloading, r.name))
-        ExtStore.fetchScript(storeBase(), r.file) { code, err ->
+        ExtStore.fetchScript(storeBase(), r.file, r.sha256) { code, err ->
             runOnUiThread {
                 if (code == null) { toast(err ?: getString(R.string.ext_load_failed)); return@runOnUiThread }
                 val meta = UserScriptMeta.parse(code)

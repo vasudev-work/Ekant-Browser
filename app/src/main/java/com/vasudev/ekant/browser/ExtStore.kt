@@ -12,7 +12,14 @@ import org.json.JSONObject
  */
 object ExtStore {
 
+    /**
+     * jsDelivr serves this repository with a short cache and immutable tags, so a
+     * new index shows up in seconds instead of minutes. The raw host stays as a
+     * fallback for the day jsDelivr is unreachable.
+     */
     const val DEFAULT_BASE =
+        "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@main/extensions/"
+    const val FALLBACK_BASE =
         "https://raw.githubusercontent.com/vasudev-work/Ekant-Browser/main/extensions/"
 
     data class Remote(
@@ -21,7 +28,8 @@ object ExtStore {
         val desc: String,
         val pattern: String,
         val file: String,
-        val version: String
+        val version: String,
+        val sha256: String = ""
     )
 
     private fun join(base: String, file: String): String {
@@ -65,7 +73,8 @@ object ExtStore {
                             e.optString("desc", ""),
                             e.optString("pattern", "*"),
                             file,
-                            e.optString("version", "1.0")
+                            e.optString("version", "1.0"),
+                            e.optString("sha256", "")
                         )
                     )
                 }
@@ -77,14 +86,38 @@ object ExtStore {
     }
 
     /** Fetches one script and hands back its text. */
-    fun fetchScript(base: String, file: String, cb: (String?, String?) -> Unit) {
+    fun fetchScript(base: String, file: String, cb: (String?, String?) -> Unit) =
+        fetchScript(base, file, null, cb)
+
+    /**
+     * Downloads a script and checks it against the hash the index published for
+     * it. A file that changed under us - a tampered repository, a proxy rewriting
+     * the response - is refused rather than installed.
+     */
+    fun fetchScript(base: String, file: String, expectedSha: String?,
+                    cb: (String?, String?) -> Unit) {
         Thread {
             try {
                 val text = http(join(base, file))
-                if (text.isBlank()) cb(null, "Empty script") else cb(text, null)
+                if (text.isBlank()) { cb(null, "Empty script"); return@Thread }
+                if (!expectedSha.isNullOrBlank()) {
+                    val got = sha256(text)
+                    if (!got.equals(expectedSha, ignoreCase = true)) {
+                        cb(null, "Checksum mismatch - the script was not installed")
+                        return@Thread
+                    }
+                }
+                cb(text, null)
             } catch (e: Exception) {
                 cb(null, e.message ?: "Download failed")
             }
         }.start()
     }
+
+    /** Lower-case hex SHA-256 of the text as it arrived, UTF-8. */
+    fun sha256(text: String): String = try {
+        val d = java.security.MessageDigest.getInstance("SHA-256")
+            .digest(text.toByteArray(Charsets.UTF_8))
+        d.joinToString("") { String.format("%02x", it) }
+    } catch (_: Exception) { "" }
 }

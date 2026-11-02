@@ -173,7 +173,7 @@
 
 <script>
 (function () {
-  var BASE = 'https://raw.githubusercontent.com/vasudev-work/Ekant-Browser/main/extensions/';
+  var BASE = 'https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@main/extensions/';
   try {
     var fromApp = new URLSearchParams(location.search).get('base');
     if (fromApp) BASE = fromApp.charAt(fromApp.length - 1) === '/' ? fromApp : fromApp + '/';
@@ -238,7 +238,8 @@
       ? 'aekant://install?b=' + encodeURIComponent(e.id)
       : 'aekant://install?u=' + encodeURIComponent(BASE + (e.file || '')) +
         '&n=' + encodeURIComponent(nm) + '&p=' + encodeURIComponent(e.pattern || '*') +
-        '&i=' + encodeURIComponent(e.id || '');
+        '&i=' + encodeURIComponent(e.id || '') +
+        '&h=' + encodeURIComponent(e.sha256 || '');
     var btn = isOn
       ? '<span class="add on">Installed</span>'
       : '<a class="add" href="' + esc(link) + '">+ Add</a>';
@@ -364,7 +365,8 @@
       ? 'aekant://install?b=' + encodeURIComponent(e.id)
       : 'aekant://install?u=' + encodeURIComponent(src) +
         '&n=' + encodeURIComponent(nm) + '&p=' + encodeURIComponent(e.pattern || '*') +
-        '&i=' + encodeURIComponent(e.id || '');
+        '&i=' + encodeURIComponent(e.id || '') +
+        '&h=' + encodeURIComponent(e.sha256 || '');
     var action = isOn
       ? '<span class="add on">Installed</span>'
       : '<a class="add" href="' + esc(link) + '">Add to Nijatva</a>';

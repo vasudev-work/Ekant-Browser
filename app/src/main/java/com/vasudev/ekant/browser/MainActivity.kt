@@ -1785,7 +1785,7 @@ document.open();document.write(h);document.close();
                     val base = script.substringBeforeLast('/') + "/"
                     val file = script.substringAfterLast('/')
                     toast(getString(R.string.ext_downloading, nm.ifBlank { file }))
-                    ExtStore.fetchScript(base, file) { code, err ->
+                    ExtStore.fetchScript(base, file, uri.getQueryParameter("h")) { code, err ->
                         runOnUiThread {
                             if (code == null) {
                                 toast(err ?: getString(R.string.ext_load_failed))
