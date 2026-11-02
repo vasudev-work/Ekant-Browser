@@ -35,14 +35,12 @@ class SettingsActivity : BaseSettingsActivity() {
                 try { startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS)) } catch (_: Exception) { }
             },
             Item(getString(R.string.dls_title)) { go(DownloadSettingsActivity::class.java) },
-            Item(getString(R.string.s_website_settings)) { go(AdvancedActivity::class.java) },
             Item(getString(R.string.rd_title)) { go(ReadingActivity::class.java) }
         ),
         getString(R.string.sec_privacy) to listOf(
             Item(getString(R.string.r_privacy_dashboard)) { go(PrivacyActivity::class.java) },
             Item(getString(R.string.ab_title)) { go(AdBlockActivity::class.java) },
             Item(getString(R.string.s_tracking)) { go(ShieldsActivity::class.java) },
-            Item(getString(R.string.s_cookies)) { go(ShieldsActivity::class.java) },
             Item(getString(R.string.s_permissions)) { go(SitePermissionsActivity::class.java) },
             Item(getString(R.string.pf_title)) { go(ProfilesActivity::class.java) },
             Item(getString(R.string.s_passwords)) { go(PasswordsActivity::class.java) },
@@ -50,12 +48,10 @@ class SettingsActivity : BaseSettingsActivity() {
             Item(getString(R.string.s_clear_data)) { go(PrivacyActivity::class.java) }
         ),
         getString(R.string.sec_performance) to listOf(
-            Item(getString(R.string.s_data_usage)) { go(ShieldsActivity::class.java) },
             Item(getString(R.string.s_cache)) { go(PrivacyActivity::class.java) },
             Item(getString(R.string.s_background)) { go(AdvancedActivity::class.java) }
         ),
         getString(R.string.sec_accessibility) to listOf(
-            Item(getString(R.string.s_text_size)) { go(AppearanceActivity::class.java) },
             Item(getString(R.string.s_reader_translate)) {
                 showDialog(getString(R.string.s_reader_translate), getString(R.string.reader_note))
             },

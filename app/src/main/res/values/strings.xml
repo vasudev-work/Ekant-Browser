@@ -257,7 +257,7 @@
     <string name="sec_accessibility">Accessibility</string>
     <string name="sec_advanced">Advanced</string>
     <string name="s_appearance">Appearance</string>
-    <string name="s_homepage">Homepage</string>
+    <string name="s_homepage">Home shortcuts</string>
     <string name="s_search_engine">Search engine</string>
     <string name="s_toolbar_nav">Toolbar &amp; navigation</string>
     <string name="s_tabs">Tabs</string>
@@ -636,7 +636,7 @@
     <string name="sf_colour">Colour</string>
     <string name="sf_strength">Strength</string>
     <string name="sf_note">A gentle tint, handy at night or for long reading sessions. It sits above the page, so it never affects the page itself.</string>
-    <string name="hs_title">History</string>
+    <string name="hs_title">History settings</string>
     <string name="hs_none">Do not save</string>
     <string name="hs_day">1 day</string>
     <string name="hs_week">1 week</string>
