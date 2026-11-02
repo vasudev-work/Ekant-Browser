@@ -791,4 +791,15 @@
     <string name="t_no_tabs">No tabs open. Tap + to start one.</string>
     <string name="t_no_private">No incognito tabs. Nothing here is saved.</string>
     <string name="t_start_page">Start page</string>
+    <string name="bm_search">Search your bookmarks</string>
+    <string name="bm_no_hits">No bookmarks match that</string>
+    <string name="bm_sort">Sort</string>
+    <string name="bm_sort_manual">Manual order</string>
+    <string name="bm_sort_newest">Newest first</string>
+    <string name="bm_sort_az">A to Z</string>
+    <string name="bm_sort_za">Z to A</string>
+    <string name="bm_visual">Visual view</string>
+    <string name="bm_mobile">Mobile bookmarks</string>
+    <string name="bm_copy">Copy link</string>
+    <string name="bm_copied">Link copied</string>
 </resources>
