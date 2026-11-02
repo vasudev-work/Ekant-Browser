@@ -2109,6 +2109,14 @@ document.open();document.write(h);document.close();
         menuOpen = true
     }
 
+    /** "12" for a menu row subtitle, or nothing when the list is empty. */
+    private fun countLabel(key: String): String? = try {
+        val raw = prefs.getString(key, "") ?: ""
+        val n = if (key == "bookmarks") raw.split("\n").count { it.contains('\u0001') }
+                else org.json.JSONArray(raw.ifBlank { "[]" }).length()
+        if (n > 0) "" + n else null
+    } catch (_: Exception) { null }
+
     private fun hideMenuPanel() {
         if (!menuOpen) return
         menuOpen = false
@@ -2165,12 +2173,20 @@ document.open();document.write(h);document.close();
         b.menuRow(c, R.drawable.ic_new_tab, getString(R.string.m_new_tab), null, act(0)); b.divider(c)
         b.menuRow(c, R.drawable.ic_incognito, getString(R.string.m_new_incognito), null, act(1)); b.divider(c)
         b.menuRow(c, R.drawable.ic_qr, getString(R.string.m_scan_qr), null,
-            View.OnClickListener { hideMenuPanel(); scanQr() }); b.divider(c)
+            View.OnClickListener { hideMenuPanel(); scanQr() })
+        val adsOn = prefs.getBoolean("block_ads", true)
+        b.iconValueRow(c, R.drawable.ic_block, getString(R.string.m_block_ads),
+            if (adsOn) "On" else "Off") {
+            prefs.edit().putBoolean("block_ads", !adsOn).apply()
+            try { adBlocker.blockAds = !adsOn } catch (_: Exception) { }
+            try { cur()?.reload() } catch (_: Exception) { }
+            hideMenuPanel()
+        }; b.divider(c)
         b.menuRow(c, R.drawable.ic_tabs, getString(R.string.m_add_group), null, act(3)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_history, getString(R.string.m_history), null, act(4)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_history, getString(R.string.m_history), countLabel("history"), act(4)); b.divider(c)
         b.menuRow(c, R.drawable.ic_delete, getString(R.string.m_delete_data), null, act(29)); b.divider(c)
         b.menuRow(c, R.drawable.ic_download, getString(R.string.m_downloads), null, act(6)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_bookmark, getString(R.string.m_bookmarks), null, act(5)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_bookmark, getString(R.string.m_bookmarks), countLabel("bookmarks"), act(5)); b.divider(c)
         b.menuRow(c, R.drawable.ic_tabs, getString(R.string.m_recent), null, act(2)); b.divider(c)
         b.menuRow(c, R.drawable.ic_settings, getString(R.string.m_settings), null, act(25)); b.divider(c)
         b.menuRow(c, R.drawable.ic_help, getString(R.string.m_help), null, act(30)); b.divider(c)

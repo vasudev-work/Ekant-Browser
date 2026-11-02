@@ -782,4 +782,5 @@
     <string name="don_pay_sub">Opens your payment app with the amount and payee filled in</string>
     <string name="don_no_app">No UPI payment app found on this device</string>
     <string name="don_thanks">Thank you for your support!</string>
+    <string name="m_block_ads">Block ads</string>
 </resources>

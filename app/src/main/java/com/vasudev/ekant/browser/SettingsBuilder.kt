@@ -384,6 +384,81 @@ class SettingsBuilder(private val a: Context, private val root: LinearLayout) {
         r.alpha = 0.6f
     }
 
+    /**
+     * An empty screen should teach the next action, not just say "nothing here".
+     * One icon, one line, and up to two buttons - the primary filled, the
+     * secondary outlined.
+     */
+    fun emptyState(card: LinearLayout, iconRes: Int, title: String, sub: String?,
+                   primary: String? = null, onPrimary: (() -> Unit)? = null,
+                   secondary: String? = null, onSecondary: (() -> Unit)? = null) {
+        val col = LinearLayout(a)
+        col.orientation = LinearLayout.VERTICAL
+        col.gravity = Gravity.CENTER_HORIZONTAL
+        col.setPadding(dp(24), dp(46), dp(24), dp(40))
+        card.addView(col)
+
+        val ic = android.widget.ImageView(a)
+        ic.setImageResource(iconRes)
+        ic.setColorFilter(attr(R.attr.textSecondaryColor))
+        col.addView(ic, LinearLayout.LayoutParams(dp(52), dp(52)))
+
+        val t = TextView(a)
+        t.text = title
+        t.setTextColor(attr(R.attr.textPrimaryColor))
+        t.textSize = 17f
+        t.gravity = Gravity.CENTER
+        t.setPadding(0, dp(14), 0, 0)
+        col.addView(t)
+
+        if (!sub.isNullOrBlank()) {
+            val s = TextView(a)
+            s.text = sub
+            s.setTextColor(attr(R.attr.textSecondaryColor))
+            s.textSize = 13f
+            s.gravity = Gravity.CENTER
+            s.setPadding(dp(8), dp(8), dp(8), 0)
+            col.addView(s)
+        }
+
+        if (primary != null && onPrimary != null) {
+            col.addView(pill(primary, filled = true, on = onPrimary))
+        }
+        if (secondary != null && onSecondary != null) {
+            col.addView(pill(secondary, filled = false, on = onSecondary))
+        }
+    }
+
+    private fun pill(label: String, filled: Boolean, on: () -> Unit): LinearLayout {
+        val holder = LinearLayout(a)
+        holder.gravity = Gravity.CENTER
+        val lp = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        lp.topMargin = dp(12)
+        holder.layoutParams = lp
+
+        val btn = TextView(a)
+        btn.text = label
+        btn.textSize = 15f
+        btn.gravity = Gravity.CENTER
+        btn.setPadding(dp(18), dp(13), dp(18), dp(13))
+        btn.setTextColor(if (filled) attr(R.attr.textPrimaryColor) else attr(R.attr.textSecondaryColor))
+        val bg = android.graphics.drawable.GradientDrawable()
+        bg.cornerRadius = dp(24).toFloat()
+        if (filled) {
+            bg.setColor(attr(R.attr.surface2Color))
+        } else {
+            bg.setColor(0x00000000)
+            bg.setStroke(dp(1), attr(R.attr.dividerColor))
+        }
+        btn.background = bg
+        btn.isFocusable = false
+        btn.setOnClickListener { on() }
+        holder.addView(btn, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        return holder
+    }
+
     fun switchRow(card: LinearLayout, title: String, summary: String?, checked: Boolean,
                   l: CompoundButton.OnCheckedChangeListener?): SwitchMaterial {
         val r = rowBase(card)
