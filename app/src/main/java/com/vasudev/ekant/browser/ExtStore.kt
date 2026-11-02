@@ -13,23 +13,25 @@ import org.json.JSONObject
 object ExtStore {
 
     /**
-     * Pinned to a tag, as asked.
+     * ONE store for both browsers.
      *
-     * A tag is immutable, so jsDelivr caches it once and serves it from the edge
-     * for good - the index and the scripts both come from the CDN and neither can
-     * lag behind a publish. The cost is honest: a tag is a fixed point, so adding
-     * an extension means pushing a new tag and bumping this constant, which is an
-     * app release. The raw host stays as the fallback so the store still works if
-     * the tag is missing or the CDN is unreachable.
+     * The catalogue lives in the nijatva-browser repository, and both apps read
+     * it from there - so adding an extension in one place reaches Nijatva and
+     * Aekant together, with no app release for either.
+     *
+     * The index is read from the live branch because that is the whole point:
+     * a tag is frozen, and a frozen index means a new extension waits for an app
+     * build. The scripts come off jsDelivr, which is fast and caches freely -
+     * safe because every script is checked against the sha256 in the index.
      */
     const val DEFAULT_BASE =
-        "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@store-v1/extensions/"
-    /** Same pinned tag for the scripts themselves. */
+        "https://raw.githubusercontent.com/vasudev-work/nijatva-browser/main/extensions/"
+    /** The scripts, from the fast CDN. */
     const val SCRIPT_BASE =
-        "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@store-v1/extensions/"
-    /** If the tag is missing or the CDN is down, the live branch. */
+        "https://cdn.jsdelivr.net/gh/vasudev-work/nijatva-browser@main/extensions/"
+    /** If one host is unreachable, the other still answers. */
     const val FALLBACK_BASE =
-        "https://raw.githubusercontent.com/vasudev-work/Ekant-Browser/main/extensions/"
+        "https://cdn.jsdelivr.net/gh/vasudev-work/nijatva-browser@main/extensions/"
 
     /**
      * The store's public key. A list is only trusted when it carries a signature
