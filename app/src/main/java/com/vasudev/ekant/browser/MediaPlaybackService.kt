@@ -54,6 +54,31 @@ class MediaPlaybackService : Service() {
             wake = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "aekant:media")
             wake?.acquire()
         } catch (_: Exception) { }
+        startAnchor()
+    }
+
+    private var anchor: android.media.MediaPlayer? = null
+
+    /**
+     * A silent, looping player. A wake lock keeps the CPU awake, but Chromium
+     * still freezes a hidden page; holding a media session does not get frozen.
+     * Inaudible on purpose - the point is the state, not the sound.
+     */
+    private fun startAnchor() {
+        try {
+            if (anchor != null) return
+            anchor = android.media.MediaPlayer.create(this, R.raw.keepalive)?.apply {
+                isLooping = true
+                setVolume(0f, 0f)
+                start()
+            }
+        } catch (_: Exception) { anchor = null }
+    }
+
+    private fun stopAnchor() {
+        try { anchor?.stop() } catch (_: Exception) { }
+        try { anchor?.release() } catch (_: Exception) { }
+        anchor = null
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -69,6 +94,7 @@ class MediaPlaybackService : Service() {
     override fun onDestroy() {
         try { wake?.let { if (it.isHeld) it.release() } } catch (_: Exception) { }
         wake = null
+        stopAnchor()
         running = false
         super.onDestroy()
     }
