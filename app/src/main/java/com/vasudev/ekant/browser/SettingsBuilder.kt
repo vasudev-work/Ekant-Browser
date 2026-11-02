@@ -269,23 +269,21 @@ class SettingsBuilder(private val a: Context, private val root: LinearLayout) {
     }
 
     /**
-     * A ripple that exists only while the finger is down, and is bounded to the
-     * row. The unbounded version left a grey wash on rows that navigate away:
-     * the view disappears mid-press, so the ripple never finishes and the next
-     * layout inherits it.
+     * A ripple has to be a NEW object per row. A Drawable keeps its own state, so
+     * one shared instance carried a stuck press from a row that was removed mid
+     * touch into the next screen - which is why the grey wash kept coming back on
+     * Exit and on All settings even after the ripple was made press-only.
      */
-    private val ripple: android.graphics.drawable.Drawable? by lazy {
-        try {
-            val ta = a.obtainStyledAttributes(intArrayOf(android.R.attr.colorControlHighlight))
-            val c = ta.getColor(0, 0x33FFFFFF.toInt())
-            ta.recycle()
-            val mask = android.graphics.drawable.GradientDrawable()
-            mask.setColor(-1)
-            mask.cornerRadius = dp(14).toFloat()
-            android.graphics.drawable.RippleDrawable(
-                android.content.res.ColorStateList.valueOf(c), null, mask)
-        } catch (_: Exception) { null }
-    }
+    private fun newRipple(): android.graphics.drawable.Drawable? = try {
+        val ta = a.obtainStyledAttributes(intArrayOf(android.R.attr.colorControlHighlight))
+        val c = ta.getColor(0, 0x33FFFFFF.toInt())
+        ta.recycle()
+        val mask = android.graphics.drawable.GradientDrawable()
+        mask.setColor(-1)
+        mask.cornerRadius = dp(14).toFloat()
+        android.graphics.drawable.RippleDrawable(
+            android.content.res.ColorStateList.valueOf(c), null, mask)
+    } catch (_: Exception) { null }
 
     private fun rowBase(card: LinearLayout): LinearLayout {
         val r = LinearLayout(a)
@@ -293,7 +291,7 @@ class SettingsBuilder(private val a: Context, private val root: LinearLayout) {
         r.gravity = Gravity.CENTER_VERTICAL
         r.setPadding(dp(16), dp(15), dp(16), dp(15))
         try {
-            if (android.os.Build.VERSION.SDK_INT >= 23) r.foreground = ripple
+            if (android.os.Build.VERSION.SDK_INT >= 23) r.foreground = newRipple()
             r.isFocusable = false
             r.isFocusableInTouchMode = false
             // settle the ripple on lift, even when the tap closes this screen
