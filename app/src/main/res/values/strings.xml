@@ -802,4 +802,9 @@
     <string name="bm_mobile">Mobile bookmarks</string>
     <string name="bm_copy">Copy link</string>
     <string name="bm_copied">Link copied</string>
+    <string name="emp_bm_title">No bookmarks yet</string>
+    <string name="emp_bm_sub">Save a page from the menu and it will appear here.</string>
+    <string name="emp_import">Import from a backup</string>
+    <string name="emp_browse">Start browsing</string>
+    <string name="dl_open">Open</string>
 </resources>
