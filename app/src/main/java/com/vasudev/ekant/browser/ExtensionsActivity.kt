@@ -83,7 +83,7 @@ class ExtensionsActivity : BaseSettingsActivity() {
         b.iconRow(add, R.drawable.ic_folder, getString(R.string.ext_upload),
             getString(R.string.ext_upload_sum)) { importFile.launch(arrayOf("*/*")) }
         b.divider(add)
-        b.iconRow(add, R.drawable.ic_link, getString(R.string.ext_from_link),
+        b.iconRow(add, R.drawable.ic_share, getString(R.string.ext_from_link),
             getString(R.string.ext_from_link_sum)) { linkDialog() }
 
         b.note(getString(R.string.ext_note))
