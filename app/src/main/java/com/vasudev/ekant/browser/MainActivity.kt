@@ -264,6 +264,9 @@ document.open();document.write(h);document.close();
     private var httpsOnly = true
     private var pendingUnlock: Runnable? = null
 
+    /** Small previews of tabs, reused between openings of the switcher. */
+    private val tabThumbs = HashMap<WebView, Bitmap>()
+
     private lateinit var adBlocker: AdBlocker
     private lateinit var store: ContainerStore
     private lateinit var extStore: ExtensionStore
@@ -1164,6 +1167,7 @@ document.open();document.write(h);document.close();
     private fun closeTab(i: Int) {
         if (i < 0 || i >= tabs.size) return
         val w = tabs.removeAt(i)
+        try { tabThumbs.remove(w)?.recycle() } catch (_: Exception) { }
         val u = w.url
         if (u != null && u.startsWith("http")) {
             closedStack.addLast(u)
@@ -2472,12 +2476,32 @@ document.open();document.write(h);document.close();
         root.addView(scroll, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
+        /**
+         * A preview of the tab as it looks now, scaled down and cached.
+         *
+         * Drawing at full size for every tab cost about 8 MB each, which is how
+         * a tab switcher runs out of memory. One draw, then a small copy kept in
+         * the cache; the full bitmap is recycled at once.
+         */
         fun thumbOf(wv: WebView): Bitmap? = try {
-            if (wv.width <= 0 || wv.height <= 0) null
+            val cached = tabThumbs[wv]
+            if (cached != null && !cached.isRecycled) cached
+            else if (wv.width <= 0 || wv.height <= 0) null
             else {
-                val b = Bitmap.createBitmap(wv.width, wv.height, Bitmap.Config.ARGB_8888)
-                wv.draw(android.graphics.Canvas(b))
-                b
+                val full = Bitmap.createBitmap(wv.width, wv.height, Bitmap.Config.ARGB_8888)
+                wv.draw(android.graphics.Canvas(full))
+                val w = 260
+                val h = maxOf(1, (full.height.toFloat() * w / full.width).toInt())
+                val small = Bitmap.createScaledBitmap(full, w, h, true)
+                full.recycle()
+                if (tabThumbs.size > 10) {
+                    val oldest = tabThumbs.keys.firstOrNull()
+                    if (oldest != null) {
+                        tabThumbs.remove(oldest)?.recycle()
+                    }
+                }
+                tabThumbs[wv] = small
+                small
             }
         } catch (_: Exception) { null }
 
