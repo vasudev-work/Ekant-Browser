@@ -82,6 +82,9 @@ class ExtensionsActivity : BaseSettingsActivity() {
         b.divider(add)
         b.iconRow(add, R.drawable.ic_folder, getString(R.string.ext_upload),
             getString(R.string.ext_upload_sum)) { importFile.launch(arrayOf("*/*")) }
+        b.divider(add)
+        b.iconRow(add, R.drawable.ic_link, getString(R.string.ext_from_link),
+            getString(R.string.ext_from_link_sum)) { linkDialog() }
 
         b.note(getString(R.string.ext_note))
         b.note(getString(R.string.ext_applied_note))
@@ -418,4 +421,69 @@ class ExtensionsActivity : BaseSettingsActivity() {
     }
 
     private fun toast(m: String) = Toast.makeText(this, m, Toast.LENGTH_SHORT).show()
+
+    /**
+     * Install a script straight from a URL - the format our engine actually
+     * supports is a userscript, and sites like Greasy Fork host thousands of
+     * them. The userscript header is parsed the same way a downloaded one is,
+     * so @match and @run-at are honoured.
+     */
+    private fun linkDialog() {
+        val et = android.widget.EditText(this)
+        et.hint = "https://greasyfork.org/scripts/12345.user.js"
+        et.isSingleLine = true
+        et.setTextColor(attr(R.attr.textPrimaryColor))
+        et.setHintTextColor(attr(R.attr.textSecondaryColor))
+        val box = LinearLayout(this)
+        box.setPadding(dp(20), dp(8), dp(20), 0)
+        box.addView(et)
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(getString(R.string.ext_from_link))
+            .setView(box)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val u = et.text.toString().trim()
+                if (!u.startsWith("http")) {
+                    android.widget.Toast.makeText(this, getString(R.string.ext_bad_link),
+                        android.widget.Toast.LENGTH_LONG).show()
+                } else installFromUrl(u)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun installFromUrl(url: String) {
+        android.widget.Toast.makeText(this, getString(R.string.ext_downloading, url.takeLast(30)),
+            android.widget.Toast.LENGTH_SHORT).show()
+        Thread {
+            try {
+                val text = java.net.URL(url).openStream().bufferedReader().use { it.readText() }
+                if (text.isBlank()) throw Exception("empty")
+                val meta = UserScriptMeta.parse(text)
+                val name = (meta.name ?: url.substringAfterLast('/')).ifBlank { "Script" }
+                runOnUiThread {
+                    val store = ExtensionStore(this)
+                    if (store.getAll().any { it.name.equals(name, true) }) {
+                        android.widget.Toast.makeText(this, getString(R.string.ext_already),
+                            android.widget.Toast.LENGTH_SHORT).show()
+                        return@runOnUiThread
+                    }
+                    val slug = name.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+                    store.add(Extension(
+                        id = "web-" + slug, name = name,
+                        pattern = meta.pattern.ifBlank { "*" }, code = text,
+                        enabled = true, builtIn = false,
+                        desc = meta.desc ?: getString(R.string.ext_from_link_sum),
+                        runAt = meta.runAt, grants = meta.grants))
+                    android.widget.Toast.makeText(this, getString(R.string.ext_added),
+                        android.widget.Toast.LENGTH_SHORT).show()
+                    rebuild()
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    android.widget.Toast.makeText(this, getString(R.string.ext_load_failed),
+                        android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
+        }.start()
+    }
 }

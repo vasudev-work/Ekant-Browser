@@ -815,4 +815,8 @@
     <string name="tts_gender_female">Female</string>
     <string name="tts_gender_none">no male/female voice on this device</string>
     <string name="rd_lower_male">Lower (male)</string>
+    <string name="ext_from_link">Install from a link</string>
+    <string name="ext_from_link_sum">Paste a userscript URL, for example from Greasy Fork</string>
+    <string name="ext_bad_link">That does not look like a link</string>
+    <string name="ext_added">Extension added</string>
 </resources>
