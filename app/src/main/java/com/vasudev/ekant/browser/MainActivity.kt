@@ -2398,6 +2398,7 @@ document.open();document.write(h);document.close();
         var gridMode = prefs.getBoolean("tabs_grid", true)
         lateinit var dlg: android.app.Dialog
         var filter = ""
+        var section = "tabs"   // "tabs" | "private"
 
         // ---- top bar: + | count | layout toggle | overflow ----
         val top = LinearLayout(this)
@@ -2466,6 +2467,42 @@ document.open();document.write(h);document.close();
         val slp = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         slp.topMargin = dp(14)
+        // Two lists, not one mixed list: an incognito tab is not a tab you
+        // expect to find among the others.
+        val heads = LinearLayout(this)
+        heads.orientation = LinearLayout.HORIZONTAL
+        heads.setPadding(dp(18), dp(14), dp(18), dp(4))
+        val tabLabel = TextView(this)
+        val privLabel = TextView(this)
+        fun paintHeads() {
+            for ((tv, key) in listOf(tabLabel to "tabs", privLabel to "private")) {
+                val on = section == key
+                tv.setTextColor(if (on) attr(R.attr.textPrimaryColor) else attr(R.attr.textSecondaryColor))
+                tv.textSize = if (on) 17f else 16f
+                tv.setTypeface(null, if (on) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+                val u = GradientDrawable()
+                u.cornerRadius = dp(2).toFloat()
+                u.setColor(if (on) attr(R.attr.brandColor) else 0x00000000)
+                tv.background = u
+                tv.setPadding(dp(4), dp(6), dp(4), dp(6))
+            }
+        }
+        for ((tv, key, label) in listOf(
+            Triple(tabLabel, "tabs", getString(R.string.t_tabs)),
+            Triple(privLabel, "private", getString(R.string.t_private))
+        )) {
+            tv.text = label
+            tv.isFocusable = false
+            val lp = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.rightMargin = dp(20)
+            tv.layoutParams = lp
+            tv.setOnClickListener { section = key; paintHeads(); rebuild() }
+            heads.addView(tv)
+        }
+        paintHeads()
+        root.addView(heads)
+
         root.addView(search, slp)
 
         val scroll = ScrollView(this)
@@ -2507,6 +2544,7 @@ document.open();document.write(h);document.close();
 
         fun card(i: Int) {
             val wv = tabs[i]
+            if ((section == "private") != privateTabs.contains(wv)) return
             val title = wv.title ?: getString(R.string.m_new_tab)
             if (filter.isNotBlank() &&
                 !title.contains(filter, true) &&
@@ -2580,8 +2618,23 @@ document.open();document.write(h);document.close();
 
         fun rebuild() {
             grid.removeAllViews()
-            count.text = "" + tabs.size
-            for (i in tabs.indices) card(i)
+            val mine = tabs.indices.filter {
+                (section == "private") == privateTabs.contains(tabs[it])
+            }
+            count.text = "" + mine.size
+            for (i in mine) card(i)
+            if (mine.isEmpty()) {
+                val hint = TextView(this)
+                hint.text = if (section == "private")
+                    getString(R.string.t_no_private) else getString(R.string.t_no_tabs)
+                hint.setTextColor(attr(R.attr.textSecondaryColor))
+                hint.textSize = 14f
+                hint.setPadding(dp(20), dp(40), dp(20), 0)
+                grid.addView(hint, GridLayout.LayoutParams().apply {
+                    width = ViewGroup.LayoutParams.MATCH_PARENT
+                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 2f)
+                })
+            }
         }
 
         toggle.setOnClickListener {

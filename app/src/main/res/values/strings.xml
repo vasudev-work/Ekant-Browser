@@ -786,4 +786,8 @@
     <string name="m_night">Night mode</string>
     <string name="quick_settings">Quick settings</string>
     <string name="no_settings_found">No settings found</string>
+    <string name="t_tabs">Tabs</string>
+    <string name="t_private">Incognito</string>
+    <string name="t_no_tabs">No tabs open. Tap + to start one.</string>
+    <string name="t_no_private">No incognito tabs. Nothing here is saved.</string>
 </resources>
