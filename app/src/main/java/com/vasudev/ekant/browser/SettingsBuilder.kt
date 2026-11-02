@@ -268,11 +268,43 @@ class SettingsBuilder(private val a: Context, private val root: LinearLayout) {
         root.addView(t)
     }
 
+    /**
+     * A ripple that exists only while the finger is down, and is bounded to the
+     * row. The unbounded version left a grey wash on rows that navigate away:
+     * the view disappears mid-press, so the ripple never finishes and the next
+     * layout inherits it.
+     */
+    private val ripple: android.graphics.drawable.Drawable? by lazy {
+        try {
+            val ta = a.obtainStyledAttributes(intArrayOf(android.R.attr.colorControlHighlight))
+            val c = ta.getColor(0, 0x33FFFFFF.toInt())
+            ta.recycle()
+            val mask = android.graphics.drawable.GradientDrawable()
+            mask.setColor(-1)
+            mask.cornerRadius = dp(14).toFloat()
+            android.graphics.drawable.RippleDrawable(
+                android.content.res.ColorStateList.valueOf(c), null, mask)
+        } catch (_: Exception) { null }
+    }
+
     private fun rowBase(card: LinearLayout): LinearLayout {
         val r = LinearLayout(a)
         r.orientation = LinearLayout.HORIZONTAL
         r.gravity = Gravity.CENTER_VERTICAL
         r.setPadding(dp(16), dp(15), dp(16), dp(15))
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 23) r.foreground = ripple
+            r.isFocusable = false
+            r.isFocusableInTouchMode = false
+            // settle the ripple on lift, even when the tap closes this screen
+            r.setOnTouchListener { v, e ->
+                if (e.action == android.view.MotionEvent.ACTION_UP ||
+                    e.action == android.view.MotionEvent.ACTION_CANCEL) {
+                    v.post { try { v.jumpDrawablesToCurrentState() } catch (_: Exception) { } }
+                }
+                false
+            }
+        } catch (_: Exception) { }
         card.addView(r)
         return r
     }
