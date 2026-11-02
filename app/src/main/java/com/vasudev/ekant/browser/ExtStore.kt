@@ -20,6 +20,7 @@ object ExtStore {
     const val DEFAULT_BASE =
         "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@main/extensions/"
     const val FALLBACK_BASE =
+        "https://raw.githubusercontent.com/vasudev-work/Ekant-Browser/main/extensions/"
 
     /**
      * The store's public key. A list is only trusted when it carries a signature
@@ -39,7 +40,6 @@ object ExtStore {
         sig.update(body.toByteArray(Charsets.UTF_8))
         sig.verify(android.util.Base64.decode(sigB64.trim(), android.util.Base64.NO_WRAP))
     } catch (_: Exception) { false }
-        "https://raw.githubusercontent.com/vasudev-work/Ekant-Browser/main/extensions/"
 
     data class Remote(
         val id: String,
