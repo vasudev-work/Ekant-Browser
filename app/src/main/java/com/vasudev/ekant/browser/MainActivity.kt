@@ -2483,7 +2483,8 @@ document.open();document.write(h);document.close();
                 tv.setTypeface(null, if (on) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
                 val u = GradientDrawable()
                 u.cornerRadius = dp(2).toFloat()
-                u.setColor(if (on) attr(R.attr.brandColor) else 0x00000000)
+                u.setColor(if (on) (attr(R.attr.brandColor) and 0x00FFFFFF) or 0x33000000
+                           else 0x00000000)
                 tv.background = u
                 tv.setPadding(dp(4), dp(6), dp(4), dp(6))
             }
@@ -2546,7 +2547,11 @@ document.open();document.write(h);document.close();
         fun card(i: Int) {
             val wv = tabs[i]
             if ((section == "private") != privateTabs.contains(wv)) return
-            val title = wv.title ?: getString(R.string.m_new_tab)
+            // a tab sitting on the start page reports the app name as its
+            // title; name it for what it is
+            val isHome = (wv.url ?: "").startsWith(HOME_ASSET)
+            val title = if (isHome) getString(R.string.t_start_page)
+                        else (wv.title ?: getString(R.string.m_new_tab))
             if (filter.isNotBlank() &&
                 !title.contains(filter, true) &&
                 !(wv.url ?: "").contains(filter, true)) return
@@ -2571,7 +2576,8 @@ document.open();document.write(h);document.close();
 
             val iv = ImageView(this)
             val fav = favicons[wv]
-            if (fav != null) iv.setImageBitmap(fav) else iv.setImageResource(R.drawable.ic_tabs)
+            if (fav != null) iv.setImageBitmap(fav)
+            else iv.setImageResource(if (isHome) R.drawable.ic_home else R.drawable.ic_tabs)
             iv.setColorFilter(attr(R.attr.textSecondaryColor))
             iv.layoutParams = LinearLayout.LayoutParams(dp(22), dp(22))
             head.addView(iv)
@@ -2597,7 +2603,9 @@ document.open();document.write(h);document.close();
 
             if (gridMode) {
                 val prev = ImageView(this)
-                prev.scaleType = ImageView.ScaleType.CENTER_CROP
+                // FIT_START keeps the top of the page, which is what a preview
+                // is for; CENTER_CROP was cutting the header off
+                prev.scaleType = ImageView.ScaleType.FIT_START
                 val bmp = thumbOf(wv)
                 if (bmp != null) prev.setImageBitmap(bmp) else {
                     val ph = GradientDrawable()
