@@ -63,6 +63,10 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val PREFS = "aekant"
 
+        /** Where the refreshed filter lists come from - this repository's assets. */
+        const val FILTER_BASE =
+            "https://raw.githubusercontent.com/vasudev-work/Ekant-Browser/main/app/src/main/assets/"
+
         /** Drop history entries older than the retention period. */
         fun pruneHistory(ctx: Context) {
             try {
@@ -300,6 +304,16 @@ document.open();document.write(h);document.close();
     private val INTERNAL_SCHEMES = setOf(
         "http", "https", "about", "data", "blob", "file", "javascript", "chrome", "aekant", "ws", "wss", "content")
 
+    /** A scanned code: a link opens, anything else becomes a search. */
+    private val scanLauncher = registerForActivityResult(
+        com.journeyapps.barcodescanner.ScanContract()) { res ->
+        val text = res.contents
+        if (!text.isNullOrBlank()) {
+            if (text.startsWith("http://") || text.startsWith("https://")) go(text)
+            else go(searchFor(text))
+        }
+    }
+
     private val fileChooser = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
         val cb = filePathCallback
         filePathCallback = null
@@ -314,6 +328,7 @@ document.open();document.write(h);document.close();
         setTheme(ThemeHelper.res(this))
         super.onCreate(saved)
         setContentView(R.layout.activity_main)
+        scheduleFilterRefresh()
         applyEdgeToEdge()
 
         container = findViewById(R.id.container)
@@ -2149,6 +2164,8 @@ document.open();document.write(h);document.close();
         }
         b.menuRow(c, R.drawable.ic_new_tab, getString(R.string.m_new_tab), null, act(0)); b.divider(c)
         b.menuRow(c, R.drawable.ic_incognito, getString(R.string.m_new_incognito), null, act(1)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_qr, getString(R.string.m_scan_qr), null,
+            View.OnClickListener { hideMenuPanel(); scanQr() }); b.divider(c)
         b.menuRow(c, R.drawable.ic_tabs, getString(R.string.m_add_group), null, act(3)); b.divider(c)
         b.menuRow(c, R.drawable.ic_history, getString(R.string.m_history), null, act(4)); b.divider(c)
         b.menuRow(c, R.drawable.ic_delete, getString(R.string.m_delete_data), null, act(29)); b.divider(c)
@@ -2981,6 +2998,41 @@ document.open();document.write(h);document.close();
     private fun translatePage() {
         val u = cur()?.url ?: return
         newTab("https://translate.google.com/translate?sl=auto&tl=en&u=" + Uri.encode(u))
+    }
+
+    /** Scan a QR code and open whatever it points at. */
+    private fun scanQr() {
+        try {
+            val o = com.journeyapps.barcodescanner.ScanOptions()
+            o.setDesiredBarcodeFormats(com.journeyapps.barcodescanner.ScanOptions.QR_CODE)
+            o.setPrompt(getString(R.string.qr_prompt))
+            o.setBeepEnabled(false)
+            o.setOrientationLocked(false)
+            scanLauncher.launch(o)
+        } catch (_: Exception) {
+            toast(getString(R.string.qr_failed))
+        }
+    }
+
+    /**
+     * Ask WorkManager to refresh the filter lists weekly. It waits for an
+     * unmetered connection, so nothing runs on mobile data.
+     */
+    private fun scheduleFilterRefresh() {
+        try {
+            val req = androidx.work.PeriodicWorkRequestBuilder<FilterRefreshWorker>(
+                7, java.util.concurrent.TimeUnit.DAYS)
+                .setConstraints(
+                    androidx.work.Constraints.Builder()
+                        .setRequiredNetworkType(androidx.work.NetworkType.UNMETERED)
+                        .build())
+                .setInputData(androidx.work.workDataOf(
+                    FilterRefreshWorker.KEY_BASE to FILTER_BASE))
+                .build()
+            androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                FilterRefreshWorker.WORK,
+                androidx.work.ExistingPeriodicWorkPolicy.KEEP, req)
+        } catch (_: Exception) { }
     }
 
     private fun toast(m: String) {

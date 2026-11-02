@@ -47,10 +47,22 @@ object AdFilterEngine {
         }.start()
     }
 
-    private fun openAsset(context: Context, name: String): java.io.InputStream? = try {
-        GZIPInputStream(context.assets.open(name))
-    } catch (_: Exception) {
-        try { context.assets.open(name.removeSuffix(".gz")) } catch (_: Exception) { null }
+    /**
+     * A list refreshed by FilterRefreshWorker wins over the copy in the APK, so
+     * the rules can be updated without shipping a new build.
+     */
+    private fun openAsset(context: Context, name: String): java.io.InputStream? {
+        try {
+            val f = java.io.File(java.io.File(context.filesDir, FilterRefreshWorker.DIR), name)
+            if (f.exists() && f.length() > 1024) {
+                return GZIPInputStream(f.inputStream())
+            }
+        } catch (_: Exception) { }
+        return try {
+            GZIPInputStream(context.assets.open(name))
+        } catch (_: Exception) {
+            try { context.assets.open(name.removeSuffix(".gz")) } catch (_: Exception) { null }
+        }
     }
 
     private fun loadCosmetic(context: Context) {

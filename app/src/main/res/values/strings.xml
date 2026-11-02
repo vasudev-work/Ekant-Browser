@@ -720,4 +720,7 @@
     <string name="m_ext_store">Extension store</string>
     <string name="hist_deleted">Entry removed</string>
     <string name="undo">Undo</string>
+    <string name="m_scan_qr">Scan QR code</string>
+    <string name="qr_prompt">Point at a QR code</string>
+    <string name="qr_failed">No camera app available</string>
 </resources>

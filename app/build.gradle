@@ -39,4 +39,8 @@ dependencies {
     implementation 'androidx.activity:activity-ktx:1.9.0'
     implementation 'androidx.webkit:webkit:1.11.0'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    // QR scanning, so a code on a poster opens in the browser
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    // weekly refresh of the filter lists, on Wi-Fi only
+    implementation 'androidx.work:work-runtime-ktx:2.9.0'
 }
