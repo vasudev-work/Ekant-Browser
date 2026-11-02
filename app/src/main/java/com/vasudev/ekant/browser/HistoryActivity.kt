@@ -62,7 +62,12 @@ class HistoryActivity : BaseSettingsActivity() {
                 val card = b.card()
                 b.valueRow(card, if (item.first.isBlank()) item.second else item.first, item.second.take(40), null)
                 b.divider(card)
-                b.navRow(card, getString(R.string.ext_delete), null) { delete(item.second, item.third) }
+                b.navRow(card, getString(R.string.ext_delete), null) {
+                    // keep the list first, so Undo can put the entry back
+                    val before = parse()
+                    delete(item.second, item.third)
+                    snack(getString(R.string.hist_deleted)) { write(before) }
+                }
             }
         }
 
@@ -104,6 +109,17 @@ class HistoryActivity : BaseSettingsActivity() {
         if (sameYear && y.get(Calendar.DAY_OF_YEAR) == then.get(Calendar.DAY_OF_YEAR))
             return getString(R.string.hist_yesterday)
         return SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(Date(ts))
+    }
+
+    /** A Material snackbar with one action - Undo, in practice. */
+    private fun snack(message: String, action: (() -> Unit)? = null) {
+        try {
+            val sb = com.google.android.material.snackbar.Snackbar
+                .make(findViewById(android.R.id.content), message,
+                    com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+            if (action != null) sb.setAction(getString(R.string.undo)) { action() }
+            sb.show()
+        } catch (_: Exception) { }
     }
 
     private fun delete(url: String, ts: Long) {

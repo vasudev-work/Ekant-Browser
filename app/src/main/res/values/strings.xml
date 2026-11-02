@@ -718,4 +718,6 @@
     <string name="sp_allow_once">Allow once</string>
     <string name="d_close_others">Close other tabs</string>
     <string name="m_ext_store">Extension store</string>
+    <string name="hist_deleted">Entry removed</string>
+    <string name="undo">Undo</string>
 </resources>

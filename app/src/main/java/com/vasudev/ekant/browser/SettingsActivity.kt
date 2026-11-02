@@ -91,17 +91,19 @@ class SettingsActivity : BaseSettingsActivity() {
     override fun build(b: SettingsBuilder, content: LinearLayout) {
         if (!searchAdded) {
             searchAdded = true
-            val et = android.widget.EditText(this)
-            et.hint = getString(R.string.st_search)
+            // Material's outlined field: the hint floats instead of vanishing
+            val til = com.google.android.material.textfield.TextInputLayout(this)
+            til.hint = getString(R.string.st_search)
+            til.boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+            til.setBoxCornerRadii(dp(22).toFloat(), dp(22).toFloat(), dp(22).toFloat(), dp(22).toFloat())
+            til.setBoxStrokeColor(attr(R.attr.brandColor))
+            til.setHintTextColor(android.content.res.ColorStateList.valueOf(attr(R.attr.textSecondaryColor)))
+            til.layoutParams = LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            val et = com.google.android.material.textfield.TextInputEditText(this)
             et.isSingleLine = true
             et.setTextColor(attr(R.attr.textPrimaryColor))
             et.setHintTextColor(attr(R.attr.textSecondaryColor))
-            val bg = android.graphics.drawable.GradientDrawable()
-            bg.cornerRadius = dp(20).toFloat()
-            bg.setColor(attr(R.attr.surface2Color))
-            et.background = bg
-            et.setPadding(dp(16), dp(11), dp(16), dp(11))
-            et.layoutParams = LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            til.addView(et)
             et.addTextChangedListener(object : android.text.TextWatcher {
                 override fun afterTextChanged(s: android.text.Editable?) { query = s?.toString() ?: ""; rebuild() }
                 override fun beforeTextChanged(s: CharSequence?, a: Int, b2: Int, c: Int) { }
@@ -109,7 +111,7 @@ class SettingsActivity : BaseSettingsActivity() {
             })
             val box = LinearLayout(this)
             box.setPadding(dp(14), dp(10), dp(14), dp(2))
-            box.addView(et)
+            box.addView(til)
             addTopView(box)
         }
 

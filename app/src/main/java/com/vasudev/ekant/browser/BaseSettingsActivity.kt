@@ -31,30 +31,17 @@ abstract class BaseSettingsActivity : AppCompatActivity() {
         root.orientation = LinearLayout.VERTICAL
         root.setBackgroundColor(attr(R.attr.bgColor))
 
-        val header = LinearLayout(this)
-        header.orientation = LinearLayout.HORIZONTAL
-        header.gravity = Gravity.CENTER_VERTICAL
-        header.setBackgroundColor(attr(R.attr.barColor))
-        header.setPadding(dp(6), dp(6), dp(6), dp(6))
-
-        val back = ImageView(this)
-        back.setImageResource(R.drawable.ic_back)
-        back.setColorFilter(attr(R.attr.textPrimaryColor))
-        back.setOnClickListener { finish() }
-        val backLp = LinearLayout.LayoutParams(dp(44), dp(44))
-        back.setPadding(dp(11), dp(11), dp(11), dp(11))
-        header.addView(back, backLp)
-
-        val title = TextView(this)
-        title.text = getString(titleRes)
-        title.setTextColor(attr(R.attr.textPrimaryColor))
-        title.textSize = 18f
-        title.setTypeface(null, Typeface.BOLD)
-        title.setPadding(dp(8), 0, 0, 0)
-        header.addView(title)
-
-        root.addView(header, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        // Material's own toolbar: title styling, navigation icon and insets
+        // come from the theme instead of being drawn by hand
+        val bar = com.google.android.material.appbar.MaterialToolbar(this)
+        bar.setBackgroundColor(attr(R.attr.barColor))
+        bar.title = getString(titleRes)
+        bar.setTitleTextColor(attr(R.attr.textPrimaryColor))
+        bar.navigationIcon = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_back)
+        try { bar.setNavigationIconTint(attr(R.attr.textPrimaryColor)) } catch (_: Exception) { }
+        bar.setNavigationOnClickListener { finish() }
+        root.addView(bar, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(56)))
 
         val scroll = ScrollView(this)
         content = LinearLayout(this)
