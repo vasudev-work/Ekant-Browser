@@ -249,6 +249,7 @@ document.open();document.write(h);document.close();
     private var desktop = false
     private var incognito = false
     private val privateTabs = HashSet<WebView>()
+    private val PRIVATE_TAG = "nijatva-private"
     private var lastBackAt = 0L
     private val gmCalls = java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection>()
     private var js = true
@@ -864,6 +865,7 @@ document.open();document.write(h);document.close();
                 try { t.destroy() } catch (_: Exception) { }
             }
             tabs.clear()
+            privateTabs.clear()
             current = -1
             val saved = if (prefs.getBoolean("restore_tabs", true)) store.getTabs(c.id) else emptyList()
             if (saved.isEmpty()) {
@@ -882,9 +884,20 @@ document.open();document.write(h);document.close();
         }
     }
 
+    /**
+     * A tab is private if it is in the set, or carries the tag the set is
+     * built from - belt and braces, so no creation path can slip through.
+     */
+    private fun isPrivate(wv: WebView): Boolean =
+        privateTabs.contains(wv) || wv.tag == PRIVATE_TAG
+
     private fun saveTabs() {
         val c = active ?: return
-        store.saveTabs(c.id, tabs.map { TabState(it.url ?: ntpUrl(), it.title ?: "") })
+        // An incognito tab is never written down. Saved, it returned next launch
+        // as an ordinary tab - which is both a privacy leak and the reason an
+        // incognito page showed up under Tabs.
+        val keep = tabs.filter { !isPrivate(it) }
+        store.saveTabs(c.id, keep.map { TabState(it.url ?: ntpUrl(), it.title ?: "") })
     }
 
     private fun updateContainerUi() {
@@ -1157,7 +1170,7 @@ document.open();document.write(h);document.close();
         }
         for (k in tabs.indices) (wrappers[tabs[k]] ?: tabs[k]).visibility = if (k == i) View.VISIBLE else View.GONE
         current = i
-        incognito = privateTabs.contains(tabs[i])
+        incognito = isPrivate(tabs[i])
         if (prefs.getBoolean("memory_saver", true)) {
             try { tabs[i].onResume() } catch (_: Exception) { }
         }
@@ -2052,6 +2065,7 @@ document.open();document.write(h);document.close();
     private fun doOpenIncognito() {
         val w = newTab(ntpUrl())
         privateTabs.add(w)
+        w.tag = PRIVATE_TAG
         incognito = true
         toast(getString(R.string.t_incognito))
     }
@@ -2546,7 +2560,7 @@ document.open();document.write(h);document.close();
 
         fun card(i: Int) {
             val wv = tabs[i]
-            if ((section == "private") != privateTabs.contains(wv)) return
+            if ((section == "private") != isPrivate(wv)) return
             // a tab sitting on the start page reports the app name as its
             // title; name it for what it is
             val isHome = (wv.url ?: "").startsWith(HOME_ASSET)
@@ -2628,7 +2642,7 @@ document.open();document.write(h);document.close();
         fun rebuild() {
             grid.removeAllViews()
             val mine = tabs.indices.filter {
-                (section == "private") == privateTabs.contains(tabs[it])
+                (section == "private") == isPrivate(tabs[it])
             }
             count.text = "" + mine.size
             for (i in mine) card(i)
@@ -2766,7 +2780,7 @@ document.open();document.write(h);document.close();
             .setItems(actions) { _, which ->
                 when (which) {
                     0 -> newTab(url)
-                    1 -> { val pw = newTab(url); privateTabs.add(pw); incognito = true }
+                    1 -> { val pw = newTab(url); privateTabs.add(pw); pw.tag = PRIVATE_TAG; incognito = true }
                     2 -> copyToClipboard(url)
                     3 -> shareText(url)
                     4 -> downloadUrl(url)
