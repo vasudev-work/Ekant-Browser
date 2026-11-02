@@ -129,8 +129,9 @@ class ReadingActivity : BaseSettingsActivity() {
         b.section(getString(R.string.rd_voice))
         val vo = b.card()
         val pit = prefs.getFloat("tts_pitch", 1.0f)
-        val pitches = floatArrayOf(0.85f, 1.0f, 1.15f, 1.3f)
-        val pitchNames = intArrayOf(R.string.rd_low, R.string.rd_default, R.string.rd_high, R.string.rd_veryhigh)
+        val pitches = floatArrayOf(0.7f, 0.85f, 1.0f, 1.15f, 1.3f)
+        val pitchNames = intArrayOf(R.string.rd_lower_male, R.string.rd_low,
+            R.string.rd_default, R.string.rd_high, R.string.rd_veryhigh)
         for (i in pitches.indices) {
             if (i > 0) b.divider(vo)
             b.radioRow(vo, getString(pitchNames[i]), null, Math.abs(pit - pitches[i]) < 0.01f) {
