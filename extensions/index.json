@@ -1,4 +1,5 @@
 {
+  "schema": 2,
   "version": 1,
   "extensions": [
     {
@@ -7,7 +8,8 @@
       "desc": "Delete the empty rectangles left behind after ads are blocked",
       "pattern": "*",
       "file": "cosmetic-cleanup.js",
-      "version": "1.0"
+      "version": "1.0",
+      "sha256": "c8ca51c59d2075a67eb69d429010a9c3b6424af593fbeda74d79b7be370376d6"
     },
     {
       "id": "hide-shorts",
@@ -15,7 +17,8 @@
       "desc": "Remove the Shorts shelves from YouTube",
       "pattern": "*youtube.com*",
       "file": "hide-shorts.js",
-      "version": "1.0"
+      "version": "1.0",
+      "sha256": "4ceb55e432cd95eb434c93f36e0b2784ce2acbd7dd8f428891bd22c9b4e678bf"
     },
     {
       "id": "stop-autoplay",
@@ -23,7 +26,8 @@
       "desc": "Pause videos that start on their own; a tap still plays them",
       "pattern": "*",
       "file": "stop-autoplay.js",
-      "version": "1.0"
+      "version": "1.0",
+      "sha256": "39ff814bd465ad390cd4872dd8c8f22918748a6b2f23d1907b08c364cd34e218"
     },
     {
       "id": "wide-github",
@@ -31,7 +35,8 @@
       "desc": "Use the full window width on GitHub",
       "pattern": "*github.com*",
       "file": "wide-github.js",
-      "version": "1.0"
+      "version": "1.0",
+      "sha256": "c18c83a70fca531a8919ff6a3e2e9714b1a5c18db71579fbea66a5a613b86401"
     },
     {
       "id": "block-youtube-redirect",
@@ -40,7 +45,8 @@
       "pattern": "*",
       "file": "block-youtube-redirect.js",
       "version": "1.0",
-      "category": "Take control of tabs"
+      "category": "Take control of tabs",
+      "sha256": "808cbac9ff5cc35eebed4e75907f1f7511fb66c9e71f7227e532ceec624009d7"
     }
   ]
 }
