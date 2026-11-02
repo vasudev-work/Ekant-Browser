@@ -13,24 +13,23 @@ import org.json.JSONObject
 object ExtStore {
 
     /**
-     * Two hosts, each doing what it is good at.
+     * Pinned to a tag, as asked.
      *
-     * The index must be fresh: it is fetched from raw, which turns over in about
-     * five minutes. jsDelivr caches a branch for hours, so an index read from it
-     * can lag behind a publish.
-     *
-     * The scripts are the opposite case. They are big, they never change for a
-     * given version, and every one is checked against the sha256 in the index -
-     * so the fast CDN is exactly right for them, and a stale copy cannot slip
-     * through because the hash would not match.
+     * A tag is immutable, so jsDelivr caches it once and serves it from the edge
+     * for good - the index and the scripts both come from the CDN and neither can
+     * lag behind a publish. The cost is honest: a tag is a fixed point, so adding
+     * an extension means pushing a new tag and bumping this constant, which is an
+     * app release. The raw host stays as the fallback so the store still works if
+     * the tag is missing or the CDN is unreachable.
      */
     const val DEFAULT_BASE =
-        "https://raw.githubusercontent.com/vasudev-work/Ekant-Browser/main/extensions/"
-    /** Fast CDN for the scripts themselves. */
+        "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@store-v1/extensions/"
+    /** Same pinned tag for the scripts themselves. */
     const val SCRIPT_BASE =
-        "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@main/extensions/"
+        "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@store-v1/extensions/"
+    /** If the tag is missing or the CDN is down, the live branch. */
     const val FALLBACK_BASE =
-        "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@main/extensions/"
+        "https://raw.githubusercontent.com/vasudev-work/Ekant-Browser/main/extensions/"
 
     /**
      * The store's public key. A list is only trusted when it carries a signature
