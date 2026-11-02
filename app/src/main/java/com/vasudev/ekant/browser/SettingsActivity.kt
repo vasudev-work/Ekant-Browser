@@ -85,6 +85,8 @@ class SettingsActivity : BaseSettingsActivity() {
                 showDialog(getString(R.string.s_updates), getString(R.string.updates_note))
             },
             Item(getString(R.string.r_about)) { go(AboutActivity::class.java) }
+            Item(getString(R.string.dev_title)) { go(DeveloperActivity::class.java) }
+            Item(getString(R.string.don_title)) { go(DonateActivity::class.java) }
         )
     )
 
