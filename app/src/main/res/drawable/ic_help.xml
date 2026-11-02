@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Material icon from @mui/icons-material (MIT), 24dp grid. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
     android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="#00000000" android:strokeColor="#FFFFFF" android:strokeWidth="1.75"
-        android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M12,12 m-8.5,0 a8.5,8.5 0 1,0 17,0 a8.5,8.5 0 1,0 -17,0" />
-    <path android:fillColor="#00000000" android:strokeColor="#FFFFFF" android:strokeWidth="1.75"
-        android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M9.4,9.4 A2.7,2.7 0 0 1 14.6,10.4 C14.6,12.2 12,12.4 12,14.4" />
-    <path android:fillColor="#00000000" android:strokeColor="#FFFFFF" android:strokeWidth="1.75"
-        android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M12,17.4 m-0.9,0 a0.9,0.9 0 1,0 1.8,0 a0.9,0.9 0 1,0 -1.8,0" />
+    <path android:fillColor="#FF000000" android:pathData="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
 </vector>
