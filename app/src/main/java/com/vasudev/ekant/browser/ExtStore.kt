@@ -13,13 +13,22 @@ import org.json.JSONObject
 object ExtStore {
 
     /**
-     * raw.githubusercontent keeps a five minute cache, so a new index shows up
-     * quickly. jsDelivr is faster but caches a branch reference for hours, which
-     * is exactly what we do not want while publishing - so it is the fallback
-     * for the day raw is unreachable, not the default.
+     * Two hosts, each doing what it is good at.
+     *
+     * The index must be fresh: it is fetched from raw, which turns over in about
+     * five minutes. jsDelivr caches a branch for hours, so an index read from it
+     * can lag behind a publish.
+     *
+     * The scripts are the opposite case. They are big, they never change for a
+     * given version, and every one is checked against the sha256 in the index -
+     * so the fast CDN is exactly right for them, and a stale copy cannot slip
+     * through because the hash would not match.
      */
     const val DEFAULT_BASE =
         "https://raw.githubusercontent.com/vasudev-work/Ekant-Browser/main/extensions/"
+    /** Fast CDN for the scripts themselves. */
+    const val SCRIPT_BASE =
+        "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@main/extensions/"
     const val FALLBACK_BASE =
         "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@main/extensions/"
 
@@ -123,7 +132,15 @@ object ExtStore {
                     cb: (String?, String?) -> Unit) {
         Thread {
             try {
-                val text = http(join(base, file))
+                // scripts come from the fast CDN; the hash below is what makes
+                // that safe, not the host
+                var text = ""
+                for (host in listOf(SCRIPT_BASE, base)) {
+                    try {
+                        val got = http(join(host, file))
+                        if (got.isNotBlank()) { text = got; break }
+                    } catch (_: Exception) { }
+                }
                 if (text.isBlank()) { cb(null, "Empty script"); return@Thread }
                 if (!expectedSha.isNullOrBlank()) {
                     val got = sha256(text)
