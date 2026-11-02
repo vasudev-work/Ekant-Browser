@@ -777,6 +777,12 @@ document.open();document.write(h);document.close();
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        val page = intent?.getStringExtra("open_url")
+        if (!page.isNullOrBlank()) {
+            intent.removeExtra("open_url")
+            try { newTab(page) } catch (_: Exception) { }
+            return
+        }
         if (intent?.getStringExtra("show") == "containers") {
             intent.removeExtra("show")
             try { showContainers() } catch (_: Exception) { }
@@ -1279,6 +1285,18 @@ document.open();document.write(h);document.close();
     }
 
     /** Native half of GM_xmlhttpRequest. */
+    /** The tab showing the extension store, so the callback lands where it asked. */
+    private var storeTab: android.webkit.WebView? = null
+
+    /** Tell the store page a card was installed, so it flips in place. */
+    private fun markInstalled(id: String) {
+        try {
+            val js = "window.__aekantInstalled&&window.__aekantInstalled(" +
+                org.json.JSONObject.quote(id) + ")"
+            (storeTab ?: cur())?.evaluateJavascript(js, null)
+        } catch (_: Exception) { }
+    }
+
     inner class GmBridge {
         @android.webkit.JavascriptInterface
         fun setValue(extId: String, key: String, value: String) {
@@ -1701,6 +1719,92 @@ document.open();document.write(h);document.close();
             "addshortcut" -> startActivity(Intent(this, HomeShortcutsActivity::class.java))
             "voice" -> voiceSearch()
             "mute" -> toggleMediaMute()
+            "store" -> {
+                storeTab = cur()
+                val have = try {
+                    ExtensionStore(this).getAll().joinToString(",") { it.id }
+                } catch (_: Exception) { "" }
+                val built = try {
+                    val cats = mapOf(
+                        "builtin-dark" to "Accessibility", "builtin-font" to "Accessibility",
+                        "builtin-cookie" to "Privacy", "builtin-json" to "Developer Tools",
+                        "builtin-ryd" to "Productivity", "builtin-media" to "Productivity",
+                        "builtin-bgplay" to "Productivity", "builtin-target" to "Take control of tabs",
+                        "cat-shorts" to "Productivity", "cat-ytad" to "Productivity",
+                        "cat-noautoplay" to "Productivity", "cat-widegh" to "Developer Tools",
+                        "cat-sticky" to "Productivity", "cat-wiki" to "Productivity",
+                        "cat-read" to "Accessibility", "cat-gray" to "Accessibility")
+                    ExtensionStore(this).catalog().joinToString("|") { e ->
+                        listOf(e.id, e.name, e.desc.take(70), e.pattern, cats[e.id] ?: "Other")
+                            .joinToString("~")
+                    }
+                } catch (_: Exception) { "" }
+                val src = try {
+                    prefs.getString("ext_store_base", ExtStore.DEFAULT_BASE) ?: ExtStore.DEFAULT_BASE
+                } catch (_: Exception) { ExtStore.DEFAULT_BASE }
+                go("file:///android_asset/store.html?installed=" + Uri.encode(have) +
+                    "&builtin=" + Uri.encode(built) + "&base=" + Uri.encode(src))
+            }
+            "install" -> {
+                val builtin = uri.getQueryParameter("b")
+                val script = uri.getQueryParameter("u")
+                val nm = uri.getQueryParameter("n") ?: ""
+                val pat = uri.getQueryParameter("p") ?: "*"
+                if (!builtin.isNullOrBlank()) {
+                    try {
+                        val store = ExtensionStore(this)
+                        val e = store.catalog().firstOrNull { it.id == builtin }
+                        if (e == null) toast(getString(R.string.ext_load_failed))
+                        else if (store.getAll().any { it.id == builtin }) {
+                            toast(getString(R.string.ext_already))
+                            markInstalled(builtin)
+                        } else {
+                            store.add(e.copy(enabled = true))
+                            toast(getString(R.string.ext_installed_toast, e.name))
+                            markInstalled(builtin)
+                        }
+                    } catch (_: Exception) { }
+                    return
+                }
+                if (!script.isNullOrBlank()) {
+                    val base = script.substringBeforeLast('/') + "/"
+                    val file = script.substringAfterLast('/')
+                    toast(getString(R.string.ext_downloading, nm.ifBlank { file }))
+                    ExtStore.fetchScript(base, file) { code, err ->
+                        runOnUiThread {
+                            if (code == null) {
+                                toast(err ?: getString(R.string.ext_load_failed))
+                                return@runOnUiThread
+                            }
+                            try {
+                                val meta = UserScriptMeta.parse(code)
+                                val name = nm.ifBlank { meta.name ?: file }
+                                val slug = name.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+                                val wanted = uri.getQueryParameter("i") ?: ""
+                                val id = wanted.ifBlank { "web-" + slug + "-" + (System.currentTimeMillis() % 100000) }
+                                val store = ExtensionStore(this)
+                                if (store.getAll().any { it.id == id }) {
+                                    toast(getString(R.string.ext_already))
+                                    markInstalled(id)
+                                    return@runOnUiThread
+                                }
+                                store.add(
+                                    Extension(
+                                        id = id, name = name,
+                                        pattern = pat.ifBlank { meta.pattern.ifBlank { "*" } },
+                                        code = code, enabled = true, builtIn = false,
+                                        desc = meta.desc ?: getString(R.string.ext_from_github),
+                                        runAt = meta.runAt, grants = meta.grants)
+                                )
+                                toast(getString(R.string.ext_installed_toast, name))
+                                markInstalled(id)
+                            } catch (_: Exception) { }
+                        }
+                    }
+                }
+            }
+            "appearance" -> startActivity(Intent(this, AppearanceActivity::class.java))
+            "settings" -> startActivity(Intent(this, SettingsActivity::class.java))
         }
     }
 
@@ -2074,6 +2178,8 @@ document.open();document.write(h);document.close();
         b.menuRow(c, R.drawable.ic_pin, getString(R.string.m_pin), null, act(22)); b.divider(c)
         b.menuRow(c, R.drawable.ic_ai, getString(R.string.ai_title), null, act(23)); b.divider(c)
         b.menuRow(c, R.drawable.ic_extension, getString(R.string.m_extensions), null, act(24)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_star, getString(R.string.m_ext_store), null,
+            View.OnClickListener { hideMenuPanel(); handleScheme("aekant://store") }); b.divider(c)
         b.menuRow(c, R.drawable.ic_exit, getString(R.string.m_exit), null, act(27)); b.divider(c)
     }
 

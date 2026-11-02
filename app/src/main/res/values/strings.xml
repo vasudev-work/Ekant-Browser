@@ -717,4 +717,5 @@
     <string name="sp_remember">Always allow</string>
     <string name="sp_allow_once">Allow once</string>
     <string name="d_close_others">Close other tabs</string>
+    <string name="m_ext_store">Extension store</string>
 </resources>
