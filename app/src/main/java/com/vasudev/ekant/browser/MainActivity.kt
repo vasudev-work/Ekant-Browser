@@ -1154,6 +1154,12 @@ document.open();document.write(h);document.close();
             custom.isNotBlank() -> custom
             cu.isNotBlank() -> cu
             desk -> UA_DESKTOP
+            // Sites serve a cut-down page when the user agent says "; wv".
+            // Chrome on Android sends no such marker, so we drop it too.
+            prefs.getBoolean("hide_wv", true) -> try {
+                android.webkit.WebSettings.getDefaultUserAgent(this)
+                    .replace("; wv", "").replace(" wv", "")
+            } catch (_: Exception) { null }
             else -> null
         }
     }

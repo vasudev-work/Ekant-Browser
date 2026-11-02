@@ -36,7 +36,9 @@ class ReadingActivity : BaseSettingsActivity() {
     override fun build(b: SettingsBuilder, content: LinearLayout) {
         b.section(getString(R.string.rd_title))
         val c = b.card()
-        b.switchRow(c, getString(R.string.rd_bionic), getString(R.string.rd_bionic_sum),
+                b.navRow(card, getString(R.string.sleep_title) + ": " + sleepName(), null) { pickSleep() }
+        b.divider(card)
+b.switchRow(c, getString(R.string.rd_bionic), getString(R.string.rd_bionic_sum),
             prefs.getBoolean("bionic", false)) { _, on ->
             prefs.edit().putBoolean("bionic", on).apply()
         }
@@ -162,5 +164,25 @@ class ReadingActivity : BaseSettingsActivity() {
         b.navRow(add, getString(R.string.rd_dict_add), getString(R.string.rd_dict_add_sum)) { dictDialog() }
 
         b.note(getString(R.string.rd_note))
+    }
+
+    /** Off, 15, 30 or 60 minutes - read aloud should not run all night. */
+    private fun sleepName(): String {
+        val m = prefs.getInt("sleep_min", 0)
+        return if (m <= 0) getString(R.string.sleep_off) else "$m min"
+    }
+
+    private fun pickSleep() {
+        val mins = intArrayOf(0, 15, 30, 60)
+        val names = arrayOf(getString(R.string.sleep_off), "15 min", "30 min", "60 min")
+        val current = mins.indexOf(prefs.getInt("sleep_min", 0)).coerceAtLeast(0)
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(getString(R.string.sleep_title))
+            .setSingleChoiceItems(names, current) { d, which ->
+                prefs.edit().putInt("sleep_min", mins[which]).apply()
+                d.dismiss()
+                rebuild()
+            }
+            .show()
     }
 }

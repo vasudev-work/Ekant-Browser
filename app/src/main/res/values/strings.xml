@@ -807,4 +807,6 @@
     <string name="emp_import">Import from a backup</string>
     <string name="emp_browse">Start browsing</string>
     <string name="dl_open">Open</string>
+    <string name="sleep_title">Sleep timer</string>
+    <string name="sleep_off">Off</string>
 </resources>

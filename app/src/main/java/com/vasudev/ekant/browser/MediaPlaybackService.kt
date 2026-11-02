@@ -55,6 +55,7 @@ class MediaPlaybackService : Service() {
             wake?.acquire()
         } catch (_: Exception) { }
         startAnchor()
+        scheduleSleep()
     }
 
     private var anchor: android.media.MediaPlayer? = null
@@ -81,6 +82,31 @@ class MediaPlaybackService : Service() {
         anchor = null
     }
 
+    private var sleepRunnable: Runnable? = null
+
+    /**
+     * Stop after the chosen number of minutes. Reading out loud is easy to start
+     * and easy to forget; this is the switch that ends it.
+     */
+    private fun scheduleSleep() {
+        cancelSleep()
+        val mins = try {
+            getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE).getInt("sleep_min", 0)
+        } catch (_: Exception) { 0 }
+        if (mins <= 0) return
+        val r = Runnable { try { stopSelf() } catch (_: Exception) { } }
+        sleepRunnable = r
+        android.os.Handler(android.os.Looper.getMainLooper())
+            .postDelayed(r, mins * 60_000L)
+    }
+
+    private fun cancelSleep() {
+        sleepRunnable?.let {
+            try { android.os.Handler(android.os.Looper.getMainLooper()).removeCallbacks(it) } catch (_: Exception) { }
+        }
+        sleepRunnable = null
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> { stopSelf(); return START_NOT_STICKY }
@@ -95,6 +121,7 @@ class MediaPlaybackService : Service() {
         try { wake?.let { if (it.isHeld) it.release() } } catch (_: Exception) { }
         wake = null
         stopAnchor()
+        cancelSleep()
         running = false
         super.onDestroy()
     }
