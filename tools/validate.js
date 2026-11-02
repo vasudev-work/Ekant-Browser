@@ -75,9 +75,27 @@ for (const e of index.extensions || []) {
   }
 }
 
+// ---- signature ----
+// The browser refuses a list that is not signed with the store's private key,
+// so a stale or hand-edited index.json would break every install. Catch it here.
+try {
+  const sigFile = path.join(DIR, 'index.json.sig');
+  const pubFile = path.join(DIR, 'store-pubkey.pem');
+  if (!fs.existsSync(sigFile)) fail('extensions/index.json.sig is missing - run tools/sign.py');
+  else if (fs.existsSync(pubFile)) {
+    const crypto2 = require('crypto');
+    const body = fs.readFileSync(INDEX);
+    const sig = Buffer.from(fs.readFileSync(sigFile, 'utf8').trim(), 'base64');
+    const ok = crypto2.verify('sha256', body, fs.readFileSync(pubFile), sig);
+    if (!ok) fail('index.json.sig does not match index.json - re-run tools/sign.py');
+  }
+} catch (e) {
+  fail('could not check the signature: ' + e.message);
+}
+
 // ---- files nobody points at ----
 for (const f of fs.readdirSync(DIR)) {
-  if (f === 'index.json' || f === 'README.md') continue;
+  if (f === 'index.json' || f === 'index.json.sig' || f === 'store-pubkey.pem' || f === 'README.md') continue;
   if (!files.has(f)) fail(`${f} is in the folder but not listed in index.json`);
 }
 
