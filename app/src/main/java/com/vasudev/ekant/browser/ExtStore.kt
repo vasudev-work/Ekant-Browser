@@ -20,6 +20,25 @@ object ExtStore {
     const val DEFAULT_BASE =
         "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@main/extensions/"
     const val FALLBACK_BASE =
+
+    /**
+     * The store's public key. A list is only trusted when it carries a signature
+     * that this key verifies, so a changed index in the repository - by anyone
+     * without the private key - is refused instead of installed.
+     */
+    private const val STORE_PUBKEY_B64 =
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEy+pYBu96v2EwW82f3h72ZnlBy0OekSZs9hXzyYJsV4d13VXy4NXxtLrtVPnwPhYX+VK54F6C48ttHZUo4JTFmQ=="
+
+    /** True when [sigB64] is a valid SHA-256 ECDSA signature over [body]. */
+    private fun signatureOk(body: String, sigB64: String): Boolean = try {
+        val keyBytes = android.util.Base64.decode(STORE_PUBKEY_B64, android.util.Base64.NO_WRAP)
+        val pub = java.security.KeyFactory.getInstance("EC")
+            .generatePublic(java.security.spec.X509EncodedKeySpec(keyBytes))
+        val sig = java.security.Signature.getInstance("SHA256withECDSA")
+        sig.initVerify(pub)
+        sig.update(body.toByteArray(Charsets.UTF_8))
+        sig.verify(android.util.Base64.decode(sigB64.trim(), android.util.Base64.NO_WRAP))
+    } catch (_: Exception) { false }
         "https://raw.githubusercontent.com/vasudev-work/Ekant-Browser/main/extensions/"
 
     data class Remote(
@@ -55,6 +74,11 @@ object ExtStore {
         Thread {
             try {
                 val body = http(join(base, "index.json"))
+                val sig = try { http(join(base, "index.json.sig")) } catch (_: Exception) { "" }
+                if (sig.isBlank() || !signatureOk(body, sig)) {
+                    cb(null, "Store signature is not valid - the list was refused")
+                    return@Thread
+                }
                 val arr: JSONArray = try {
                     val o = JSONObject(body)
                     o.optJSONArray("extensions") ?: JSONArray()
