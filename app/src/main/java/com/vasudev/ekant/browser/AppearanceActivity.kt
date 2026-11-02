@@ -37,11 +37,7 @@ class AppearanceActivity : BaseSettingsActivity() {
         b.section(getString(R.string.ap_theme))
         val c0 = b.card()
         val mode = prefs.getString("theme_mode", "dark")
-        b.radioRow(c0, getString(R.string.theme_dark), null, mode == "dark") { setThemeMode("dark") }
-        b.divider(c0)
-        b.radioRow(c0, getString(R.string.theme_light), null, mode == "light") { setThemeMode("light") }
-        b.divider(c0)
-        b.radioRow(c0, getString(R.string.theme_system), null, mode == "system") { setThemeMode("system") }
+        b.themeCards(c0, mode) { setThemeMode(it) }
 
         b.section(getString(R.string.ap_sites))
         val c3 = b.card()

@@ -459,6 +459,98 @@ class SettingsBuilder(private val a: Context, private val root: LinearLayout) {
         return holder
     }
 
+    /**
+     * A row that opens a screen and carries its own switch: the chevron says
+     * "there is more in here", the switch says "and you can turn it off without
+     * going in". Tapping the row navigates; tapping the switch does not.
+     */
+    fun toggleNavRow(card: LinearLayout, iconRes: Int, title: String, summary: String?,
+                     checked: Boolean, onNav: () -> Unit,
+                     onToggle: (Boolean) -> Unit): android.widget.CompoundButton {
+        val r = rowBase(card)
+        addIcon(r, iconRes)
+        textCol(r, title, summary, textColor)
+
+        val chev = TextView(a)
+        chev.text = "\u203a"
+        chev.textSize = 20f
+        chev.setTextColor(attr(R.attr.textSecondaryColor))
+        chev.setPadding(dp(6), 0, dp(10), 0)
+        r.addView(chev)
+
+        val sw = com.google.android.material.switchmaterial.SwitchMaterial(a)
+        sw.isChecked = checked
+        sw.isFocusable = false
+        sw.setOnCheckedChangeListener { _, v -> onToggle(v) }
+        r.addView(sw)
+        r.setOnClickListener { onNav() }
+        return sw
+    }
+
+    /**
+     * Theme as three cards rather than three radio rows: the light card is
+     * white and the dark card is black, so the choice explains itself.
+     */
+    fun themeCards(card: LinearLayout, current: String, onPick: (String) -> Unit) {
+        val strip = LinearLayout(a)
+        strip.orientation = LinearLayout.HORIZONTAL
+        strip.setPadding(dp(12), dp(12), dp(12), dp(12))
+        card.addView(strip)
+
+        val options = listOf(
+            Triple("system", "Follow system", 0),
+            Triple("light", "Light", 1),
+            Triple("dark", "Dark", 2)
+        )
+        for ((key, label, kind) in options) {
+            val on = key == current
+            val cell = LinearLayout(a)
+            cell.orientation = LinearLayout.VERTICAL
+            cell.gravity = Gravity.CENTER
+            cell.setPadding(dp(4), dp(20), dp(4), dp(18))
+            val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            lp.rightMargin = dp(8)
+            cell.layoutParams = lp
+
+            val bg = android.graphics.drawable.GradientDrawable()
+            bg.cornerRadius = dp(14).toFloat()
+            // the card shows its own theme
+            when (kind) {
+                1 -> bg.setColor(0xFFFFFFFF.toInt())
+                2 -> bg.setColor(0xFF0E0E10.toInt())
+                else -> bg.setColor(attr(R.attr.surface2Color))
+            }
+            if (on) bg.setStroke(dp(2), attr(R.attr.brandColor))
+            else bg.setStroke(dp(1), attr(R.attr.dividerColor))
+            cell.background = bg
+            cell.isFocusable = false
+
+            val t = TextView(a)
+            t.text = label
+            t.textSize = 13f
+            t.gravity = Gravity.CENTER
+            t.setTextColor(
+                when (kind) {
+                    1 -> 0xFF101010.toInt()
+                    2 -> 0xFFF2F2F2.toInt()
+                    else -> attr(R.attr.textPrimaryColor)
+                })
+            cell.addView(t)
+
+            if (on) {
+                val check = TextView(a)
+                check.text = "\u2713"
+                check.textSize = 12f
+                check.gravity = Gravity.CENTER
+                check.setTextColor(attr(R.attr.brandColor))
+                cell.addView(check)
+            }
+
+            cell.setOnClickListener { onPick(key) }
+            strip.addView(cell)
+        }
+    }
+
     fun switchRow(card: LinearLayout, title: String, summary: String?, checked: Boolean,
                   l: CompoundButton.OnCheckedChangeListener?): SwitchMaterial {
         val r = rowBase(card)

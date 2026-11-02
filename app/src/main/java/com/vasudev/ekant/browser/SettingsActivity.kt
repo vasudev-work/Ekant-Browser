@@ -91,6 +91,35 @@ class SettingsActivity : BaseSettingsActivity() {
     )
 
     override fun build(b: SettingsBuilder, content: LinearLayout) {
+
+        // The switches people flip most often, before the categories: one tap
+        // here instead of a screen and a half for the same thing.
+        val quick = b.card()
+        b.iconSwitchRow(quick, R.drawable.ic_brightness, getString(R.string.m_night), null,
+            prefs.getBoolean("force_dark", false)) { _, on ->
+            prefs.edit().putBoolean("force_dark", on).apply()
+            rebuild()
+        }
+        b.divider(quick)
+        b.iconSwitchRow(quick, R.drawable.ic_block, getString(R.string.sh_ads), null,
+            prefs.getBoolean("block_ads", true)) { _, on ->
+            prefs.edit().putBoolean("block_ads", on).apply()
+        }
+        b.divider(quick)
+        b.iconSwitchRow(quick, R.drawable.ic_shield, getString(R.string.sh_trackers), null,
+            prefs.getBoolean("block_trackers", true)) { _, on ->
+            prefs.edit().putBoolean("block_trackers", on).apply()
+        }
+        b.divider(quick)
+        b.iconSwitchRow(quick, R.drawable.ic_lock, getString(R.string.sh_https), null,
+            prefs.getBoolean("https_only", false)) { _, on ->
+            prefs.edit().putBoolean("https_only", on).apply()
+        }
+        b.divider(quick)
+        b.iconSwitchRow(quick, R.drawable.ic_filter, getString(R.string.sh_clean_urls), null,
+            prefs.getBoolean("clean_urls", false)) { _, on ->
+            prefs.edit().putBoolean("clean_urls", on).apply()
+        }
         if (!searchAdded) {
             searchAdded = true
             // Material's outlined field: the hint floats instead of vanishing
