@@ -13,14 +13,15 @@ import org.json.JSONObject
 object ExtStore {
 
     /**
-     * jsDelivr serves this repository with a short cache and immutable tags, so a
-     * new index shows up in seconds instead of minutes. The raw host stays as a
-     * fallback for the day jsDelivr is unreachable.
+     * raw.githubusercontent keeps a five minute cache, so a new index shows up
+     * quickly. jsDelivr is faster but caches a branch reference for hours, which
+     * is exactly what we do not want while publishing - so it is the fallback
+     * for the day raw is unreachable, not the default.
      */
     const val DEFAULT_BASE =
-        "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@main/extensions/"
-    const val FALLBACK_BASE =
         "https://raw.githubusercontent.com/vasudev-work/Ekant-Browser/main/extensions/"
+    const val FALLBACK_BASE =
+        "https://cdn.jsdelivr.net/gh/vasudev-work/Ekant-Browser@main/extensions/"
 
     /**
      * The store's public key. A list is only trusted when it carries a signature

@@ -1770,7 +1770,7 @@ document.open();document.write(h);document.close();
                         val store = ExtensionStore(this)
                         val e = store.catalog().firstOrNull { it.id == builtin }
                         if (e == null) toast(getString(R.string.ext_load_failed))
-                        else if (store.getAll().any { it.id == builtin }) {
+                        else if (store.getAll().any { it.id == builtin || it.name.equals(e.name, true) }) {
                             toast(getString(R.string.ext_already))
                             markInstalled(builtin)
                         } else {
@@ -1798,7 +1798,7 @@ document.open();document.write(h);document.close();
                                 val wanted = uri.getQueryParameter("i") ?: ""
                                 val id = wanted.ifBlank { "web-" + slug + "-" + (System.currentTimeMillis() % 100000) }
                                 val store = ExtensionStore(this)
-                                if (store.getAll().any { it.id == id }) {
+                                if (store.getAll().any { it.id == id || it.name.equals(name, true) }) {
                                     toast(getString(R.string.ext_already))
                                     markInstalled(id)
                                     return@runOnUiThread
