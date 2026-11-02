@@ -784,4 +784,6 @@
     <string name="don_thanks">Thank you for your support!</string>
     <string name="m_block_ads">Block ads</string>
     <string name="m_night">Night mode</string>
+    <string name="quick_settings">Quick settings</string>
+    <string name="no_settings_found">No settings found</string>
 </resources>

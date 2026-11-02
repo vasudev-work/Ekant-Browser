@@ -38,6 +38,11 @@ class SettingsActivity : BaseSettingsActivity() {
             Item(getString(R.string.rd_title)) { go(ReadingActivity::class.java) }
         ),
         getString(R.string.sec_privacy) to listOf(
+            Item(getString(R.string.sh_clean_urls)) {
+                val on = prefs.getBoolean("clean_urls", false)
+                prefs.edit().putBoolean("clean_urls", !on).apply()
+                rebuild()
+            },
             Item(getString(R.string.r_privacy_dashboard)) { go(PrivacyActivity::class.java) },
             Item(getString(R.string.ab_title)) { go(AdBlockActivity::class.java) },
             Item(getString(R.string.s_tracking)) { go(ShieldsActivity::class.java) },
@@ -81,6 +86,9 @@ class SettingsActivity : BaseSettingsActivity() {
                 showDialog(getString(R.string.s_privacy_policy), getString(R.string.policy_note))
             },
             Item(getString(R.string.s_feedback)) { feedback() },
+            Item(getString(R.string.s_app_version)) {
+                showDialog(getString(R.string.s_app_version), appVersion())
+            },
             Item(getString(R.string.s_updates)) {
                 showDialog(getString(R.string.s_updates), getString(R.string.updates_note))
             },
@@ -94,6 +102,7 @@ class SettingsActivity : BaseSettingsActivity() {
 
         // The switches people flip most often, before the categories: one tap
         // here instead of a screen and a half for the same thing.
+        b.section(getString(R.string.quick_settings))
         val quick = b.card()
         b.iconSwitchRow(quick, R.drawable.ic_brightness, getString(R.string.m_night), null,
             prefs.getBoolean("force_dark", false)) { _, on ->
@@ -114,11 +123,6 @@ class SettingsActivity : BaseSettingsActivity() {
         b.iconSwitchRow(quick, R.drawable.ic_lock, getString(R.string.sh_https), null,
             prefs.getBoolean("https_only", false)) { _, on ->
             prefs.edit().putBoolean("https_only", on).apply()
-        }
-        b.divider(quick)
-        b.iconSwitchRow(quick, R.drawable.ic_filter, getString(R.string.sh_clean_urls), null,
-            prefs.getBoolean("clean_urls", false)) { _, on ->
-            prefs.edit().putBoolean("clean_urls", on).apply()
         }
         if (!searchAdded) {
             searchAdded = true
@@ -158,7 +162,7 @@ class SettingsActivity : BaseSettingsActivity() {
                     b.navRow(card, item.label, null, android.view.View.OnClickListener { item.action() })
                 }
             }
-            if (first) b.note(getString(R.string.d_empty))
+            if (first) b.note(getString(R.string.no_settings_found))
             return
         }
 
@@ -182,9 +186,6 @@ class SettingsActivity : BaseSettingsActivity() {
             }
         }
 
-        b.section(getString(R.string.sec_about))
-        val av = b.card()
-        b.valueRow(av, getString(R.string.s_app_version), appVersion(), null)
     }
 
     private fun containerName(): String = try {
