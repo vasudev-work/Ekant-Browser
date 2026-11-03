@@ -396,7 +396,6 @@
   function openSheet(e) {
     var nm = e.name || 'Extension';
     var isOn = installed[e.id] ? true : false;
-    var src = e.fromApp ? '' : CDN + (e.file || '');
     var link = e.fromApp
       ? 'aekant://install?b=' + encodeURIComponent(e.id)
       : 'aekant://install?u=' + encodeURIComponent(src) +
@@ -418,9 +417,7 @@
       '<div class="kv"><span>Type</span><span>Userscript, injected into the page</span></div>' +
       '<div class="kv"><span>Needs</span><span>Nothing outside the page</span></div>' +
       '<div class="kv"><span>Source</span><span>' + esc(e.fromApp ? 'ships with the app' : (e.file || '')) + '</span></div>' +
-      '<div class="s-actions">' +
-        '<a class="ghost" href="' + esc(src) + '">View source</a>' + action +
-      '</div>';
+      '<div class="s-actions">' + action + '</div>';
     document.getElementById('sheet').classList.add('on');
     document.getElementById('sscrim').classList.add('on');
   }
