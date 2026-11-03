@@ -234,6 +234,13 @@
     return b + p.replace(/^\.?\//, '');
   }
 
+  /* a script that costs 40 KB is a different promise from one that costs 600 bytes */
+  function kb(n) {
+    if (!n) return '';
+    if (n < 1024) return n + ' B';
+    return (n / 1024).toFixed(n < 10240 ? 1 : 0) + ' KB';
+  }
+
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -267,7 +274,8 @@
         '<div style="flex:1;min-width:0">' +
           '<div class="c-name">' + esc(nm) + '</div>' +
           '<div class="c-meta"><span>' + (e.fromApp ? 'built in' : 'v' + esc(e.version || '1.0')) + '</span><span>·</span>' +
-          '<span>' + esc(e.pattern || '*') + '</span></div>' +
+          '<span>' + esc(e.pattern || '*') + '</span>' +
+          (e.size ? '<span>·</span><span>' + kb(e.size) + '</span>' : '') + '</div>' +
         '</div>' +
       '</div>' +
       '<div class="c-desc">' + esc(e.desc || '') + '</div>' +
