@@ -1728,6 +1728,40 @@ document.open();document.write(h);document.close();
         }
     }
 
+    /**
+     * Page-side anchors, from the reader lab: a looping silent <audio> element
+     * and a Web Audio oscillator at near-zero gain. The native service holds a
+     * media session for the process; these hold one for the PAGE, which is what
+     * stops Chromium throttling a hidden page's timers.
+     */
+    private fun injectKeepAlive(w: WebView) {
+        try {
+            if (!prefs.getBoolean("keepalive", true)) return
+            val js = try {
+                w.context.assets.open("keepalive.js").bufferedReader().use { it.readText() }
+            } catch (_: Exception) { return }
+            if (js.isNotBlank()) w.evaluateJavascript(js, null)
+        } catch (_: Exception) { }
+    }
+
+    /**
+     * A URL that differs only in its #fragment is a SAME-document navigation to
+     * a WebView: it scrolls to the anchor and never re-runs the page. On a reader
+     * whose chapter lives in the hash, nothing changes. Blank first, then load.
+     */
+    private fun hardLoad(w: WebView, url: String) {
+        val current = w.url
+        val sameDocument = current != null &&
+            current.substringBefore('#') == url.substringBefore('#')
+        if (sameDocument) {
+            try { w.stopLoading() } catch (_: Exception) { }
+            w.loadUrl("about:blank")
+            w.postDelayed({ try { w.loadUrl(url) } catch (_: Exception) { } }, 120L)
+        } else {
+            w.loadUrl(url)
+        }
+    }
+
     private fun go(input: String?) {
         var u = input?.trim() ?: ""
         if (u.isEmpty()) return
@@ -1739,7 +1773,7 @@ document.open();document.write(h);document.close();
             u = "https://" + u.substring(7)
         }
         cur()?.let { applyProfile(it, u) }
-        cur()?.loadUrl(u)
+        cur()?.let { hardLoad(it, u) }
         val im = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         im?.hideSoftInputFromWindow(urlBar.windowToken, 0)
     }
@@ -1921,6 +1955,7 @@ document.open();document.write(h);document.close();
 
     private inner class BrowserClient : WebViewClient() {
         override fun onPageStarted(v: WebView?, url: String?, fav: android.graphics.Bitmap?) {
+        try { if (v != null) injectKeepAlive(v) } catch (_: Exception) { }
             if (v == cur()) progress.visibility = View.VISIBLE
             if (url != null) injectExtensions(v, url, true)
         }

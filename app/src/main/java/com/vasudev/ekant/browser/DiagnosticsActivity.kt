@@ -104,7 +104,9 @@ class DiagnosticsActivity : BaseSettingsActivity() {
         b.section(getString(R.string.dg_perms))
         val c = b.card()
         row(b, c, getString(R.string.dg_notif), yesNo(notificationsAllowed()))
-        row(b, c, getString(R.string.dg_battery_opt), yesNo(batteryExempt()))
+        b.navRow(c, getString(R.string.dg_battery_opt),
+            if (batteryExempt()) getString(R.string.dg_on) else getString(R.string.dg_off),
+            android.view.View.OnClickListener { askBatteryExemption() })
         row(b, c, getString(R.string.dg_service),
             if (MediaPlaybackService.running) getString(R.string.dg_on) else getString(R.string.dg_off))
         row(b, c, getString(R.string.dg_tts),
@@ -286,5 +288,18 @@ class DiagnosticsActivity : BaseSettingsActivity() {
             android.widget.Toast.makeText(this, getString(R.string.dg_copied),
                 android.widget.Toast.LENGTH_SHORT).show()
         } catch (_: Exception) { }
+    }
+
+    /** Ask the system to stop freezing this app, which is what keeps audio alive. */
+    private fun askBatteryExemption() {
+        try {
+            val i = android.content.Intent(
+                android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+            i.data = android.net.Uri.parse("package:" + packageName)
+            startActivity(i)
+        } catch (_: Exception) {
+            try { startActivity(android.content.Intent(
+                android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) } catch (_: Exception) { }
+        }
     }
 }
