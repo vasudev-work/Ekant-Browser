@@ -2560,25 +2560,7 @@ document.open();document.write(h);document.close();
 
         root.addView(top)
 
-        // ---- search, then the groups, as the tabs screen in Ulaa has them ----
-        val search = EditText(this)
-        search.hint = getString(R.string.tg_search)
-        search.textSize = 14f
-        search.setSingleLine(true)
-        search.setPadding(dp(18), dp(12), dp(18), dp(12))
-        val sbg = GradientDrawable()
-        sbg.cornerRadius = dp(22).toFloat()
-        sbg.setColor(attr(R.attr.surface2Color))
-        search.background = sbg
-        val slp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        slp.topMargin = dp(12)
-        root.addView(search, slp)
-        search.addTextChangedListener(object : android.text.TextWatcher {
-            override fun afterTextChanged(s: android.text.Editable?) { filter = s?.toString() ?: ""; refresh?.invoke() }
-            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) { }
-            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) { }
-        })
-
+        // ---- tab groups, under the existing search field ----
         val groupRow = LinearLayout(this)
         groupRow.orientation = LinearLayout.HORIZONTAL
         val grlp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
