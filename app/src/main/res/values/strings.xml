@@ -830,4 +830,6 @@
     <string name="tts_voice_saved">Voice saved</string>
     <string name="ext_not_installed">That extension is not installed</string>
     <string name="ext_removed_toast">Removed %1$s</string>
+    <string name="m_inspect">Inspect page</string>
+    <string name="m_inspect_sub">Console and elements, loaded on demand</string>
 </resources>
