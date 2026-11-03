@@ -227,6 +227,19 @@ object TtsReader {
     private fun speakCurrent() {
         val s = queue.getOrNull(index) ?: return
         try {
+            // applied per utterance, so a voice changed in settings takes effect
+            // on the next sentence instead of needing a restart
+            try {
+                val p = ctx?.getSharedPreferences(MainActivity.PREFS, Context.MODE_PRIVATE)
+                val voiceName = p?.getString("tts_voice_name", "") ?: ""
+                val langTag = p?.getString("tts_voice_lang", "") ?: ""
+                if (voiceName.isNotBlank()) {
+                    tts?.voices?.firstOrNull { it.name == voiceName }?.let { tts?.voice = it }
+                } else if (langTag.isNotBlank()) {
+                    val l = Locale.forLanguageTag(langTag)
+                    if (tts?.isLanguageAvailable(l) == TextToSpeech.LANG_AVAILABLE) tts?.language = l
+                }
+            } catch (_: Exception) { }
             tts?.setSpeechRate(rate)
             tts?.setPitch(pitch)
             tts?.speak(applyDict(s), TextToSpeech.QUEUE_FLUSH, Bundle(), "aekant-" + index)
