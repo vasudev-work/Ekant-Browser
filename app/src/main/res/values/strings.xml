@@ -839,4 +839,11 @@
     <string name="md_started">Download started</string>
     <string name="md_done">Saved to %1$s</string>
     <string name="md_failed">Could not download: %1$s</string>
+    <string name="tg_search">Search your tabs</string>
+    <string name="tg_new">+ New group</string>
+    <string name="tg_empty">Nothing to group yet</string>
+    <string name="tg_removed">Group removed</string>
+    <string name="tg_created">Saved as %1$s</string>
+    <string name="tg_default_name">Group %1$d</string>
+    <string name="m_new_group">New tab group</string>
 </resources>

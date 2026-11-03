@@ -2267,7 +2267,17 @@ document.open();document.write(h);document.close();
             b.menuRow(c, R.drawable.ic_update, getString(R.string.m_update), getString(R.string.m_update_sum), act(28)); b.divider(c)
         }
         b.menuRow(c, R.drawable.ic_new_tab, getString(R.string.m_new_tab), null, act(0)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_incognito, getString(R.string.m_new_incognito), null, act(1)); b.divider(c)
+        b.menuRow(c, R.drawable.ic_incognito, getString(R.string.m_new_incognito), null, act(1))
+        b.menuRow(c, R.drawable.ic_grid, getString(R.string.m_new_group), null,
+            View.OnClickListener {
+                hideMenuPanel()
+                val urls = tabs.filter { !isPrivate(it) }.mapNotNull { it.url }.filter { !it.startsWith("about:") }
+                if (urls.isEmpty()) toast(getString(R.string.tg_empty))
+                else {
+                    val g = TabGroups.create(this, getString(R.string.tg_default_name, TabGroups.all(this).size + 1), urls)
+                    toast(getString(R.string.tg_created, g.name))
+                }
+            }); b.divider(c)
         b.menuRow(c, R.drawable.ic_qr, getString(R.string.m_scan_qr), null,
             View.OnClickListener { hideMenuPanel(); scanQr() })
         val adsOn = prefs.getBoolean("block_ads", true)
@@ -2549,6 +2559,83 @@ document.open();document.write(h);document.close();
         top.addView(more)
 
         root.addView(top)
+
+        // ---- search, then the groups, as the tabs screen in Ulaa has them ----
+        val search = EditText(this)
+        search.hint = getString(R.string.tg_search)
+        search.textSize = 14f
+        search.setSingleLine(true)
+        search.setPadding(dp(18), dp(12), dp(18), dp(12))
+        val sbg = GradientDrawable()
+        sbg.cornerRadius = dp(22).toFloat()
+        sbg.setColor(attr(R.attr.surface2Color))
+        search.background = sbg
+        val slp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        slp.topMargin = dp(12)
+        root.addView(search, slp)
+        search.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) { filter = s?.toString() ?: ""; refresh?.invoke() }
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) { }
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) { }
+        })
+
+        val groupRow = LinearLayout(this)
+        groupRow.orientation = LinearLayout.HORIZONTAL
+        val grlp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        grlp.topMargin = dp(10)
+        root.addView(groupRow, grlp)
+
+        fun paintGroups() {
+            groupRow.removeAllViews()
+            val groups = TabGroups.all(this)
+            if (groups.isEmpty()) { groupRow.visibility = View.GONE; return }
+            groupRow.visibility = View.VISIBLE
+            for (g in groups) {
+                val chip = TextView(this)
+                chip.text = g.name + "  " + g.urls.size
+                chip.textSize = 12.5f
+                chip.setTextColor(attr(R.attr.textPrimaryColor))
+                chip.setPadding(dp(12), dp(8), dp(12), dp(8))
+                val cbg2 = GradientDrawable()
+                cbg2.cornerRadius = dp(16).toFloat()
+                cbg2.setColor(0x22FFFFFF and g.colour or 0x22000000)
+                cbg2.setStroke(dp(1), g.colour)
+                chip.background = cbg2
+                val lp2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                lp2.rightMargin = dp(8)
+                chip.layoutParams = lp2
+                chip.setOnClickListener {
+                    dlg.dismiss()
+                    g.urls.forEach { newTab(it) }
+                }
+                chip.setOnLongClickListener {
+                    TabGroups.remove(this, g.id)
+                    toast(getString(R.string.tg_removed))
+                    paintGroups()
+                    true
+                }
+                groupRow.addView(chip)
+            }
+            val addG = TextView(this)
+            addG.text = getString(R.string.tg_new)
+            addG.textSize = 12.5f
+            addG.setTextColor(attr(R.attr.brandColor))
+            addG.setPadding(dp(12), dp(8), dp(12), dp(8))
+            val abg = GradientDrawable()
+            abg.cornerRadius = dp(16).toFloat()
+            abg.setStroke(dp(1), attr(R.attr.brandColor))
+            addG.background = abg
+            addG.setOnClickListener {
+                val urls = tabs.filter { !isPrivate(it) }.mapNotNull { it.url }
+                    .filter { !it.startsWith("about:") }
+                if (urls.isEmpty()) { toast(getString(R.string.tg_empty)); return@setOnClickListener }
+                val g = TabGroups.create(this, getString(R.string.tg_default_name, TabGroups.all(this).size + 1), urls)
+                toast(getString(R.string.tg_created, g.name))
+                paintGroups()
+            }
+            groupRow.addView(addG)
+        }
+        paintGroups()
 
         // ---- search ----
         val search = EditText(this)
