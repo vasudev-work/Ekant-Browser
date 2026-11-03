@@ -1087,6 +1087,7 @@ document.open();document.write(h);document.close();
     private fun newTab(u: String, select: Boolean = true): WebView {
         val w = AekantWebView(this)
         try { w.addJavascriptInterface(MediaBridge(), "AekantMedia") } catch (_: Exception) { }
+        try { w.addJavascriptInterface(SpeechBridge(w), "NijatvaSpeech") } catch (_: Exception) { }
         try { w.addJavascriptInterface(BlockBridge(), "AekantBlock") } catch (_: Exception) { }
         try { w.addJavascriptInterface(GmBridge(), "AekantGM") } catch (_: Exception) { }
         w.layoutParams = FrameLayout.LayoutParams(
@@ -1956,6 +1957,7 @@ document.open();document.write(h);document.close();
     private inner class BrowserClient : WebViewClient() {
         override fun onPageStarted(v: WebView?, url: String?, fav: android.graphics.Bitmap?) {
         try { if (v != null) injectKeepAlive(v) } catch (_: Exception) { }
+        try { v?.evaluateJavascript(SpeechBridge.SHIM, null) } catch (_: Exception) { }
             if (v == cur()) progress.visibility = View.VISIBLE
             if (url != null) injectExtensions(v, url, true)
         }

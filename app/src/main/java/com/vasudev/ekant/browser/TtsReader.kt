@@ -173,6 +173,10 @@ object TtsReader {
                     tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                         override fun onStart(id: String?) { }
                         override fun onError(id: String?) { }
+                        // API 26+: fires per word while speaking
+                        override fun onRangeStart(id: String?, start: Int, end: Int, frame: Int) {
+                            try { onBoundary?.invoke(start, end) } catch (_: Exception) { }
+                        }
                         override fun onDone(id: String?) {
                             if (!speaking) return
                             if (index + 1 < queue.size) { index++; speakCurrent() } else stopInternal()
@@ -182,6 +186,9 @@ object TtsReader {
             }
         } catch (_: Exception) { }
     }
+
+    /** Word boundaries, so a reader can highlight the line being spoken. */
+    @Volatile var onBoundary: ((Int, Int) -> Unit)? = null
 
     fun isActive(): Boolean = queue.isNotEmpty()
 
