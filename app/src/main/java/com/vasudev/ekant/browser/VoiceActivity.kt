@@ -218,7 +218,7 @@ class VoiceActivity : BaseSettingsActivity() {
                 toastDone()
                 rebuild()
             }
-            .setNegativeButton(android.android.R.string.cancel, null)
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 
