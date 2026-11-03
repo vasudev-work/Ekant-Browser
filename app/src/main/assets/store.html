@@ -223,6 +223,15 @@
     });
   } catch (e) { }
 
+
+  /* the icon path in the index is relative to the catalogue, not to this page */
+  function asset(p) {
+    if (!p) return '';
+    if (/^https?:/i.test(p)) return p;
+    var b = BASE.charAt(BASE.length - 1) === '/' ? BASE : BASE + '/';
+    return b + p.replace(/^\.?\//, '');
+  }
+
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -250,7 +259,7 @@
     return '<div class="card" data-id="' + esc(e.id || '') + '" style="animation-delay:' + Math.min(i * 30, 210) + 'ms">' +
       '<div class="c-top">' +
         '<div class="ico" style="background:' + colour(nm) + '">' +
-        (e.icon ? '<img src="' + esc(e.icon) + '" alt="" loading="lazy">' : esc(nm.charAt(0).toUpperCase())) +
+        (e.icon ? '<img src="' + esc(asset(e.icon)) + '" alt="" loading="lazy">' : esc(nm.charAt(0).toUpperCase())) +
       '</div>' +
         '<div style="flex:1;min-width:0">' +
           '<div class="c-name">' + esc(nm) + '</div>' +
