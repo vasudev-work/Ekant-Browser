@@ -34,6 +34,8 @@ class SpeechBridge(webView: WebView) {
     private var started = false
     private var failed = false
     private var pending: String? = null
+    /** The voice the page asked for, kept while the engine starts. */
+    private var pendingVoice: String = ""
     private var lastUtterance = ""
 
     private fun ctx(): Context? = view.get()?.context
@@ -59,7 +61,7 @@ class SpeechBridge(webView: WebView) {
                         }
                     })
                 } catch (_: Exception) { }
-                pending?.let { say(it, "", 1f, 1f) }
+                pending?.let { say(it, "", 1f, 1f, pendingVoice) }
                 pending = null
             }
         } catch (_: Exception) { failed = true }
@@ -110,7 +112,7 @@ class SpeechBridge(webView: WebView) {
         return out
     }
 
-    private fun say(text: String, lang: String, rate: Float, pitch: Float) {
+    private fun say(text: String, lang: String, rate: Float, pitch: Float, voiceUri: String = "") {
         if (text.isBlank() || tts == null) return
         try {
             // the page wins; otherwise the voice chosen in settings, otherwise the system
@@ -120,7 +122,10 @@ class SpeechBridge(webView: WebView) {
                 val l = Locale.forLanguageTag(want)
                 if (tts?.isLanguageAvailable(l) == TextToSpeech.LANG_AVAILABLE) tts?.language = l
             }
-            val voiceName = try { prefs()?.getString("tts_voice_name", "") ?: "" } catch (_: Exception) { "" }
+            // the voice the PAGE picked comes first - a reader site lists its own
+            // voices and expects the one it chose to be used
+            val voiceName = if (voiceUri.isNotBlank()) voiceUri else
+                (try { prefs()?.getString("tts_voice_name", "") ?: "" } catch (_: Exception) { "" })
             if (voiceName.isNotBlank()) {
                 try {
                     tts?.voices?.firstOrNull { it.name == voiceName }?.let { tts?.voice = it }
@@ -142,6 +147,15 @@ class SpeechBridge(webView: WebView) {
                     null, "nijatva-web-" + i)
             }
         } catch (_: Exception) { }
+    }
+
+    @JavascriptInterface
+    fun speak(text: String?, lang: String?, rate: Double, pitch: Double, voice: String?) {
+        val t = text ?: return
+        attach()
+        pendingVoice = voice ?: ""
+        pending = t
+        say(t, lang ?: "", rate.toFloat(), pitch.toFloat(), voice ?: "")
     }
 
     @JavascriptInterface
@@ -238,12 +252,20 @@ class SpeechBridge(webView: WebView) {
           if (!txt) return;
           cur = u;
           var lang = (u && u.lang) || (u && u.voice && u.voice.lang) || '';
-          B.speak(txt, lang, (u && u.rate) || 1, (u && u.pitch) || 1);
+          var vn = '';
+          try { vn = (u && u.voice && (u.voice.voiceURI || u.voice.name)) || ''; } catch(e){}
+          if (vn && B.speak.length >= 5) B.speak(txt, lang, (u && u.rate) || 1, (u && u.pitch) || 1, vn);
+          else B.speak(txt, lang, (u && u.rate) || 1, (u && u.pitch) || 1);
           S.speaking = true; S.paused = false; S.pending = false;
           if (u && u.onstart) setTimeout(function(){ try{ u.onstart({}) }catch(e){} }, 0);
         }catch(e){}
       },
-      cancel: function(){ try{ B.stop() }catch(e){} S.speaking = false; cur = null; },
+      cancel: function(){
+        try{ B.stop() }catch(e){}
+        S.speaking = false; S.pending = false; S.paused = false;
+        if (cur) { try{ if (cur.onend) cur.onend({}); }catch(e){} }
+        cur = null;
+      },
       pause: function(){ try{ B.pause() }catch(e){} S.paused = true; },
       resume: function(){ try{ B.resume() }catch(e){} S.paused = false; },
       getVoices: function(){ return list.length ? list : fallback; },
