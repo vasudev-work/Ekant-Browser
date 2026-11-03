@@ -1818,6 +1818,21 @@ document.open();document.write(h);document.close();
                 go("file:///android_asset/store.html?installed=" + Uri.encode(have) +
                     "&builtin=" + Uri.encode(built) + "&base=" + Uri.encode(src))
             }
+            "remove" -> {
+                // The card on the store page offers this once a script is installed,
+                // so the page can flip back to Add without a trip to Extensions.
+                val id = uri.getQueryParameter("id") ?: ""
+                try {
+                    val store = ExtensionStore(this)
+                    val found = store.getAll().firstOrNull { it.id == id || it.name.equals(id, true) }
+                    if (found == null) toast(getString(R.string.ext_not_installed))
+                    else {
+                        store.delete(found.id)
+                        toast(getString(R.string.ext_removed_toast, found.name))
+                    }
+                } catch (_: Exception) { }
+                markInstalled("")
+            }
             "install" -> {
                 val builtin = uri.getQueryParameter("b")
                 val script = uri.getQueryParameter("u")

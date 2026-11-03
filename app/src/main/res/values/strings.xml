@@ -828,4 +828,6 @@
     <string name="tts_voice_failed">The speech engine is not available</string>
     <string name="tts_voice_starting">Starting the speech engine...</string>
     <string name="tts_voice_saved">Voice saved</string>
+    <string name="ext_not_installed">That extension is not installed</string>
+    <string name="ext_removed_toast">Removed %1$s</string>
 </resources>
