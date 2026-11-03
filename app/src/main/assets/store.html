@@ -173,10 +173,10 @@
 
 <script>
 (function () {
-  var BASE = 'https://raw.githubusercontent.com/vasudev-work/nijatva-browser/main/extensions/';
+  var BASE = 'https://vasudev-work.github.io/nijatva-web-store/extensions/';
   // scripts are big and never change for a version, so the CDN serves them;
   // the index must be fresh, so it comes from raw
-  var CDN  = 'https://cdn.jsdelivr.net/gh/vasudev-work/nijatva-browser@main/extensions/';
+  var CDN  = 'https://vasudev-work.github.io/nijatva-web-store/extensions/';
   try {
     var fromApp = new URLSearchParams(location.search).get('base');
     if (fromApp) BASE = fromApp.charAt(fromApp.length - 1) === '/' ? fromApp : fromApp + '/';

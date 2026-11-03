@@ -13,25 +13,21 @@ import org.json.JSONObject
 object ExtStore {
 
     /**
-     * ONE store for both browsers.
+     * The store is a GitHub Pages site now: vasudev-work.github.io/nijatva-web-store
      *
-     * The catalogue lives in the nijatva-browser repository, and both apps read
-     * it from there - so adding an extension in one place reaches Nijatva and
-     * Aekant together, with no app release for either.
-     *
-     * The index is read from the live branch because that is the whole point:
-     * a tag is frozen, and a frozen index means a new extension waits for an app
-     * build. The scripts come off jsDelivr, which is fast and caches freely -
-     * safe because every script is checked against the sha256 in the index.
+     * Pages rebuilds within a minute of a push and serves from a CDN, so a new
+     * extension reaches both browsers without a release. The raw branch is kept
+     * as a fallback for the first minute after a push, when Pages is still
+     * building, and for the case where Pages is unreachable.
      */
     const val DEFAULT_BASE =
-        "https://raw.githubusercontent.com/vasudev-work/nijatva-browser/main/extensions/"
-    /** The scripts, from the fast CDN. */
+        "https://vasudev-work.github.io/nijatva-web-store/extensions/"
+    /** The scripts come from the same place. */
     const val SCRIPT_BASE =
-        "https://cdn.jsdelivr.net/gh/vasudev-work/nijatva-browser@main/extensions/"
-    /** If one host is unreachable, the other still answers. */
+        "https://vasudev-work.github.io/nijatva-web-store/extensions/"
+    /** While Pages is building, or if it is down, the branch answers. */
     const val FALLBACK_BASE =
-        "https://cdn.jsdelivr.net/gh/vasudev-work/nijatva-browser@main/extensions/"
+        "https://raw.githubusercontent.com/vasudev-work/nijatva-web-store/main/extensions/"
 
     /**
      * The store's public key. A list is only trusted when it carries a signature
@@ -84,7 +80,14 @@ object ExtStore {
     fun fetchIndex(base: String, cb: (List<Remote>?, String?) -> Unit) {
         Thread {
             try {
-                val body = http(join(base, "index.json"))
+                var body = ""
+                for (host in listOf(base, FALLBACK_BASE)) {
+                    try {
+                        val got = http(join(host, "index.json"))
+                        if (got.isNotBlank()) { body = got; break }
+                    } catch (_: Exception) { }
+                }
+                if (body.isBlank()) throw Exception("no index")
                 val sig = try { http(join(base, "index.json.sig")) } catch (_: Exception) { "" }
                 if (sig.isBlank() || !signatureOk(body, sig)) {
                     cb(null, "Store signature is not valid - the list was refused")
@@ -136,7 +139,7 @@ object ExtStore {
                 // scripts come from the fast CDN; the hash below is what makes
                 // that safe, not the host
                 var text = ""
-                for (host in listOf(SCRIPT_BASE, base)) {
+                for (host in listOf(SCRIPT_BASE, base, FALLBACK_BASE)) {
                     try {
                         val got = http(join(host, file))
                         if (got.isNotBlank()) { text = got; break }
