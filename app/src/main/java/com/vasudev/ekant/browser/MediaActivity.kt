@@ -39,6 +39,21 @@ class MediaActivity : BaseSettingsActivity() {
     }
 
     private fun download(url: String) {
+        // a playlist is not a file: DownloadManager would save a text file with
+        // segment URLs in it, so it goes through the HLS downloader instead
+        if (url.substringBefore('?').lowercase().endsWith(".m3u8")) {
+            val cookie = try {
+                android.webkit.CookieManager.getInstance().getCookie(url)
+            } catch (_: Exception) { null }
+            toast(getString(R.string.md_started))
+            HlsDownloader.download(this, url, cookie,
+                url.substringAfter("://").substringBefore('/').ifBlank { "video" }.take(40)) { ok, info ->
+                runOnUiThread {
+                    toast(if (ok) getString(R.string.md_done, info) else getString(R.string.md_failed, info))
+                }
+            }
+            return
+        }
         try {
             val r = DownloadManager.Request(Uri.parse(url))
             r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)

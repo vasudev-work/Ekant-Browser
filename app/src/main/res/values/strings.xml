@@ -832,4 +832,11 @@
     <string name="ext_removed_toast">Removed %1$s</string>
     <string name="m_inspect">Inspect page</string>
     <string name="m_inspect_sub">Console and elements, loaded on demand</string>
+    <string name="m_media_sub">Streams found while loading</string>
+    <string name="md_title">Media</string>
+    <string name="md_none">Nothing found yet. Play the video, then open this again.</string>
+    <string name="md_get">Download</string>
+    <string name="md_started">Download started</string>
+    <string name="md_done">Saved to %1$s</string>
+    <string name="md_failed">Could not download: %1$s</string>
 </resources>
