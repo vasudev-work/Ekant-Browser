@@ -60,14 +60,13 @@ class HistoryActivity : BaseSettingsActivity() {
                     b.section(day)
                 }
                 val card = b.card()
-                b.valueRow(card, if (item.first.isBlank()) item.second else item.first, item.second.take(40), null)
-                b.divider(card)
-                b.navRow(card, getString(R.string.ext_delete), null) {
+                entryRow(card, if (item.first.isBlank()) item.second else item.first, item.second) {
                     // keep the list first, so Undo can put the entry back
                     val before = parse()
                     delete(item.second, item.third)
                     snack(getString(R.string.hist_deleted)) { write(before) }
                 }
+                b.divider(card)
             }
         }
 
@@ -103,11 +102,12 @@ class HistoryActivity : BaseSettingsActivity() {
         val now = Calendar.getInstance()
         val then = Calendar.getInstance().apply { timeInMillis = ts }
         val sameYear = now.get(Calendar.YEAR) == then.get(Calendar.YEAR)
+        val dm = SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(Date(ts))
         if (sameYear && now.get(Calendar.DAY_OF_YEAR) == then.get(Calendar.DAY_OF_YEAR))
-            return getString(R.string.hist_today)
+            return getString(R.string.hist_today) + " - " + dm
         val y = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
         if (sameYear && y.get(Calendar.DAY_OF_YEAR) == then.get(Calendar.DAY_OF_YEAR))
-            return getString(R.string.hist_yesterday)
+            return getString(R.string.hist_yesterday) + " - " + dm
         return SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(Date(ts))
     }
 
@@ -136,5 +136,72 @@ class HistoryActivity : BaseSettingsActivity() {
             it.first + '\u0001' + it.second + '\u0001' + it.third
         }).apply()
         rebuild()
+    }
+
+    /** One history entry: a mark, the page, its host, and a round x to forget it. */
+    private fun entryRow(card: LinearLayout, title: String, url: String, onDelete: () -> Unit) {
+        val host = try { android.net.Uri.parse(url).host?.removePrefix("www.") ?: url } catch (_: Exception) { url }
+        val label = if (title.isBlank()) host else title
+
+        val row = LinearLayout(this)
+        row.orientation = LinearLayout.HORIZONTAL
+        row.gravity = android.view.Gravity.CENTER_VERTICAL
+        row.setPadding(dp(14), dp(11), dp(10), dp(11))
+
+        val mark = android.widget.TextView(this)
+        mark.text = (label.firstOrNull() ?: '?').uppercaseChar().toString()
+        mark.setTextColor(0xFFFFFFFF.toInt())
+        mark.textSize = 15f
+        mark.gravity = android.view.Gravity.CENTER
+        mark.setTypeface(null, android.graphics.Typeface.BOLD)
+        val bg = GradientDrawable()
+        bg.shape = GradientDrawable.OVAL
+        bg.setColor(avatarColour(host))
+        mark.background = bg
+        row.addView(mark, LinearLayout.LayoutParams(dp(34), dp(34)))
+
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        val nm = android.widget.TextView(this)
+        nm.text = label
+        nm.setTextColor(attr(R.attr.textPrimaryColor))
+        nm.textSize = 15f
+        nm.setTypeface(null, android.graphics.Typeface.BOLD)
+        nm.maxLines = 1
+        nm.ellipsize = android.text.TextUtils.TruncateAt.END
+        val hs = android.widget.TextView(this)
+        hs.text = host
+        hs.setTextColor(attr(R.attr.textSecondaryColor))
+        hs.textSize = 13f
+        hs.maxLines = 1
+        hs.ellipsize = android.text.TextUtils.TruncateAt.END
+        col.addView(nm)
+        col.addView(hs)
+        val clp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        clp.leftMargin = dp(13)
+        row.addView(col, clp)
+
+        val x = android.widget.TextView(this)
+        x.text = "\u2715"
+        x.textSize = 12f
+        x.gravity = android.view.Gravity.CENTER
+        x.setTextColor(attr(R.attr.textSecondaryColor))
+        val xbg = GradientDrawable()
+        xbg.shape = GradientDrawable.OVAL
+        xbg.setColor(attr(R.attr.surface2Color))
+        x.background = xbg
+        x.setOnClickListener { onDelete() }
+        val xlp = LinearLayout.LayoutParams(dp(28), dp(28))
+        xlp.leftMargin = dp(6)
+        row.addView(x, xlp)
+
+        card.addView(row)
+    }
+
+    /** A stable colour per host, so the same site keeps the same mark. */
+    private fun avatarColour(host: String): Int {
+        val palette = intArrayOf(0xFF1A73E8.toInt(), 0xFF0C9054.toInt(), 0xFFE2543A.toInt(),
+                                 0xFF7B4BFF.toInt(), 0xFF00A8A2.toInt(), 0xFFF5A623.toInt())
+        return palette[(host.hashCode() and 0x7FFFFFFF) % palette.size]
     }
 }
