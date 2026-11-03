@@ -2556,13 +2556,15 @@ document.open();document.write(h);document.close();
             return t
         }
 
-        pill.addView(cell("" + tabs.size, section == "tabs") { })
+        val count = cell("" + tabs.size, section == "tabs") { }
+        pill.addView(count)
         pill.addView(cell("\uD83D\uDD75", section == "private") { section = "private"; refresh?.invoke() })
-        pill.addView(cell(if (gridMode) "\u25A6" else "\u2630", true) {
+        val toggle = cell(if (gridMode) "\u25A6" else "\u2630", true) {
             gridMode = !gridMode
             prefs.edit().putBoolean("tabs_grid", gridMode).apply()
             refresh?.invoke()
-        })
+        }
+        pill.addView(toggle)
         top.addView(pill)
 
         val more = TextView(this)
