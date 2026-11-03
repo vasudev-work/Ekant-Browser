@@ -71,6 +71,7 @@
         <activity android:name=".AdBlockActivity" android:exported="false" android:label="@string/ab_title" />
         <activity android:name=".FilesActivity" android:exported="false" android:label="@string/fl_title" />
         <activity android:name=".ReadingActivity" android:exported="false" android:label="@string/rd_title" />
+        <activity android:name=".VoiceActivity" android:exported="false" android:label="@string/tts_voice" />
         <activity android:name=".DiagnosticsActivity" android:exported="false" android:label="@string/dg_title" />
         <activity android:name=".UserStylesActivity" android:exported="false" android:label="@string/us_title" />
         <activity android:name=".MediaActivity" android:exported="false" android:label="@string/m_media" />

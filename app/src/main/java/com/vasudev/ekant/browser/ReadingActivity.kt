@@ -127,6 +127,11 @@ class ReadingActivity : BaseSettingsActivity() {
         }
 
         b.section(getString(R.string.rd_voice))
+        b.navRow(c, getString(R.string.tts_voice), voiceSummary(),
+            android.view.View.OnClickListener {
+                startActivity(android.content.Intent(this, VoiceActivity::class.java))
+            })
+        b.divider(c)
         val vo = b.card()
         val pit = prefs.getFloat("tts_pitch", 1.0f)
         val pitches = floatArrayOf(0.7f, 0.85f, 1.0f, 1.15f, 1.3f)
@@ -185,5 +190,17 @@ class ReadingActivity : BaseSettingsActivity() {
                 rebuild()
             }
             .show()
+    }
+
+    /** The chosen voice, or the system default. */
+    private fun voiceSummary(): String {
+        val name = prefs.getString("tts_voice_name", "") ?: ""
+        val tag = prefs.getString("tts_voice_lang", "") ?: ""
+        return when {
+            name.isBlank() -> getString(R.string.tts_voice_default)
+            tag.isBlank() -> name
+            else -> try { java.util.Locale.forLanguageTag(tag).getDisplayName(java.util.Locale.ENGLISH) }
+                    catch (_: Exception) { name }
+        }
     }
 }

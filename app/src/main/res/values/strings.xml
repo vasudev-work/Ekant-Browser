@@ -819,4 +819,13 @@
     <string name="ext_from_link_sum">Paste a userscript URL, for example from Greasy Fork</string>
     <string name="ext_bad_link">That does not look like a link</string>
     <string name="ext_added">Extension added</string>
+    <string name="tts_voice">Voice</string>
+    <string name="tts_voice_default">System default</string>
+    <string name="tts_voice_on">in use</string>
+    <string name="tts_voice_languages">Languages</string>
+    <string name="tts_voice_count">%1$d voices</string>
+    <string name="tts_voice_search">Search languages</string>
+    <string name="tts_voice_failed">The speech engine is not available</string>
+    <string name="tts_voice_starting">Starting the speech engine...</string>
+    <string name="tts_voice_saved">Voice saved</string>
 </resources>

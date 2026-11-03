@@ -168,6 +168,19 @@ object TtsReader {
                     try {
                         tts?.language = Locale.getDefault()
                         tts?.setSpeechRate(rate)
+                        // the voice chosen in settings wins over the system default
+                        try {
+                            val p = ctx?.getSharedPreferences(MainActivity.PREFS, Context.MODE_PRIVATE)
+                            val langTag = p?.getString("tts_voice_lang", "") ?: ""
+                            val voiceName = p?.getString("tts_voice_name", "") ?: ""
+                            if (langTag.isNotBlank()) {
+                                val l = Locale.forLanguageTag(langTag)
+                                if (tts?.isLanguageAvailable(l) == TextToSpeech.LANG_AVAILABLE) tts?.language = l
+                            }
+                            if (voiceName.isNotBlank()) {
+                                tts?.voices?.firstOrNull { it.name == voiceName }?.let { tts?.voice = it }
+                            }
+                        } catch (_: Exception) { }
                         tts?.setPitch(prefFloat("tts_pitch", 1.0f))
                     } catch (_: Exception) { }
                     tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
