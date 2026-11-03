@@ -846,4 +846,8 @@
     <string name="tg_created">Saved as %1$s</string>
     <string name="tg_default_name">Group %1$d</string>
     <string name="m_new_group">New tab group</string>
+    <string name="tg_title">Tab groups</string>
+    <string name="tg_empty_title">You'll find your tab groups here</string>
+    <string name="tg_empty_sub">A group keeps its pages even after you close the tabs.</string>
+    <string name="tg_count">%1$d pages</string>
 </resources>

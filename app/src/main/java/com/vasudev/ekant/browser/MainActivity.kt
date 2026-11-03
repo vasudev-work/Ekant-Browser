@@ -2507,7 +2507,7 @@ document.open();document.write(h);document.close();
         var section = "tabs"   // "tabs" | "private"
         var refresh: (() -> Unit)? = null
 
-        // ---- top bar: + | count | layout toggle | overflow ----
+        // ---- top bar, as Ulaa has it: + on the left, one segmented pill on the right ----
         val top = LinearLayout(this)
         top.orientation = LinearLayout.HORIZONTAL
         top.gravity = Gravity.CENTER_VERTICAL
@@ -2516,12 +2516,12 @@ document.open();document.write(h);document.close();
         plus.text = "+"
         plus.textSize = 26f
         plus.gravity = Gravity.CENTER
-        plus.setTextColor(attr(R.attr.bgColor))
+        plus.setTextColor(attr(R.attr.brandColor))
         val pbg = GradientDrawable()
-        pbg.cornerRadius = dp(16).toFloat()
-        pbg.setColor(attr(R.attr.brandColor))
+        pbg.cornerRadius = dp(14).toFloat()
+        pbg.setColor((attr(R.attr.brandColor) and 0x00FFFFFF) or 0x28000000)
         plus.background = pbg
-        plus.layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
+        plus.layoutParams = LinearLayout.LayoutParams(dp(46), dp(46))
         plus.setOnClickListener { dlg.dismiss(); newTab(ntpUrl()) }
         top.addView(plus)
 
@@ -2529,26 +2529,41 @@ document.open();document.write(h);document.close();
         spacer.layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
         top.addView(spacer)
 
-        val count = TextView(this)
-        count.text = "" + tabs.size
-        count.textSize = 15f
-        count.gravity = Gravity.CENTER
-        count.setTextColor(attr(R.attr.textPrimaryColor))
-        val cbg = GradientDrawable()
-        cbg.cornerRadius = dp(12).toFloat()
-        cbg.setStroke(dp(2), attr(R.attr.textPrimaryColor))
-        cbg.setColor(0x00000000)
-        count.background = cbg
-        count.layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
-        top.addView(count)
+        val pill = LinearLayout(this)
+        pill.orientation = LinearLayout.HORIZONTAL
+        pill.gravity = Gravity.CENTER_VERTICAL
+        pill.setPadding(dp(4), dp(4), dp(4), dp(4))
+        val pbg2 = GradientDrawable()
+        pbg2.cornerRadius = dp(18).toFloat()
+        pbg2.setColor(attr(R.attr.surface2Color))
+        pill.background = pbg2
+        top.addView(pill)
 
-        val toggle = TextView(this)
-        toggle.text = if (gridMode) "\u25A6" else "\u2630"
-        toggle.textSize = 22f
-        toggle.gravity = Gravity.CENTER
-        toggle.setTextColor(attr(R.attr.textPrimaryColor))
-        toggle.setPadding(dp(10), 0, dp(10), 0)
-        top.addView(toggle)
+        fun cell(label: String, on: Boolean, cb: () -> Unit): TextView {
+            val t = TextView(this)
+            t.text = label
+            t.textSize = 15f
+            t.gravity = Gravity.CENTER
+            t.setTextColor(if (on) attr(R.attr.textPrimaryColor) else attr(R.attr.textSecondaryColor))
+            if (on) {
+                val bg = GradientDrawable()
+                bg.cornerRadius = dp(14).toFloat()
+                bg.setColor(attr(R.attr.surfaceColor))
+                t.background = bg
+            }
+            t.layoutParams = LinearLayout.LayoutParams(dp(46), dp(36))
+            t.setOnClickListener { cb() }
+            return t
+        }
+
+        pill.addView(cell("" + tabs.size, section == "tabs") { })
+        pill.addView(cell("\uD83D\uDD75", section == "private") { section = "private"; refresh?.invoke() })
+        pill.addView(cell(if (gridMode) "\u25A6" else "\u2630", true) {
+            gridMode = !gridMode
+            prefs.edit().putBoolean("tabs_grid", gridMode).apply()
+            refresh?.invoke()
+        })
+        top.addView(pill)
 
         val more = TextView(this)
         more.text = "\u22EE"
@@ -2560,62 +2575,127 @@ document.open();document.write(h);document.close();
 
         root.addView(top)
 
-        // ---- tab groups, under the existing search field ----
-        val groupRow = LinearLayout(this)
-        groupRow.orientation = LinearLayout.HORIZONTAL
-        val grlp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        grlp.topMargin = dp(10)
-        root.addView(groupRow, grlp)
+        // ---- tab groups: their own section, cards or the empty state ----
+        val groupWrap = LinearLayout(this)
+        groupWrap.orientation = LinearLayout.VERTICAL
+        val gwlp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        gwlp.topMargin = dp(14)
+        root.addView(groupWrap, gwlp)
 
         fun paintGroups() {
-            groupRow.removeAllViews()
+            groupWrap.removeAllViews()
             val groups = TabGroups.all(this)
-            if (groups.isEmpty()) { groupRow.visibility = View.GONE; return }
-            groupRow.visibility = View.VISIBLE
-            for (g in groups) {
-                val chip = TextView(this)
-                chip.text = g.name + "  " + g.urls.size
-                chip.textSize = 12.5f
-                chip.setTextColor(attr(R.attr.textPrimaryColor))
-                chip.setPadding(dp(12), dp(8), dp(12), dp(8))
-                val cbg2 = GradientDrawable()
-                cbg2.cornerRadius = dp(16).toFloat()
-                cbg2.setColor(0x22FFFFFF and g.colour or 0x22000000)
-                cbg2.setStroke(dp(1), g.colour)
-                chip.background = cbg2
-                val lp2 = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                lp2.rightMargin = dp(8)
-                chip.layoutParams = lp2
-                chip.setOnClickListener {
-                    dlg.dismiss()
-                    g.urls.forEach { newTab(it) }
-                }
-                chip.setOnLongClickListener {
-                    TabGroups.remove(this, g.id)
-                    toast(getString(R.string.tg_removed))
-                    paintGroups()
-                    true
-                }
-                groupRow.addView(chip)
-            }
+
+            val head = LinearLayout(this)
+            head.orientation = LinearLayout.HORIZONTAL
+            head.gravity = Gravity.CENTER_VERTICAL
+            val gt = TextView(this)
+            gt.text = getString(R.string.tg_title)
+            gt.textSize = 16f
+            gt.setTypeface(null, android.graphics.Typeface.BOLD)
+            gt.setTextColor(attr(R.attr.textPrimaryColor))
+            head.addView(gt, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             val addG = TextView(this)
             addG.text = getString(R.string.tg_new)
-            addG.textSize = 12.5f
+            addG.textSize = 13f
             addG.setTextColor(attr(R.attr.brandColor))
-            addG.setPadding(dp(12), dp(8), dp(12), dp(8))
-            val abg = GradientDrawable()
-            abg.cornerRadius = dp(16).toFloat()
-            abg.setStroke(dp(1), attr(R.attr.brandColor))
-            addG.background = abg
+            addG.setPadding(dp(8), dp(4), dp(4), dp(4))
             addG.setOnClickListener {
-                val urls = tabs.filter { !isPrivate(it) }.mapNotNull { it.url }
-                    .filter { !it.startsWith("about:") }
+                val urls = tabs.filter { !isPrivate(it) }.mapNotNull { it.url }.filter { !it.startsWith("about:") }
                 if (urls.isEmpty()) { toast(getString(R.string.tg_empty)); return@setOnClickListener }
                 val g = TabGroups.create(this, getString(R.string.tg_default_name, TabGroups.all(this).size + 1), urls)
                 toast(getString(R.string.tg_created, g.name))
                 paintGroups()
             }
-            groupRow.addView(addG)
+            head.addView(addG)
+            groupWrap.addView(head)
+
+            if (groups.isEmpty()) {
+                val box = LinearLayout(this)
+                box.orientation = LinearLayout.VERTICAL
+                box.gravity = Gravity.CENTER_HORIZONTAL
+                box.setPadding(dp(24), dp(26), dp(24), dp(6))
+
+                val mark = TextView(this)
+                mark.text = "\u25A6"
+                mark.textSize = 40f
+                mark.gravity = Gravity.CENTER
+                mark.setTextColor(0xFFFFFFFF.toInt())
+                val mbg = GradientDrawable()
+                mbg.cornerRadius = dp(16).toFloat()
+                mbg.setColor(attr(R.attr.brandColor))
+                mark.background = mbg
+                mark.layoutParams = LinearLayout.LayoutParams(dp(96), dp(96))
+                box.addView(mark)
+
+                val t1 = TextView(this)
+                t1.text = getString(R.string.tg_empty_title)
+                t1.textSize = 17f
+                t1.setTypeface(null, android.graphics.Typeface.BOLD)
+                t1.setTextColor(attr(R.attr.textPrimaryColor))
+                t1.gravity = Gravity.CENTER
+                t1.setPadding(0, dp(16), 0, dp(6))
+                box.addView(t1)
+
+                val t2 = TextView(this)
+                t2.text = getString(R.string.tg_empty_sub)
+                t2.textSize = 13.5f
+                t2.setTextColor(attr(R.attr.textSecondaryColor))
+                t2.gravity = Gravity.CENTER
+                box.addView(t2)
+
+                groupWrap.addView(box)
+                return
+            }
+
+            for (g in groups) {
+                val card = LinearLayout(this)
+                card.orientation = LinearLayout.HORIZONTAL
+                card.gravity = Gravity.CENTER_VERTICAL
+                card.setPadding(dp(14), dp(12), dp(14), dp(12))
+                val cbg = GradientDrawable()
+                cbg.cornerRadius = dp(14).toFloat()
+                cbg.setColor(attr(R.attr.surfaceColor))
+                card.background = cbg
+                val clp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                clp.topMargin = dp(8)
+
+                val dot = View(this)
+                val dbg = GradientDrawable()
+                dbg.cornerRadius = dp(9).toFloat()
+                dbg.setColor(g.colour)
+                dot.background = dbg
+                dot.layoutParams = LinearLayout.LayoutParams(dp(18), dp(18))
+                card.addView(dot)
+
+                val nm = TextView(this)
+                nm.text = g.name
+                nm.textSize = 14.5f
+                nm.setTextColor(attr(R.attr.textPrimaryColor))
+                nm.maxLines = 1
+                nm.ellipsize = android.text.TextUtils.TruncateAt.END
+                val nlp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                nlp.leftMargin = dp(12)
+                card.addView(nm, nlp)
+
+                val ct = TextView(this)
+                ct.text = getString(R.string.tg_count, g.urls.size)
+                ct.textSize = 12.5f
+                ct.setTextColor(attr(R.attr.textSecondaryColor))
+                card.addView(ct)
+
+                card.setOnClickListener {
+                    dlg.dismiss()
+                    g.urls.forEach { newTab(it) }
+                }
+                card.setOnLongClickListener {
+                    TabGroups.remove(this, g.id)
+                    toast(getString(R.string.tg_removed))
+                    paintGroups()
+                    true
+                }
+                groupWrap.addView(card, clp)
+            }
         }
         paintGroups()
 
