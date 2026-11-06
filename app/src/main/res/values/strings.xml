@@ -864,4 +864,8 @@
     <string name="ext_site_off_sub">Scripts stay installed but never run</string>
     <string name="ext_incog">Run scripts in incognito</string>
     <string name="ext_incog_sub">Off by default: an incognito tab leaves nothing behind</string>
+    <string name="ext_allow_here">Allow scripts on %1$s</string>
+    <string name="ext_no_access">No access needed</string>
+    <string name="ext_runs_on">Runs on %1$s</string>
+    <string name="ext_discover">Discover more scripts</string>
 </resources>

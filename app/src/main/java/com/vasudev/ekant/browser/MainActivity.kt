@@ -1334,6 +1334,43 @@ document.open();document.write(h);document.close();
         val here = extStore.getEnabled().filter { it.matches(url) }
 
         val s = Sheet.build(this, getString(R.string.m_page_scripts))
+
+        // the per-site switch, at the top where the reference puts it: one tap to
+        // let this site's scripts run, without touching the global setting
+        val siteMode = try { prefs.getString("ext_site_mode", "on") ?: "on" } catch (_: Exception) { "on" }
+        if (host.isNotBlank() && siteMode == "ask") {
+            val bar = LinearLayout(this)
+            bar.orientation = LinearLayout.HORIZONTAL
+            bar.gravity = Gravity.CENTER_VERTICAL
+            bar.setPadding(dp(20), dp(14), dp(16), dp(14))
+            val label = TextView(this)
+            label.text = getString(R.string.ext_allow_here, host)
+            label.textSize = 14f
+            label.setTextColor(attr(R.attr.textPrimaryColor))
+            bar.addView(label, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+
+            val sw = android.widget.Switch(this)
+            sw.isChecked = allowedHosts().contains(host)
+            sw.setOnCheckedChangeListener { _, on ->
+                try {
+                    val now = allowedHosts().toMutableSet()
+                    if (on) now.add(host) else now.remove(host)
+                    prefs.edit().putStringSet("ext_allowed_hosts", now).apply()
+                } catch (_: Exception) { }
+                try { cur()?.reload() } catch (_: Exception) { }
+            }
+            bar.addView(sw)
+            s.content(bar)
+        } else if (host.isNotBlank()) {
+            val note = TextView(this)
+            note.text = if (siteMode == "off") getString(R.string.ext_site_off)
+                        else getString(R.string.ext_site_on)
+            note.textSize = 12.5f
+            note.setTextColor(attr(R.attr.textSecondaryColor))
+            note.setPadding(dp(20), dp(10), dp(20), dp(10))
+            s.content(note)
+        }
+
         if (here.isEmpty()) {
             val tv = TextView(this)
             tv.text = getString(R.string.scripts_none)
@@ -1344,21 +1381,18 @@ document.open();document.write(h);document.close();
         }
         for (e in here) {
             val on = !blocked.contains(e.id)
-            s.item((if (on) "\u2713  " else "\u2715  ") + e.name, 0) {
+            // name, then what it reaches - "No access needed" when the pattern is
+            // every site and it asks for nothing
+            val touch = if (e.pattern.isBlank() || e.pattern == "*") getString(R.string.ext_no_access)
+                        else getString(R.string.ext_runs_on, e.pattern)
+            s.item((if (on) "\u2713  " else "\u2715  ") + e.name + "\n" + touch, 0) {
                 if (on) blocked.add(e.id) else blocked.remove(e.id)
                 saveBlockedExts(host, blocked)
                 toast(if (on) getString(R.string.script_off) else getString(R.string.script_on))
                 try { cur()?.reload() } catch (_: Exception) { }
             }
         }
-        if (try { prefs.getString("ext_site_mode", "on") } catch (_: Exception) { "on" } == "ask" &&
-            host.isNotBlank() && !allowedHosts().contains(host)) {
-            s.item(getString(R.string.ext_allow_site, host), 1) {
-                allowHost(host)
-                toast(getString(R.string.ext_allowed, host))
-                try { cur()?.reload() } catch (_: Exception) { }
-            }
-        }
+        s.action(getString(R.string.ext_discover)) { try { handleScheme("aekant://store") } catch (_: Exception) { } }
         s.action(getString(R.string.r_extensions)) {
             startActivity(Intent(this, ExtensionsActivity::class.java))
         }
