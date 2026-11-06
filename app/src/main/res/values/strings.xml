@@ -872,4 +872,11 @@
     <string name="ext_remove">Remove</string>
     <string name="ext_dev_mode">Developer mode</string>
     <string name="ext_dev_mode_sub">Show the store source, update checks and manual installs</string>
+    <string name="dl_empty_title">You\'ll find your downloads here</string>
+    <string name="dl_empty_sub">Files you save show up here, ready to open or share.</string>
+    <string name="bm_add">Add bookmark</string>
+    <string name="bm_add_title">Title</string>
+    <string name="bm_add_url">Address</string>
+    <string name="bm_added">Bookmark added</string>
+    <string name="hist_time_fmt">HH:mm</string>
 </resources>

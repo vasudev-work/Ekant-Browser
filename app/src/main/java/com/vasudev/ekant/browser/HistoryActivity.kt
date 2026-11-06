@@ -60,7 +60,7 @@ class HistoryActivity : BaseSettingsActivity() {
                     b.section(day)
                 }
                 val card = b.card()
-                entryRow(card, if (item.first.isBlank()) item.second else item.first, item.second) {
+                entryRow(card, if (item.first.isBlank()) item.second else item.first, item.second, item.third) {
                     // keep the list first, so Undo can put the entry back
                     val before = parse()
                     delete(item.second, item.third)
@@ -139,7 +139,7 @@ class HistoryActivity : BaseSettingsActivity() {
     }
 
     /** One history entry: a mark, the page, its host, and a round x to forget it. */
-    private fun entryRow(card: LinearLayout, title: String, url: String, onDelete: () -> Unit) {
+    private fun entryRow(card: LinearLayout, title: String, url: String, ts: Long, onDelete: () -> Unit) {
         val host = try { android.net.Uri.parse(url).host?.removePrefix("www.") ?: url } catch (_: Exception) { url }
         val label = if (title.isBlank()) host else title
 
@@ -180,6 +180,15 @@ class HistoryActivity : BaseSettingsActivity() {
         val clp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         clp.leftMargin = dp(13)
         row.addView(col, clp)
+
+        // the time, then the x - the reference puts the hour on the right
+        val tm = android.widget.TextView(this)
+        tm.text = try { java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                            .format(java.util.Date(ts)) } catch (_: Exception) { "" }
+        tm.setTextColor(attr(R.attr.textSecondaryColor))
+        tm.textSize = 12.5f
+        tm.setPadding(dp(6), 0, dp(6), 0)
+        row.addView(tm)
 
         val x = android.widget.TextView(this)
         x.text = "\u2715"

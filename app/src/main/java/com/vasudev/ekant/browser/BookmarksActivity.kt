@@ -58,8 +58,10 @@ class BookmarksActivity : BaseSettingsActivity() {
         }
 
         if (query.isBlank()) {
-            val card = b.card()
-            b.navRow(card, getString(R.string.bm_sort) + ": " + sortName(), null) { pickSort() }
+            val addCard = b.card()
+            b.iconRow(addCard, R.drawable.ic_bookmark, getString(R.string.bm_add), null) { addDialog() }
+            b.divider(addCard)
+            b.navRow(addCard, getString(R.string.bm_sort) + ": " + sortName(), null) { pickSort() }
             b.divider(card)
             b.switchRow(card, getString(R.string.bm_visual), null,
                 prefs.getBoolean("bm_visual", true)) { _, on ->
@@ -298,5 +300,45 @@ class BookmarksActivity : BaseSettingsActivity() {
         var x = 0
         for (c in host) x = (x * 31 + c.code) % palette.size
         return palette[x]
+    }
+
+    /** Add one by hand: a title and an address, the way the + button does it. */
+    private fun addDialog() {
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        col.setPadding(dp(22), dp(10), dp(22), dp(4))
+
+        val titleIn = EditText(this)
+        titleIn.hint = getString(R.string.bm_add_title)
+        titleIn.setSingleLine(true)
+        col.addView(titleIn)
+
+        val urlIn = EditText(this)
+        urlIn.hint = getString(R.string.bm_add_url)
+        urlIn.setSingleLine(true)
+        urlIn.inputType = android.text.InputType.TYPE_TEXT_VARIATION_URI
+        col.addView(urlIn)
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle(getString(R.string.bm_add))
+            .setView(col)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                var u = urlIn.text.toString().trim()
+                if (u.isBlank()) return@setPositiveButton
+                if (!u.startsWith("http")) u = "https://" + u
+                val t = titleIn.text.toString().trim().ifBlank {
+                    try { android.net.Uri.parse(u).host ?: u } catch (_: Exception) { u }
+                }
+                val line = t + '\u0001' + u
+                val now = prefs.getString("bookmarks", "") ?: ""
+                if (!now.split("\n").contains(line)) {
+                    prefs.edit().putString("bookmarks",
+                        (now + (if (now.isBlank()) "" else "\n") + line).trim()).apply()
+                }
+                toast(getString(R.string.bm_added))
+                rebuild()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 }
