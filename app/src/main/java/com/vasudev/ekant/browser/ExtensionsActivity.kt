@@ -64,6 +64,16 @@ class ExtensionsActivity : BaseSettingsActivity() {
         val installed = store.getAll()
         val haveIds = installed.map { it.id }.toHashSet()
 
+        // developer mode, as the reference manager has it: the advanced rows are
+        // hidden until someone says they want them
+        val devCard = b.card()
+        b.switchRow(devCard, getString(R.string.ext_dev_mode), getString(R.string.ext_dev_mode_sub),
+            prefs.getBoolean("ext_dev_mode", false)) { _, on ->
+            prefs.edit().putBoolean("ext_dev_mode", on).apply()
+            recreate()
+        }
+        val devOn = prefs.getBoolean("ext_dev_mode", false)
+
         b.section(getString(R.string.ext_installed))
         if (installed.isEmpty()) b.note(getString(R.string.ext_none))
         else installed.forEach { addCard(content, it, false) }
@@ -74,26 +84,29 @@ class ExtensionsActivity : BaseSettingsActivity() {
             catalog.forEach { addCard(content, it, true) }
         }
 
-        // ---------- remote store (your GitHub) ----------
-        b.section(getString(R.string.ext_remote))
-        val rc = b.card()
-        b.navRow(rc, getString(R.string.ext_remote_source), shortBase(),
-            android.view.View.OnClickListener { editBaseDialog() })
-        b.divider(rc)
-        b.navRow(rc, if (remoteLoading) getString(R.string.ext_checking) else getString(R.string.ext_check),
-            getString(R.string.ext_check_sum), android.view.View.OnClickListener { checkStore() })
-        b.divider(rc)
-        b.navRow(rc, getString(R.string.ext_paste_url), getString(R.string.ext_paste_url_sum),
-            android.view.View.OnClickListener { pasteDialog() })
+        if (devOn) {
+            // ---------- remote store (your GitHub) ----------
+            b.section(getString(R.string.ext_remote))
+            val rc = b.card()
+            b.navRow(rc, getString(R.string.ext_remote_source), shortBase(),
+                android.view.View.OnClickListener { editBaseDialog() })
+            b.divider(rc)
+            b.navRow(rc, if (remoteLoading) getString(R.string.ext_checking) else getString(R.string.ext_check),
+                getString(R.string.ext_check_sum), android.view.View.OnClickListener { checkStore() })
+            b.divider(rc)
+            b.navRow(rc, getString(R.string.ext_paste_url), getString(R.string.ext_paste_url_sum),
+                android.view.View.OnClickListener { pasteDialog() })
 
-        if (remoteLoading) b.note(getString(R.string.ext_checking))
-        remoteError?.let { b.note(getString(R.string.ext_remote_error, it)) }
-        remote?.let { list ->
-            if (list.isEmpty()) {
-                b.note(getString(R.string.ext_remote_empty))
-            } else {
-                for (r in list) addCard(content, r, haveIds.contains(r.id))
+            if (remoteLoading) b.note(getString(R.string.ext_checking))
+            remoteError?.let { b.note(getString(R.string.ext_remote_error, it)) }
+            remote?.let { list ->
+                if (list.isEmpty()) {
+                    b.note(getString(R.string.ext_remote_empty))
+                } else {
+                    for (r in list) addCard(content, r, haveIds.contains(r.id))
+                }
             }
+
         }
 
         b.section(getString(R.string.ext_add))
@@ -116,6 +129,93 @@ class ExtensionsActivity : BaseSettingsActivity() {
     }
 
     // ---------- one row ----------
+    /**
+     * An installed script, drawn the way the reference manager draws an extension:
+     * icon and name, the description, the id in small type, then Details and Remove
+     * as real buttons with the switch beside them.
+     */
+    private fun installedCard(content: LinearLayout, e: Extension) {
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.setPadding(dp(14), dp(14), dp(14), dp(10))
+        val bg = GradientDrawable()
+        bg.cornerRadius = dp(16).toFloat()
+        bg.setColor(attr(R.attr.surfaceColor))
+        card.background = bg
+
+        val top = LinearLayout(this)
+        top.orientation = LinearLayout.HORIZONTAL
+        top.gravity = Gravity.CENTER_VERTICAL
+        top.addView(iconView(e.id, e.name), LinearLayout.LayoutParams(dp(38), dp(38)))
+
+        val nm = TextView(this)
+        nm.text = if (e.version.isNotBlank()) e.name + "  " + e.version else e.name
+        nm.setTextColor(attr(R.attr.textPrimaryColor))
+        nm.textSize = 15f
+        nm.setTypeface(null, Typeface.BOLD)
+        val nlp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        nlp.leftMargin = dp(12)
+        top.addView(nm, nlp)
+        card.addView(top)
+
+        if (e.desc.isNotBlank()) {
+            val ds = TextView(this)
+            ds.text = e.desc
+            ds.setTextColor(attr(R.attr.textSecondaryColor))
+            ds.textSize = 13f
+            ds.maxLines = 3
+            ds.setPadding(dp(50), dp(6), 0, 0)
+            card.addView(ds)
+        }
+
+        val idLine = TextView(this)
+        idLine.text = "ID: " + e.id
+        idLine.setTextColor(attr(R.attr.textSecondaryColor))
+        idLine.textSize = 11.5f
+        idLine.setPadding(dp(50), dp(4), 0, 0)
+        card.addView(idLine)
+
+        val row = LinearLayout(this)
+        row.orientation = LinearLayout.HORIZONTAL
+        row.gravity = Gravity.CENTER_VERTICAL
+        row.setPadding(0, dp(10), 0, 0)
+
+        fun pill(text: String, onTap: () -> Unit): TextView {
+            val t = TextView(this)
+            t.text = text
+            t.textSize = 13f
+            t.setTextColor(attr(R.attr.brandColor))
+            t.setPadding(dp(16), dp(8), dp(16), dp(8))
+            val d = GradientDrawable()
+            d.cornerRadius = dp(18).toFloat()
+            d.setStroke(dp(1), attr(R.attr.brandColor))
+            d.setColor(0x00000000)
+            t.background = d
+            t.setOnClickListener { onTap() }
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.rightMargin = dp(8)
+            t.layoutParams = lp
+            return t
+        }
+
+        row.addView(pill(getString(R.string.ext_details)) { detail(e) })
+        row.addView(pill(getString(R.string.ext_remove)) { confirmRemove(e) })
+
+        val gap = View(this)
+        row.addView(gap, LinearLayout.LayoutParams(0, 1, 1f))
+
+        val sw = androidx.appcompat.widget.SwitchCompat(this)
+        sw.isChecked = e.enabled
+        sw.setOnCheckedChangeListener { _, on -> store.update(e.copy(enabled = on)) }
+        row.addView(sw)
+        card.addView(row)
+
+        val clp = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        clp.bottomMargin = dp(10)
+        content.addView(card, clp)
+    }
+
     private fun addCard(content: LinearLayout, e: Extension, recommended: Boolean) {
         val card = LinearLayout(this)
         card.orientation = LinearLayout.HORIZONTAL

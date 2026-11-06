@@ -868,4 +868,8 @@
     <string name="ext_no_access">No access needed</string>
     <string name="ext_runs_on">Runs on %1$s</string>
     <string name="ext_discover">Discover more scripts</string>
+    <string name="ext_details">Details</string>
+    <string name="ext_remove">Remove</string>
+    <string name="ext_dev_mode">Developer mode</string>
+    <string name="ext_dev_mode_sub">Show the store source, update checks and manual installs</string>
 </resources>
