@@ -19,7 +19,9 @@ data class Extension(
     val builtIn: Boolean = false,
     val desc: String = "",
     val runAt: String = RUN_END,
-    val grants: List<String> = emptyList()
+    val grants: List<String> = emptyList(),
+    /** The catalogue version this copy came from. */
+    val version: String = ""
 ) {
     /** pattern supports '*' wildcards and comma-separated alternatives. */
     fun matches(url: String): Boolean {
@@ -71,7 +73,8 @@ data class Extension(
                 builtIn = o.optBoolean("builtIn", false),
                 desc = o.optString("desc", ""),
                 runAt = o.optString("runAt", RUN_END),
-                grants = g
+                grants = g,
+                version = o.optString("version", "")
             )
         }
 

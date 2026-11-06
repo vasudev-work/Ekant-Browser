@@ -1853,6 +1853,37 @@ document.open();document.write(h);document.close();
                 } catch (_: Exception) { }
                 markInstalled("")
             }
+            "update" -> {
+                // Same as install, but the script is already here: keep its id and
+                // its on/off state, swap the code and the version.
+                val script = uri.getQueryParameter("u")
+                val wanted = uri.getQueryParameter("i") ?: ""
+                val ver = uri.getQueryParameter("v") ?: ""
+                if (!script.isNullOrBlank()) {
+                    val base = script.substringBeforeLast('/') + "/"
+                    val file = script.substringAfterLast('/')
+                    toast(getString(R.string.ext_updating))
+                    ExtStore.fetchScript(base, file, uri.getQueryParameter("h")) { code, err ->
+                        runOnUiThread {
+                            if (code == null) { toast(err ?: getString(R.string.ext_load_failed)); return@runOnUiThread }
+                            try {
+                                val store = ExtensionStore(this)
+                                val old = store.getAll().firstOrNull { it.id == wanted }
+                                if (old == null) { toast(getString(R.string.ext_not_installed)); return@runOnUiThread }
+                                val meta = UserScriptMeta.parse(code)
+                                store.update(old.copy(
+                                    code = code,
+                                    pattern = meta.pattern.ifBlank { old.pattern },
+                                    runAt = meta.runAt,
+                                    grants = meta.grants,
+                                    version = ver))
+                                toast(getString(R.string.ext_updated, old.name))
+                                markInstalled(old.id)
+                            } catch (_: Exception) { toast(getString(R.string.ext_load_failed)) }
+                        }
+                    }
+                }
+            }
             "install" -> {
                 val builtin = uri.getQueryParameter("b")
                 val script = uri.getQueryParameter("u")

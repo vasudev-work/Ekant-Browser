@@ -850,4 +850,6 @@
     <string name="tg_empty_title">You\'ll find your tab groups here</string>
     <string name="tg_empty_sub">A group keeps its pages even after you close the tabs.</string>
     <string name="tg_count">%1$d pages</string>
+    <string name="ext_updating">Updating...</string>
+    <string name="ext_updated">Updated %1$s</string>
 </resources>
