@@ -40,6 +40,27 @@ class ExtensionsActivity : BaseSettingsActivity() {
         }
 
     override fun build(b: SettingsBuilder, content: LinearLayout) {
+
+        // where scripts may run, and whether they may run in an incognito tab
+        b.section(getString(R.string.ext_site_sec))
+        val sc = b.card()
+        val mode = prefs.getString("ext_site_mode", "on") ?: "on"
+        b.radioRow(sc, getString(R.string.ext_site_on), getString(R.string.ext_site_on_sub), mode == "on") {
+            prefs.edit().putString("ext_site_mode", "on").apply(); recreate()
+        }
+        b.divider(sc)
+        b.radioRow(sc, getString(R.string.ext_site_ask), getString(R.string.ext_site_ask_sub), mode == "ask") {
+            prefs.edit().putString("ext_site_mode", "ask").apply(); recreate()
+        }
+        b.divider(sc)
+        b.radioRow(sc, getString(R.string.ext_site_off), getString(R.string.ext_site_off_sub), mode == "off") {
+            prefs.edit().putString("ext_site_mode", "off").apply(); recreate()
+        }
+        val sc2 = b.card()
+        b.switchRow(sc2, getString(R.string.ext_incog), getString(R.string.ext_incog_sub),
+            prefs.getBoolean("ext_incognito", false)) { _, on ->
+            prefs.edit().putBoolean("ext_incognito", on).apply()
+        }
         val installed = store.getAll()
         val haveIds = installed.map { it.id }.toHashSet()
 

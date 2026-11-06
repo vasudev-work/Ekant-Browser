@@ -852,4 +852,16 @@
     <string name="tg_count">%1$d pages</string>
     <string name="ext_updating">Updating...</string>
     <string name="ext_updated">Updated %1$s</string>
+    <string name="ext_ask_hint">Scripts are paused on this site. Menu > Page scripts to allow.</string>
+    <string name="ext_allow_site">Run scripts on %1$s</string>
+    <string name="ext_allowed">Scripts allowed on %1$s</string>
+    <string name="ext_site_sec">Where scripts may run</string>
+    <string name="ext_site_on">Always on matching sites</string>
+    <string name="ext_site_on_sub">A script runs wherever its pattern matches</string>
+    <string name="ext_site_ask">Ask on each site</string>
+    <string name="ext_site_ask_sub">Nothing runs until you allow the site</string>
+    <string name="ext_site_off">Off everywhere</string>
+    <string name="ext_site_off_sub">Scripts stay installed but never run</string>
+    <string name="ext_incog">Run scripts in incognito</string>
+    <string name="ext_incog_sub">Off by default: an incognito tab leaves nothing behind</string>
 </resources>

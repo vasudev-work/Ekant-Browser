@@ -1224,9 +1224,43 @@ document.open();document.write(h);document.close();
     }
 
     /** Run every enabled extension whose pattern matches this URL. */
+    /** Hosts the user said yes to, while the mode is "ask". */
+    private fun allowedHosts(): Set<String> =
+        try { prefs.getStringSet("ext_allowed_hosts", emptySet()) ?: emptySet() }
+        catch (_: Exception) { emptySet() }
+
+    private fun allowHost(host: String) {
+        try {
+            val now = allowedHosts().toMutableSet()
+            now.add(host)
+            prefs.edit().putStringSet("ext_allowed_hosts", now).apply()
+        } catch (_: Exception) { }
+    }
+
+    private val askedHosts = HashSet<String>()
+
+    /** Said once per site, not on every page load. */
+    private fun askOnce(host: String, url: String) {
+        if (host.isBlank() || askedHosts.contains(host)) return
+        askedHosts.add(host)
+        toast(getString(R.string.ext_ask_hint))
+    }
+
     private fun injectExtensions(wv: WebView?, url: String, start: Boolean) {
         val w = wv ?: return
+        // an incognito tab is a promise: nothing is remembered, and nothing of the
+        // user's own is run in it either, unless they said so once
+        try {
+            if (isPrivate(w) && !prefs.getBoolean("ext_incognito", false)) return
+        } catch (_: Exception) { }
         val host = try { Uri.parse(url).host ?: "" } catch (_: Exception) { "" }
+        // site permission, as Vivaldi models it: on, off, or ask first
+        val mode = try { prefs.getString("ext_site_mode", "on") ?: "on" } catch (_: Exception) { "on" }
+        if (mode == "off") return
+        if (mode == "ask" && !allowedHosts().contains(host)) {
+            try { askOnce(host, url) } catch (_: Exception) { }
+            return
+        }
         val blocked = blockedExts(host)
         for (e in extStore.getEnabled()) {
             if (blocked.contains(e.id)) continue
@@ -1314,6 +1348,14 @@ document.open();document.write(h);document.close();
                 if (on) blocked.add(e.id) else blocked.remove(e.id)
                 saveBlockedExts(host, blocked)
                 toast(if (on) getString(R.string.script_off) else getString(R.string.script_on))
+                try { cur()?.reload() } catch (_: Exception) { }
+            }
+        }
+        if (try { prefs.getString("ext_site_mode", "on") } catch (_: Exception) { "on" } == "ask" &&
+            host.isNotBlank() && !allowedHosts().contains(host)) {
+            s.item(getString(R.string.ext_allow_site, host), 1) {
+                allowHost(host)
+                toast(getString(R.string.ext_allowed, host))
                 try { cur()?.reload() } catch (_: Exception) { }
             }
         }
