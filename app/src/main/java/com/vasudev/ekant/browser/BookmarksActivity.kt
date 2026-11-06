@@ -58,10 +58,10 @@ class BookmarksActivity : BaseSettingsActivity() {
         }
 
         if (query.isBlank()) {
-            val addCard = b.card()
-            b.iconRow(addCard, R.drawable.ic_bookmark, getString(R.string.bm_add), null) { addDialog() }
-            b.divider(addCard)
-            b.navRow(addCard, getString(R.string.bm_sort) + ": " + sortName(), null) { pickSort() }
+            val card = b.card()
+            b.iconRow(card, R.drawable.ic_bookmark, getString(R.string.bm_add), null) { addDialog() }
+            b.divider(card)
+            b.navRow(card, getString(R.string.bm_sort) + ": " + sortName(), null) { pickSort() }
             b.divider(card)
             b.switchRow(card, getString(R.string.bm_visual), null,
                 prefs.getBoolean("bm_visual", true)) { _, on ->
@@ -335,7 +335,7 @@ class BookmarksActivity : BaseSettingsActivity() {
                     prefs.edit().putString("bookmarks",
                         (now + (if (now.isBlank()) "" else "\n") + line).trim()).apply()
                 }
-                toast(getString(R.string.bm_added))
+                Toast.makeText(this, getString(R.string.bm_added), Toast.LENGTH_SHORT).show()
                 rebuild()
             }
             .setNegativeButton(android.R.string.cancel, null)
