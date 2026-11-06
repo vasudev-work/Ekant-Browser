@@ -146,7 +146,7 @@ class ExtensionsActivity : BaseSettingsActivity() {
         val top = LinearLayout(this)
         top.orientation = LinearLayout.HORIZONTAL
         top.gravity = Gravity.CENTER_VERTICAL
-        top.addView(iconView(e.id, e.name), LinearLayout.LayoutParams(dp(38), dp(38)))
+        top.addView(iconView(e.name), LinearLayout.LayoutParams(dp(38), dp(38)))
 
         val nm = TextView(this)
         nm.text = if (e.version.isNotBlank()) e.name + "  " + e.version else e.name
@@ -199,9 +199,9 @@ class ExtensionsActivity : BaseSettingsActivity() {
         }
 
         row.addView(pill(getString(R.string.ext_details)) { detail(e) })
-        row.addView(pill(getString(R.string.ext_remove)) { confirmRemove(e) })
+        row.addView(pill(getString(R.string.ext_remove)) { confirmDelete(e) })
 
-        val gap = View(this)
+        val gap = android.view.View(this)
         row.addView(gap, LinearLayout.LayoutParams(0, 1, 1f))
 
         val sw = androidx.appcompat.widget.SwitchCompat(this)
