@@ -913,4 +913,9 @@
     <string name="ap_zoom_text">Zoom text only</string>
     <string name="ap_zoom_text_sum">Off scales the whole page, images included</string>
     <string name="ap_zoom_set">Zoom set to %1$d%%</string>
+    <string name="lock_here">Lock %1$s</string>
+    <string name="lock_on">Locked %1$s - blocking off here</string>
+    <string name="lock_off">Unlocked %1$s</string>
+    <string name="lock_no_site">No site open</string>
+    <string name="m_lock">Lock this site</string>
 </resources>

@@ -1929,6 +1929,25 @@ document.open();document.write(h);document.close();
         row.addView(sw)
         col.addView(row)
 
+        // lock this site: the answer when blocking went too far
+        val host = currentHost()
+        if (host.isNotBlank()) {
+            val lockRow = LinearLayout(this)
+            lockRow.orientation = LinearLayout.HORIZONTAL
+            lockRow.gravity = Gravity.CENTER_VERTICAL
+            lockRow.setPadding(0, dp(10), 0, 0)
+            val lt = TextView(this)
+            lt.text = getString(R.string.lock_here, host)
+            lt.textSize = 14f
+            lt.setTextColor(attr(R.attr.textPrimaryColor))
+            lockRow.addView(lt, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            val lsw = androidx.appcompat.widget.SwitchCompat(this)
+            lsw.isChecked = try { AdFilterEngine.isAllowed(host) } catch (_: Exception) { false }
+            lsw.setOnCheckedChangeListener { _, _ -> toggleLockHere() }
+            lockRow.addView(lsw)
+            col.addView(lockRow)
+        }
+
         Sheet.build(this, getString(R.string.sh_title))
             .content(col)
             .action(getString(R.string.sh_manage)) {
@@ -1993,6 +2012,22 @@ document.open();document.write(h);document.close();
         if (code.contains("document-start") || code.contains("document_start")) out.add(getString(R.string.chk_early))
         if (code.contains("MutationObserver") && code.length > 200000) out.add(getString(R.string.chk_heavy))
         return out
+    }
+
+    /** The site you are on, with blocking switched off for it and its subdomains. */
+    private fun toggleLockHere() {
+        val w = cur() ?: return
+        val host = try { Uri.parse(w.url ?: "").host ?: "" } catch (_: Exception) { "" }
+        if (host.isBlank()) { toast(getString(R.string.lock_no_site)); return }
+        val now = !AdFilterEngine.isAllowed(host)
+        try { AdFilterEngine.allow(host, now) } catch (_: Exception) { }
+        toast(if (now) getString(R.string.lock_on, host) else getString(R.string.lock_off, host))
+        try { w.reload() } catch (_: Exception) { }
+    }
+
+    private fun currentHost(): String {
+        val w = cur() ?: return ""
+        return try { Uri.parse(w.url ?: "").host ?: "" } catch (_: Exception) { "" }
     }
 
     private fun go(input: String?) {
@@ -2363,7 +2398,10 @@ document.open();document.write(h);document.close();
                 try { NetLog.add(url, true) } catch (_: Exception) { }
                 return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
             }
-            if (AdFilterEngine.isBlocked(url) || adBlocker.isBlocked(url)) {
+            // the page itself is never blocked: blocking the document leaves a blank
+            // tab with no way back, which is not what a filter is for
+            val isPage = try { request?.isForMainFrame == true } catch (_: Exception) { false }
+            if (!isPage && (AdFilterEngine.isBlocked(url) || adBlocker.isBlocked(url))) {
                 try { AdFilterEngine.recordBlocked() } catch (_: Exception) { }
                 try { NetLog.add(url, true) } catch (_: Exception) { }
                 return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0)))
@@ -2524,6 +2562,9 @@ document.open();document.write(h);document.close();
         b.menuRow(c, R.drawable.ic_qr, getString(R.string.m_scan_qr), null,
             View.OnClickListener { hideMenuPanel(); scanQr() })
         val adsOn = prefs.getBoolean("block_ads", true)
+        b.menuRow(c, R.drawable.ic_lock, getString(R.string.m_lock), null,
+            View.OnClickListener { hideMenuPanel(); toggleLockHere() })
+        b.divider(c)
         b.menuRow(c, R.drawable.ic_shield, getString(R.string.m_shield), null,
             View.OnClickListener { hideMenuPanel(); showShield() })
         b.divider(c)
