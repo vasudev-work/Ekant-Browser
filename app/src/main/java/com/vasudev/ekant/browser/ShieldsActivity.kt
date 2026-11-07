@@ -122,7 +122,9 @@ class ShieldsActivity : BaseSettingsActivity() {
             .putBoolean("sh_fonts", level == "strict")
             .putBoolean("sh_popups", level == "strict")
             .apply()
-        toast(getString(if (level == "strict") R.string.sh_level_strict else R.string.sh_level_std))
+        android.widget.Toast.makeText(this,
+            getString(if (level == "strict") R.string.sh_level_strict else R.string.sh_level_std),
+            android.widget.Toast.LENGTH_SHORT).show()
         recreate()
     }
 }
