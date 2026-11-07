@@ -41,14 +41,39 @@ class AppearanceActivity : BaseSettingsActivity() {
 
         b.section(getString(R.string.ap_sites))
         val c3 = b.card()
-        b.switchRow(c3, getString(R.string.ap_force_dark), getString(R.string.ap_force_dark_sum),
-            prefs.getBoolean("force_dark", false)) { _, on ->
-            prefs.edit().putBoolean("force_dark", on).apply()
-            recreate()
+        // the reference offers three, not two: follow the system, force light, force dark
+        val look = prefs.getString("site_appearance",
+            if (prefs.getBoolean("force_dark", false)) "dark" else "auto") ?: "auto"
+        b.radioRow(c3, getString(R.string.ap_look_auto), getString(R.string.ap_look_auto_sum), look == "auto") {
+            setLook("auto")
+        }
+        b.divider(c3)
+        b.radioRow(c3, getString(R.string.ap_look_light), null, look == "light") { setLook("light") }
+        b.divider(c3)
+        b.radioRow(c3, getString(R.string.ap_look_dark), getString(R.string.ap_force_dark_sum), look == "dark") {
+            setLook("dark")
         }
         b.divider(c3)
         b.navRow(c3, getString(R.string.us_title), null) {
             startActivity(android.content.Intent(this, UserStylesActivity::class.java))
+        }
+
+        b.section(getString(R.string.ap_zoom))
+        val cz = b.card()
+        val z = prefs.getInt("zoom", 100)
+        for ((i, level) in listOf(80, 100, 120, 150).withIndex()) {
+            if (i > 0) b.divider(cz)
+            b.radioRow(cz, "$level%", null, z == level) {
+                prefs.edit().putInt("zoom", level).apply()
+                toast(getString(R.string.ap_zoom_set, level))
+                recreate()
+            }
+        }
+        val cz2 = b.card()
+        b.switchRow(cz2, getString(R.string.ap_zoom_text), getString(R.string.ap_zoom_text_sum),
+            prefs.getBoolean("zoom_text_only", true)) { _, on ->
+            prefs.edit().putBoolean("zoom_text_only", on).apply()
+            recreate()
         }
 
         b.section(getString(R.string.ap_browsing))
@@ -120,5 +145,14 @@ class AppearanceActivity : BaseSettingsActivity() {
                 recreate()
             }
         }
+    }
+
+    /** One pref, and the old boolean kept in step so nothing else has to change. */
+    private fun setLook(v: String) {
+        prefs.edit()
+            .putString("site_appearance", v)
+            .putBoolean("force_dark", v == "dark")
+            .apply()
+        recreate()
     }
 }

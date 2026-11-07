@@ -905,4 +905,12 @@
     <string name="chk_require">Asks for @require - nothing is fetched for it</string>
     <string name="chk_early">Wants to run before the page loads - this runs after</string>
     <string name="chk_heavy">Large script with a MutationObserver - may be slow</string>
+    <string name="ap_look_auto">Automatic</string>
+    <string name="ap_look_auto_sum">Follow the system setting</string>
+    <string name="ap_look_light">Light</string>
+    <string name="ap_look_dark">Dark</string>
+    <string name="ap_zoom">Zoom</string>
+    <string name="ap_zoom_text">Zoom text only</string>
+    <string name="ap_zoom_text_sum">Off scales the whole page, images included</string>
+    <string name="ap_zoom_set">Zoom set to %1$d%%</string>
 </resources>

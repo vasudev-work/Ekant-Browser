@@ -60,10 +60,51 @@ class SearchEngineStore(context: Context) {
         return all.firstOrNull { it.name == defaultName } ?: all.first()
     }
 
+    /**
+     * A leading @word picks an engine for that one search, the way the reference's
+     * search shortcuts work: "@ddg privacy" goes to DuckDuckGo without changing the
+     * default. Unknown words are left alone and searched normally.
+     */
     fun urlFor(query: String): String {
+        val q = query.trim()
+        val first = q.substringBefore(' ', "")
+        if (first.startsWith("@") && first.length > 1) {
+            val word = first.substring(1).lowercase()
+            val hit = shortcuts()[word]
+            if (hit != null) {
+                val rest = q.substringAfter(' ', "").ifBlank { "" }
+                val enc = android.net.Uri.encode(rest)
+                return if (hit.contains("%s")) hit.replace("%s", enc) else hit + enc
+            }
+        }
         val t = default().template
-        val enc = android.net.Uri.encode(query)
+        val enc = android.net.Uri.encode(q)
         return if (t.contains("%s")) t.replace("%s", enc) else t + enc
+    }
+
+    /** keyword -> template. Four to start with, and the user can add their own. */
+    fun shortcuts(): MutableMap<String, String> {
+        val raw = prefs.getString("shortcuts", "") ?: ""
+        val map = LinkedHashMap<String, String>()
+        if (raw.isBlank()) {
+            map["google"] = "https://www.google.com/search?q=%s"
+            map["bing"] = "https://www.bing.com/search?q=%s"
+            map["ddg"] = "https://duckduckgo.com/?q=%s"
+            map["wikipedia"] = "https://en.wikipedia.org/w/index.php?search=%s"
+        } else {
+            for (line in raw.split("\n")) {
+                if (!line.contains('\u0001')) continue
+                val k = line.substringBefore('\u0001').trim()
+                val v = line.substringAfter('\u0001').trim()
+                if (k.isNotBlank() && v.isNotBlank()) map[k] = v
+            }
+        }
+        return map
+    }
+
+    fun saveShortcuts(map: Map<String, String>) {
+        prefs.edit().putString("shortcuts",
+            map.entries.joinToString("\n") { it.key + '\u0001' + it.value }).apply()
     }
 
     private fun defaults(): List<SearchEngine> = listOf(

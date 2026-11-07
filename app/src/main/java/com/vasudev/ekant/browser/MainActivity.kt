@@ -1061,7 +1061,8 @@ document.open();document.write(h);document.close();
     private fun applyContent(s: WebSettings) {
         s.javaScriptEnabled = js
         s.blockNetworkImage = !images
-        s.textZoom = textZoom
+        if (prefs.getBoolean("zoom_text_only", true)) s.textZoom = textZoom
+        else s.setInitialScale(textZoom)
         try {
             if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
                 WebSettingsCompat.setSafeBrowsingEnabled(s, prefs.getBoolean("safe_browsing", true))
@@ -1072,13 +1073,24 @@ document.open();document.write(h);document.close();
 
     /** Dark Reader style: let the engine darken sites that have no dark theme. */
     private fun applyDarkMode(s: WebSettings) {
-        val on = prefs.getBoolean("force_dark", false)
+        // Automatic follows the system; Light and Dark are a decision, not a guess
+        val look = prefs.getString("site_appearance",
+            if (prefs.getBoolean("force_dark", false)) "dark" else "auto") ?: "auto"
+        val on = look == "dark"
         try {
             if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
-                WebSettingsCompat.setAlgorithmicDarkeningAllowed(s, on)
+                if (look == "auto") {
+                    WebSettingsCompat.setAlgorithmicDarkeningAllowed(s, true)
+                } else {
+                    WebSettingsCompat.setAlgorithmicDarkeningAllowed(s, on)
+                }
             } else if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-                WebSettingsCompat.setForceDark(
-                    s, if (on) WebSettingsCompat.FORCE_DARK_ON else WebSettingsCompat.FORCE_DARK_OFF)
+                val mode = when (look) {
+                    "dark" -> WebSettingsCompat.FORCE_DARK_ON
+                    "light" -> WebSettingsCompat.FORCE_DARK_OFF
+                    else -> WebSettingsCompat.FORCE_DARK_AUTO
+                }
+                WebSettingsCompat.setForceDark(s, mode)
             }
         } catch (_: Exception) { }
     }
@@ -1099,7 +1111,8 @@ document.open();document.write(h);document.close();
         s.displayZoomControls = false
         s.loadWithOverviewMode = true
         s.useWideViewPort = true
-        s.textZoom = textZoom
+        if (prefs.getBoolean("zoom_text_only", true)) s.textZoom = textZoom
+        else s.setInitialScale(textZoom)
         s.mediaPlaybackRequiresUserGesture = !prefs.getBoolean("bg_media", false)
         s.databaseEnabled = true
         s.allowFileAccess = false
