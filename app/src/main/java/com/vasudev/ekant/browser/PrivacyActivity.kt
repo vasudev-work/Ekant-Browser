@@ -50,6 +50,7 @@ class PrivacyActivity : BaseSettingsActivity() {
 
         b.section(getString(R.string.priv_data))
         val c2 = b.card()
+        b.note(usageText())
         b.navRow(c2, getString(R.string.priv_clear_all), getString(R.string.r_clear_sum)) { clearAll() }; b.divider(c2)
         b.navRow(c2, getString(R.string.priv_clear_cookies), null) {
             CookieManager.getInstance().removeAllCookies(null); toast(getString(R.string.t_cleared))
@@ -70,4 +71,20 @@ class PrivacyActivity : BaseSettingsActivity() {
     }
 
     private fun toast(m: String) = Toast.makeText(this, m, Toast.LENGTH_SHORT).show()
+
+    /** How much this browser is actually holding, in words. */
+    private fun usageText(): String {
+        var bytes = 0L
+        try {
+            val cache = java.io.File(cacheDir, "WebView")
+            if (cache.exists()) cache.walkTopDown().filter { it.isFile }.forEach { bytes += it.length() }
+        } catch (_: Exception) { }
+        try {
+            val app = java.io.File(applicationInfo.dataDir, "app_webview")
+            if (app.exists()) app.walkTopDown().filter { it.isFile }.forEach { bytes += it.length() }
+        } catch (_: Exception) { }
+        val mb = bytes / (1024.0 * 1024.0)
+        val text = if (mb < 1) String.format("%.0f KB", bytes / 1024.0) else String.format("%.1f MB", mb)
+        return getString(R.string.priv_usage, text)
+    }
 }

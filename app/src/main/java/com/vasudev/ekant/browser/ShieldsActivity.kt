@@ -7,6 +7,21 @@ class ShieldsActivity : BaseSettingsActivity() {
     override val titleRes = R.string.r_shields
 
     override fun build(b: SettingsBuilder, content: LinearLayout) {
+        b.section(getString(R.string.sh_level))
+        val lv = b.card()
+        val level = prefs.getString("shield_level", "std") ?: "std"
+        b.radioRow(lv, getString(R.string.sh_level_std), getString(R.string.sh_level_std_sum), level == "std") {
+            setLevel("std")
+        }
+        b.divider(lv)
+        b.radioRow(lv, getString(R.string.sh_level_strict), getString(R.string.sh_level_strict_sum), level == "strict") {
+            setLevel("strict")
+        }
+        b.divider(lv)
+        b.radioRow(lv, getString(R.string.sh_level_custom), getString(R.string.sh_level_custom_sum), level == "custom") {
+            prefs.edit().putString("shield_level", "custom").apply(); recreate()
+        }
+
         val c = b.card()
 
         b.switchRow(c, getString(R.string.sh_easylist), getString(R.string.sh_easylist_sum),
@@ -94,5 +109,20 @@ class ShieldsActivity : BaseSettingsActivity() {
             prefs.getBoolean("bg_media", false)) { _, on ->
             prefs.edit().putBoolean("bg_media", on).apply()
         }
+    }
+
+    /** A level is a preset for switches that already exist, not a new engine. */
+    private fun setLevel(level: String) {
+        prefs.edit()
+            .putString("shield_level", level)
+            .putBoolean("block_ads", true)
+            .putBoolean("sh_easylist", true)
+            .putBoolean("sh_trackers", true)
+            .putBoolean("sh_3p", level == "strict")
+            .putBoolean("sh_fonts", level == "strict")
+            .putBoolean("sh_popups", level == "strict")
+            .apply()
+        toast(getString(if (level == "strict") R.string.sh_level_strict else R.string.sh_level_std))
+        recreate()
     }
 }

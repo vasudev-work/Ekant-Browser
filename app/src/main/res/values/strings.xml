@@ -879,4 +879,19 @@
     <string name="bm_add_url">Address</string>
     <string name="bm_added">Bookmark added</string>
     <string name="hist_time_fmt">HH:mm</string>
+    <string name="m_shield">Shield</string>
+    <string name="sh_title">Shield</string>
+    <string name="sh_count_label">THREATS NEUTRALIZED</string>
+    <string name="sh_protection">Shield protection</string>
+    <string name="sh_manage">Manage protection</string>
+    <string name="sh_on">Shield on</string>
+    <string name="sh_off">Shield off</string>
+    <string name="sh_level">Protection level</string>
+    <string name="sh_level_std">Standard</string>
+    <string name="sh_level_std_sum">Ads and trackers from the built-in lists</string>
+    <string name="sh_level_strict">Strict</string>
+    <string name="sh_level_strict_sum">Also block third-party cookies, fonts and pop-ups</string>
+    <string name="sh_level_custom">Custom</string>
+    <string name="sh_level_custom_sum">Choose each switch below</string>
+    <string name="priv_usage">Using %1$s</string>
 </resources>

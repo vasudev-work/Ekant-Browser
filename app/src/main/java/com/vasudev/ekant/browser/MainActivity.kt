@@ -1859,6 +1859,61 @@ document.open();document.write(h);document.close();
         try { w.evaluateJavascript(js, null) } catch (_: Exception) { }
     }
 
+    /**
+     * The shield, as Brave and Edge draw it: the number of things stopped, one
+     * switch, and a way in to the rest. The number is the engine's own count, not
+     * a decoration - it only goes up when a request was actually blocked.
+     */
+    private fun showShield() {
+        val count = try { AdFilterEngine.blockedCount } catch (_: Exception) { 0 }
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
+        col.gravity = Gravity.CENTER_HORIZONTAL
+        col.setPadding(dp(20), dp(18), dp(20), dp(12))
+
+        val big = TextView(this)
+        big.text = "" + count
+        big.textSize = 44f
+        big.setTypeface(null, android.graphics.Typeface.BOLD)
+        big.setTextColor(attr(R.attr.brandColor))
+        big.gravity = Gravity.CENTER
+        col.addView(big)
+
+        val label = TextView(this)
+        label.text = getString(R.string.sh_count_label)
+        label.textSize = 12f
+        label.setTextColor(attr(R.attr.textSecondaryColor))
+        label.gravity = Gravity.CENTER
+        label.setPadding(0, 0, 0, dp(14))
+        col.addView(label)
+
+        val row = LinearLayout(this)
+        row.orientation = LinearLayout.HORIZONTAL
+        row.gravity = Gravity.CENTER_VERTICAL
+        val t = TextView(this)
+        t.text = getString(R.string.sh_protection)
+        t.textSize = 14.5f
+        t.setTextColor(attr(R.attr.textPrimaryColor))
+        row.addView(t, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+
+        val sw = androidx.appcompat.widget.SwitchCompat(this)
+        sw.isChecked = prefs.getBoolean("block_ads", true)
+        sw.setOnCheckedChangeListener { _, on ->
+            prefs.edit().putBoolean("block_ads", on).apply()
+            toast(if (on) getString(R.string.sh_on) else getString(R.string.sh_off))
+            try { cur()?.reload() } catch (_: Exception) { }
+        }
+        row.addView(sw)
+        col.addView(row)
+
+        Sheet.build(this, getString(R.string.sh_title))
+            .content(col)
+            .action(getString(R.string.sh_manage)) {
+                startActivity(Intent(this, ShieldsActivity::class.java))
+            }
+            .show()
+    }
+
     private fun go(input: String?) {
         var u = input?.trim() ?: ""
         if (u.isEmpty()) return
@@ -2388,6 +2443,9 @@ document.open();document.write(h);document.close();
         b.menuRow(c, R.drawable.ic_qr, getString(R.string.m_scan_qr), null,
             View.OnClickListener { hideMenuPanel(); scanQr() })
         val adsOn = prefs.getBoolean("block_ads", true)
+        b.menuRow(c, R.drawable.ic_shield, getString(R.string.m_shield), null,
+            View.OnClickListener { hideMenuPanel(); showShield() })
+        b.divider(c)
         b.iconValueRow(c, R.drawable.ic_block, getString(R.string.m_block_ads),
             if (adsOn) "On" else "Off") {
             prefs.edit().putBoolean("block_ads", !adsOn).apply()
