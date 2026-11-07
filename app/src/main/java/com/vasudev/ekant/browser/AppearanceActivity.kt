@@ -65,7 +65,8 @@ class AppearanceActivity : BaseSettingsActivity() {
             if (i > 0) b.divider(cz)
             b.radioRow(cz, "$level%", null, z == level) {
                 prefs.edit().putInt("zoom", level).apply()
-                toast(getString(R.string.ap_zoom_set, level))
+                android.widget.Toast.makeText(this, getString(R.string.ap_zoom_set, level),
+                    android.widget.Toast.LENGTH_SHORT).show()
                 recreate()
             }
         }

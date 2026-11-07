@@ -1058,11 +1058,19 @@ document.open();document.write(h);document.close();
         if (w != null) w.loadUrl(target) else newTab(target)
     }
 
+    /** Page-wide zoom has to be set on the WebView itself, not on its settings. */
+    private fun applyViewZoom(w: WebView) {
+        try {
+            if (prefs.getBoolean("zoom_text_only", true)) w.setInitialScale(0)
+            else w.setInitialScale(textZoom)
+        } catch (_: Exception) { }
+    }
+
     private fun applyContent(s: WebSettings) {
         s.javaScriptEnabled = js
         s.blockNetworkImage = !images
-        if (prefs.getBoolean("zoom_text_only", true)) s.textZoom = textZoom
-        else s.setInitialScale(textZoom)
+        s.textZoom = if (prefs.getBoolean("zoom_text_only", true)) textZoom
+                     else 100   // page scaling happens on the view, not on its settings
         try {
             if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
                 WebSettingsCompat.setSafeBrowsingEnabled(s, prefs.getBoolean("safe_browsing", true))
@@ -1102,6 +1110,7 @@ document.open();document.write(h);document.close();
         try { w.addJavascriptInterface(SpeechBridge(w), "NijatvaSpeech") } catch (_: Exception) { }
         try { w.addJavascriptInterface(BlockBridge(), "AekantBlock") } catch (_: Exception) { }
         try { w.addJavascriptInterface(GmBridge(), "AekantGM") } catch (_: Exception) { }
+        applyViewZoom(w)
         w.layoutParams = FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         val s = w.settings
@@ -1111,8 +1120,8 @@ document.open();document.write(h);document.close();
         s.displayZoomControls = false
         s.loadWithOverviewMode = true
         s.useWideViewPort = true
-        if (prefs.getBoolean("zoom_text_only", true)) s.textZoom = textZoom
-        else s.setInitialScale(textZoom)
+        s.textZoom = if (prefs.getBoolean("zoom_text_only", true)) textZoom
+                     else 100   // page scaling happens on the view, not on its settings
         s.mediaPlaybackRequiresUserGesture = !prefs.getBoolean("bg_media", false)
         s.databaseEnabled = true
         s.allowFileAccess = false
