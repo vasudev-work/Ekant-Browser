@@ -1393,6 +1393,7 @@ document.open();document.write(h);document.close();
             }
         }
         s.action(getString(R.string.ext_discover)) { try { handleScheme("aekant://store") } catch (_: Exception) { } }
+        s.action(getString(R.string.chk_action)) { checkScripts() }
         s.action(getString(R.string.r_extensions)) {
             startActivity(Intent(this, ExtensionsActivity::class.java))
         }
@@ -1912,6 +1913,64 @@ document.open();document.write(h);document.close();
                 startActivity(Intent(this, ShieldsActivity::class.java))
             }
             .show()
+    }
+
+    /**
+     * Will this script run here?
+     *
+     * Three separate questions, answered separately: does its pattern cover this
+     * page, does the code parse at all, and does it reach for something a WebView
+     * does not have. A script can fail for any one of them, and saying "installed"
+     * without saying which is not much help.
+     */
+    private fun checkScripts() {
+        val w = cur() ?: return
+        val url = w.url ?: return
+        val all = extStore.getEnabled()
+        if (all.isEmpty()) { toast(getString(R.string.scripts_none)); return }
+
+        val report = StringBuilder()
+        var pending = all.size
+
+        fun finish() {
+            val d = android.app.AlertDialog.Builder(this)
+            d.setTitle(getString(R.string.chk_title))
+            d.setMessage(report.toString().trim())
+            d.setPositiveButton(android.R.string.ok, null)
+            d.show()
+        }
+
+        for (e in all) {
+            val matches = e.matches(url)
+            val bad = scan(e.code)
+            val q = org.json.JSONObject.quote(e.code)
+            val js = "(function(){try{new Function($q);return 'ok'}catch(x){return 'bad: '+x.message}})()"
+            w.evaluateJavascript(js) { res ->
+                val clean = (res ?: "").trim().removeSurrounding("\"")
+                val parses = clean == "ok"
+                report.append(if (matches && parses && bad.isEmpty()) "\u2713 " else "\u2717 ")
+                report.append(e.name).append("\n")
+                report.append("   ").append(if (matches) getString(R.string.chk_match) else getString(R.string.chk_no_match, url.take(40))).append("\n")
+                if (!parses) report.append("   ").append(getString(R.string.chk_syntax, clean.take(60))).append("\n")
+                for (b in bad) report.append("   ").append(b).append("\n")
+                if (matches && parses && bad.isEmpty()) report.append("   ").append(getString(R.string.chk_ok)).append("\n")
+                report.append("\n")
+                pending--
+                if (pending == 0) finish()
+            }
+        }
+    }
+
+    /** Things a userscript can ask for that this browser cannot give it. */
+    private fun scan(code: String): List<String> {
+        val out = ArrayList<String>()
+        if (code.contains("chrome.") && !code.contains("chrome.runtime.id")) out.add(getString(R.string.chk_chrome))
+        if (code.contains("unsafeWindow")) out.add(getString(R.string.chk_unsafe))
+        if (code.contains("GM_xmlhttpRequest") && !code.contains("GM_xmlhttpRequest\u200b")) { }
+        if (code.contains("@require") || code.contains("GM_require")) out.add(getString(R.string.chk_require))
+        if (code.contains("document-start") || code.contains("document_start")) out.add(getString(R.string.chk_early))
+        if (code.contains("MutationObserver") && code.length > 200000) out.add(getString(R.string.chk_heavy))
+        return out
     }
 
     private fun go(input: String?) {

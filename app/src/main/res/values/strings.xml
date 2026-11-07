@@ -894,4 +894,15 @@
     <string name="sh_level_custom">Custom</string>
     <string name="sh_level_custom_sum">Choose each switch below</string>
     <string name="priv_usage">Using %1$s</string>
+    <string name="chk_action">Will these scripts run here?</string>
+    <string name="chk_title">Script check</string>
+    <string name="chk_match">Pattern matches this page</string>
+    <string name="chk_no_match">Pattern does not match %1$s</string>
+    <string name="chk_syntax">Syntax error: %1$s</string>
+    <string name="chk_ok">Runs here</string>
+    <string name="chk_chrome">Uses chrome.* - no such API in a WebView</string>
+    <string name="chk_unsafe">Uses unsafeWindow - not available</string>
+    <string name="chk_require">Asks for @require - nothing is fetched for it</string>
+    <string name="chk_early">Wants to run before the page loads - this runs after</string>
+    <string name="chk_heavy">Large script with a MutationObserver - may be slow</string>
 </resources>
