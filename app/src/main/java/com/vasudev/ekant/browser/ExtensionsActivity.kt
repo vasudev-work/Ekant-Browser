@@ -41,6 +41,79 @@ class ExtensionsActivity : BaseSettingsActivity() {
 
     override fun build(b: SettingsBuilder, content: LinearLayout) {
 
+        // ---- the header the reference puts at the top: menu, title, search, dev switch ----
+        val head = LinearLayout(this)
+        head.orientation = LinearLayout.HORIZONTAL
+        head.gravity = Gravity.CENTER_VERTICAL
+        head.setPadding(dp(4), dp(2), dp(4), dp(10))
+
+        val menuBtn = TextView(this)
+        menuBtn.text = "\u2630"
+        menuBtn.textSize = 20f
+        menuBtn.setTextColor(attr(R.attr.textPrimaryColor))
+        menuBtn.setPadding(dp(10), dp(6), dp(10), dp(6))
+        menuBtn.setOnClickListener { drawer() }
+        head.addView(menuBtn)
+
+        val title = TextView(this)
+        title.text = getString(R.string.r_extensions)
+        title.textSize = 20f
+        title.setTypeface(null, android.graphics.Typeface.BOLD)
+        title.setTextColor(attr(R.attr.textPrimaryColor))
+        val tlp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        tlp.leftMargin = dp(6)
+        head.addView(title, tlp)
+
+        val devLabel = TextView(this)
+        devLabel.text = getString(R.string.ext_dev_mode)
+        devLabel.textSize = 12.5f
+        devLabel.setTextColor(attr(R.attr.textSecondaryColor))
+        head.addView(devLabel)
+
+        val devSw = androidx.appcompat.widget.SwitchCompat(this)
+        devSw.isChecked = prefs.getBoolean("ext_dev_mode", false)
+        devSw.setOnCheckedChangeListener { _, on ->
+            prefs.edit().putBoolean("ext_dev_mode", on).apply()
+            recreate()
+        }
+        head.addView(devSw)
+        content.addView(head)
+
+        // ---- the pill row, only while developer mode is on ----
+        if (prefs.getBoolean("ext_dev_mode", false)) {
+            val pills = LinearLayout(this)
+            pills.orientation = LinearLayout.HORIZONTAL
+            val plp = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            plp.bottomMargin = dp(10)
+            content.addView(pills, plp)
+
+            fun pill(text: String, onTap: () -> Unit) {
+                val t = TextView(this)
+                t.text = text
+                t.textSize = 13f
+                t.setTextColor(attr(R.attr.brandColor))
+                t.setPadding(dp(16), dp(9), dp(16), dp(9))
+                val d = GradientDrawable()
+                d.cornerRadius = dp(18).toFloat()
+                d.setStroke(dp(1), attr(R.attr.brandColor))
+                d.setColor(0x00000000)
+                t.background = d
+                t.setOnClickListener { onTap() }
+                val lp = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                lp.rightMargin = dp(8)
+                t.layoutParams = lp
+                pills.addView(t)
+            }
+            pill(getString(R.string.ext_from_link)) { linkDialog() }
+            pill(getString(R.string.ext_upload)) { importFile.launch(arrayOf("*/*")) }
+            pill(getString(R.string.ext_check)) { checkStore() }
+        }
+
+        // the line the reference shows under the pills
+        b.note(getString(R.string.ext_mobile_note))
+
         // where scripts may run, and whether they may run in an incognito tab
         b.section(getString(R.string.ext_site_sec))
         val sc = b.card()
@@ -606,5 +679,14 @@ class ExtensionsActivity : BaseSettingsActivity() {
                 }
             }
         }.start()
+    }
+
+    /** The reference's side menu: three places to go, and the store at the bottom. */
+    private fun drawer() {
+        val s = Sheet.build(this, getString(R.string.r_extensions))
+        s.item(getString(R.string.ext_my), 0) { }
+        s.item(getString(R.string.ext_site_sec), 1) { }
+        s.action(getString(R.string.ext_find_more)) { findMore() }
+        s.show()
     }
 }

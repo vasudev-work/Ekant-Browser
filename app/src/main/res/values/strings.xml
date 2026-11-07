@@ -918,4 +918,6 @@
     <string name="lock_off">Unlocked %1$s</string>
     <string name="lock_no_site">No site open</string>
     <string name="m_lock">Lock this site</string>
+    <string name="ext_mobile_note">Some scripts are written for desktop and may behave differently on a phone.</string>
+    <string name="ext_my">My scripts</string>
 </resources>
