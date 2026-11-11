@@ -46,6 +46,7 @@ class SettingsActivity : BaseSettingsActivity() {
             Item(getString(R.string.r_privacy_dashboard)) { go(PrivacyActivity::class.java) },
             Item(getString(R.string.ab_title)) { go(AdBlockActivity::class.java) },
             Item(getString(R.string.s_tracking)) { go(ShieldsActivity::class.java) },
+            Item(getString(R.string.s_focus)) { go(FocusActivity::class.java) },
             Item(getString(R.string.s_permissions)) { go(SitePermissionsActivity::class.java) },
             Item(getString(R.string.pf_title)) { go(ProfilesActivity::class.java) },
             Item(getString(R.string.s_passwords)) { go(PasswordsActivity::class.java) },

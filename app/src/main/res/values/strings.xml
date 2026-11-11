@@ -920,4 +920,25 @@
     <string name="m_lock">Lock this site</string>
     <string name="ext_mobile_note">Some scripts are written for desktop and may behave differently on a phone.</string>
     <string name="ext_my">My scripts</string>
+    <string name="focus_title">Focus - blocked sites</string>
+    <string name="focus_when">When the block applies</string>
+    <string name="focus_always">Always</string>
+    <string name="focus_always_sum">Every hour of the day</string>
+    <string name="focus_sched">During hours I choose</string>
+    <string name="focus_sched_sum">Block only inside the window below</string>
+    <string name="focus_from">From</string>
+    <string name="focus_to">To</string>
+    <string name="focus_pick_hour">Pick an hour</string>
+    <string name="focus_off_note">Nothing is blocked until you choose Always or a window.</string>
+    <string name="focus_sites">Sites</string>
+    <string name="focus_add">Add a site</string>
+    <string name="focus_add_sum">Type a domain, such as youtube.com</string>
+    <string name="focus_hint">youtube.com</string>
+    <string name="focus_empty">No sites on the list yet.</string>
+    <string name="focus_remove">Remove</string>
+    <string name="focus_removed">Removed %1$s</string>
+    <string name="focus_added">Added %1$s</string>
+    <string name="focus_page">This site is on your blocked list. Change it in Settings, Focus.</string>
+    <string name="focus_note">The block is applied before the page loads, so it cannot be dismissed from the page.</string>
+    <string name="s_focus">Focus - blocked sites</string>
 </resources>

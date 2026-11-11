@@ -39,6 +39,7 @@
 
         <activity android:name=".SettingsActivity" android:exported="false" android:label="@string/settings_title" />
         <activity android:name=".ShieldsActivity" android:exported="false" android:label="@string/r_shields" />
+        <activity android:name=".FocusActivity" android:exported="false" android:label="@string/s_focus" />
         <activity android:name=".AppearanceActivity" android:exported="false" android:label="@string/r_appearance" />
         <activity android:name=".NewTabPageActivity" android:exported="false" android:label="@string/r_ntp" />
         <activity android:name=".LanguagesActivity" android:exported="false" android:label="@string/r_languages" />

@@ -2030,6 +2030,32 @@ document.open();document.write(h);document.close();
         return try { Uri.parse(w.url ?: "").host ?: "" } catch (_: Exception) { "" }
     }
 
+    /** True when this host is on the list and the clock says the list applies. */
+    private fun focusBlocked(host: String): Boolean {
+        if (host.isBlank()) return false
+        val sites = (prefs.getString("block_sites", "") ?: "").split("\n")
+            .map { it.trim().lowercase() }.filter { it.isNotBlank() }
+        if (sites.isEmpty()) return false
+        val hit = sites.any { s -> host == s || host.endsWith("." + s) }
+        if (!hit) return false
+        if (prefs.getBoolean("block_always", false)) return true
+        if (!prefs.getBoolean("block_sched_on", false)) return false
+        val from = prefs.getInt("block_from", 9)
+        val to = prefs.getInt("block_to", 18)
+        val h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        return if (from <= to) h in from until to else (h >= from || h < to)
+    }
+
+    /** The page shown instead: what is blocked, and how to change that. */
+    private fun focusPage(host: String): String {
+        val body = getString(R.string.focus_page, host)
+        return "<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'>" +
+            "<style>body{margin:0;height:100vh;display:grid;place-items:center;background:#141414;" +
+            "color:#e8eaed;font:15px/1.6 system-ui,sans-serif;text-align:center;padding:24px}" +
+            "h1{font-size:19px;margin:0 0 8px}p{color:#9aa0a6;margin:0;max-width:340px}</style>" +
+            "<div><h1>" + host + "</h1><p>" + body + "</p></div>"
+    }
+
     private fun go(input: String?) {
         var u = input?.trim() ?: ""
         if (u.isEmpty()) return
@@ -2401,6 +2427,16 @@ document.open();document.write(h);document.close();
             // the page itself is never blocked: blocking the document leaves a blank
             // tab with no way back, which is not what a filter is for
             val isPage = try { request?.isForMainFrame == true } catch (_: Exception) { false }
+            if (isPage) {
+                try {
+                    val h = request?.url?.host ?: ""
+                    if (focusBlocked(h)) {
+                        return WebResourceResponse("text/html", "utf-8", 200, "Blocked",
+                            mapOf("Cache-Control" to "no-store"),
+                            java.io.ByteArrayInputStream(focusPage(h).toByteArray()))
+                    }
+                } catch (_: Exception) { }
+            }
             if (!isPage && (AdFilterEngine.isBlocked(url) || adBlocker.isBlocked(url))) {
                 try { AdFilterEngine.recordBlocked() } catch (_: Exception) { }
                 try { NetLog.add(url, true) } catch (_: Exception) { }
