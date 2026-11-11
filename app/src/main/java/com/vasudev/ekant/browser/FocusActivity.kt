@@ -53,7 +53,7 @@ class FocusActivity : BaseSettingsActivity() {
                 b.navRow(c2, host, getString(R.string.focus_remove)) {
                     prefs.edit().putString("block_sites",
                         blocked().filterNot { it == host }.joinToString("\n")).apply()
-                    toast(getString(R.string.focus_removed, host))
+                    android.widget.Toast.makeText(this, getString(R.string.focus_removed, host), android.widget.Toast.LENGTH_SHORT).show()
                     recreate()
                 }
             }
@@ -100,12 +100,10 @@ class FocusActivity : BaseSettingsActivity() {
                 val now = blocked().toMutableList()
                 if (!now.contains(host)) now.add(host)
                 prefs.edit().putString("block_sites", now.joinToString("\n")).apply()
-                toast(getString(R.string.focus_added, host))
+                android.widget.Toast.makeText(this, getString(R.string.focus_added, host), android.widget.Toast.LENGTH_SHORT).show()
                 recreate()
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
-
-    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 }
