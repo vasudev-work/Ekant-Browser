@@ -377,6 +377,26 @@ class SettingsBuilder(private val a: Context, private val root: LinearLayout) {
         r.isClickable = l != null
     }
 
+    /**
+     * A row whose icon carries a colour of its own, so a long list can be read by
+     * colour before it is read by word - the way the reference settings screen does.
+     */
+    fun iconRowTinted(card: LinearLayout, iconRes: Int, tint: Int, title: String,
+                      summary: String?, l: View.OnClickListener?) {
+        val r = rowBase(card)
+        val ic = ImageView(a)
+        ic.setImageResource(iconRes)
+        ic.setColorFilter(tint)
+        val ilp = LinearLayout.LayoutParams(dp(22), dp(22))
+        ilp.rightMargin = dp(16)
+        ic.layoutParams = ilp
+        r.addView(ic)
+        textCol(r, title, summary, textColor)
+        addChevron(r)
+        r.setOnClickListener(l)
+        r.isClickable = l != null
+    }
+
     /** Same as iconRow but without the trailing chevron, for the floating menu card. */
     fun menuRow(card: LinearLayout, iconRes: Int, title: String, summary: String?, l: View.OnClickListener?) {
         val r = rowBase(card)
