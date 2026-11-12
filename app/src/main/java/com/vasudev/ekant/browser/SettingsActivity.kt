@@ -203,7 +203,7 @@ class SettingsActivity : BaseSettingsActivity() {
         listOf(R.drawable.ic_tabs, R.drawable.ic_bookmark, R.drawable.ic_history,
                R.drawable.ic_schedule, R.drawable.ic_book, R.drawable.ic_folder,
                R.drawable.ic_download, R.drawable.ic_save, R.drawable.ic_speak),
-        listOf(R.drawable.ic_link, R.drawable.ic_shield, R.drawable.ic_block,
+        listOf(R.drawable.ic_globe, R.drawable.ic_shield, R.drawable.ic_block,
                R.drawable.ic_shield, R.drawable.ic_lock, R.drawable.ic_verified,
                R.drawable.ic_share, R.drawable.ic_key, R.drawable.ic_note,
                R.drawable.ic_delete),
