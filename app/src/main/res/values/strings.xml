@@ -941,4 +941,6 @@
     <string name="focus_page">This site is on your blocked list. Change it in Settings, Focus.</string>
     <string name="focus_note">The block is applied before the page loads, so it cannot be dismissed from the page.</string>
     <string name="s_focus">Focus - blocked sites</string>
+    <string name="dev_email">Email</string>
+    <string name="dev_maintains">Maintains</string>
 </resources>

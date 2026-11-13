@@ -67,8 +67,51 @@ class DeveloperActivity : BaseSettingsActivity() {
 
         card.addView(stats())
 
+        // the apps this developer maintains, as marks rather than a sentence
+        val keep = LinearLayout(this)
+        keep.orientation = LinearLayout.HORIZONTAL
+        keep.gravity = Gravity.CENTER_VERTICAL
+        keep.setPadding(0, dp(16), 0, dp(2))
+        val keepLabel = TextView(this)
+        keepLabel.text = getString(R.string.dev_maintains)
+        keepLabel.setTextColor(attr(R.attr.textSecondaryColor))
+        keepLabel.textSize = 12.5f
+        keep.addView(keepLabel, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        card.addView(keep)
+
+        val chips = LinearLayout(this)
+        chips.orientation = LinearLayout.HORIZONTAL
+        chips.setPadding(0, dp(8), 0, 0)
+        val marks = listOf("N", "A", "Q")
+        for (m in marks) {
+            val t = TextView(this)
+            t.text = m
+            t.setTextColor(Color.WHITE)
+            t.textSize = 14f
+            t.gravity = Gravity.CENTER
+            val d = GradientDrawable()
+            d.cornerRadius = dp(12).toFloat()
+            d.setColor(attr(R.attr.brandColor))
+            t.background = d
+            val clp = LinearLayout.LayoutParams(dp(38), dp(38))
+            clp.rightMargin = dp(8)
+            chips.addView(t, clp)
+        }
+        val more = TextView(this)
+        more.text = "+22"
+        more.setTextColor(attr(R.attr.textSecondaryColor))
+        more.textSize = 13f
+        more.gravity = Gravity.CENTER
+        val md = GradientDrawable()
+        md.cornerRadius = dp(12).toFloat()
+        md.setColor(attr(R.attr.surface2Color))
+        more.background = md
+        chips.addView(more, LinearLayout.LayoutParams(dp(46), dp(38)))
+        card.addView(chips)
+
         infoRow(card, getString(R.string.dev_location), getString(R.string.dev_location_value))
         infoRow(card, getString(R.string.dev_website), "github.com/vasudev-work")
+        infoRow(card, getString(R.string.dev_email), "Vasudev.Social@rediffmail.com")
 
         val btn = TextView(this)
         btn.text = getString(R.string.dev_github_btn)
@@ -78,8 +121,13 @@ class DeveloperActivity : BaseSettingsActivity() {
         btn.setPadding(0, dp(14), 0, dp(14))
         val bg = GradientDrawable()
         bg.cornerRadius = dp(26).toFloat()
-        bg.setColor(attr(R.attr.brandColor))
+        // white on dark, as the reference draws it: one clear way out of the page
+        val isNight = (resources.configuration.uiMode and
+            android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        bg.setColor(if (isNight) 0xFFFFFFFF.toInt() else attr(R.attr.brandColor))
         btn.background = bg
+        btn.setTextColor(if (isNight) 0xFF101010.toInt() else Color.WHITE)
         btn.isFocusable = false
         btn.setOnClickListener { open("https://github.com/vasudev-work") }
         val bLp = LinearLayout.LayoutParams(
