@@ -2619,7 +2619,6 @@ document.open();document.write(h);document.close();
         b.menuRow(c, R.drawable.ic_tabs, getString(R.string.m_recent), null, act(2)); b.divider(c)
         b.menuRow(c, R.drawable.ic_settings, getString(R.string.m_settings), null, act(25)); b.divider(c)
         b.menuRow(c, R.drawable.ic_help, getString(R.string.m_help), null, act(30)); b.divider(c)
-        b.menuRow(c, R.drawable.ic_logo, getString(R.string.m_about), null, act(26)); b.divider(c)
         b.menuRow(c, R.drawable.ic_find, getString(R.string.m_find), null, act(7)); b.divider(c)
         b.menuRow(c, R.drawable.ic_code, getString(R.string.m_inspect),
             getString(R.string.m_inspect_sub),
@@ -2689,7 +2688,6 @@ document.open();document.write(h);document.close();
             23 -> { startActivity(Intent(this, AIActivity::class.java)); hideMenuPanel() }
             24 -> { startActivity(Intent(this, ExtensionsActivity::class.java)); hideMenuPanel() }
             25 -> { startActivity(Intent(this, SettingsActivity::class.java)); hideMenuPanel() }
-            26 -> { startActivity(Intent(this, AboutActivity::class.java)); hideMenuPanel() }
             27 -> finishAffinity()
             28 -> { go("https://github.com/vasudev-work/Ekant-Browser/releases/latest"); hideMenuPanel() }
             29 -> { startActivity(Intent(this, PrivacyActivity::class.java)); hideMenuPanel() }
@@ -3270,7 +3268,6 @@ document.open();document.write(h);document.close();
         item(getString(R.string.tabs_select)) { toast(getString(R.string.tabs_select_note)) }
         item(getString(R.string.m_delete_data)) { startActivity(Intent(this, PrivacyActivity::class.java)) }
         item(getString(R.string.m_settings)) { startActivity(Intent(this, SettingsActivity::class.java)) }
-        item(getString(R.string.m_about)) { startActivity(Intent(this, AboutActivity::class.java)) }
 
         val d = android.app.Dialog(this)
         d.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
