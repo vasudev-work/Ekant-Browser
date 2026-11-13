@@ -2653,10 +2653,10 @@ document.open();document.write(h);document.close();
 
     private fun feedback() {
         try {
-            startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:Vasudev.work@rediffmail.com")))
+            startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:vasudev.work@rediffmail.com")))
         } catch (_: Exception) {
             AlertDialog.Builder(this).setTitle(R.string.m_help)
-                .setMessage("Vasudev.work@rediffmail.com")
+                .setMessage("vasudev.work@rediffmail.com")
                 .setPositiveButton(android.R.string.ok, null).show()
         }
     }

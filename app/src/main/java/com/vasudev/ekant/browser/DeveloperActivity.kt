@@ -111,7 +111,7 @@ class DeveloperActivity : BaseSettingsActivity() {
 
         infoRow(card, getString(R.string.dev_location), getString(R.string.dev_location_value))
         infoRow(card, getString(R.string.dev_website), "github.com/vasudev-work")
-        infoRow(card, getString(R.string.dev_email), "Vasudev.Social@rediffmail.com")
+        infoRow(card, getString(R.string.dev_email), "vasudev.work@rediffmail.com")
 
         val btn = TextView(this)
         btn.text = getString(R.string.dev_github_btn)
