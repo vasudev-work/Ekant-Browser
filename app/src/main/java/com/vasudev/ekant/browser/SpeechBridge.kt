@@ -22,10 +22,13 @@ class SpeechBridge(webView: WebView) {
         active = this
         try {
             Tts.onEvent = { js -> active?.post(js) }
-            Tts.onStateChanged = { speaking ->
+            // the engine tells us when it starts or stops; the keep-alive follows it
+            Tts.onStateChanged = {
                 val c = ctxRef.get()
                 if (c != null) {
-                    try { if (speaking) KeepAlive.start(c) else KeepAlive.stop() } catch (_: Exception) { }
+                    try {
+                        if (Tts.isSpeaking()) KeepAlive.start(c) else KeepAlive.stop()
+                    } catch (_: Exception) { }
                 }
             }
             val c = webView.context
