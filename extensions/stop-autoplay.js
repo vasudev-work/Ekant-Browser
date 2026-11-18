@@ -1,13 +1,13 @@
 /*
- * Nijatva extension: stop videos that start on their own.
+ * Aekant extension: stop videos that start on their own.
  *
  * A video is paused if it begins playing without the user having clicked or
  * tapped the page. Once they do, playback is left alone.
  */
 (function () {
   try {
-    if (window.__nijatvaNoAutoplay) return;
-    window.__nijatvaNoAutoplay = 1;
+    if (window.__aekantNoAutoplay) return;
+    window.__aekantNoAutoplay = 1;
     var touched = false;
     function mark() { touched = true; }
     document.addEventListener('click', mark, true);
@@ -25,7 +25,7 @@
     function scan() {
       try {
         var vs = document.querySelectorAll('video');
-        for (var i = 0; i < vs.length; i++) if (!vs[i].__nijatvaGuard) { vs[i].__nijatvaGuard = 1; guard(vs[i]); }
+        for (var i = 0; i < vs.length; i++) if (!vs[i].__aekantGuard) { vs[i].__aekantGuard = 1; guard(vs[i]); }
       } catch (e) { }
     }
 

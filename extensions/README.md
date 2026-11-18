@@ -1,10 +1,10 @@
-# Nijatva extensions
+# Aekant extensions
 
 Userscripts the browser can fetch from **Settings → Extensions → Extension source**.
 
 The default source is this folder:
 
-    https://raw.githubusercontent.com/vasudev-work/nijatva-browser/main/extensions/
+    https://raw.githubusercontent.com/vasudev-work/aekant-browser/main/extensions/
 
 `index.json` lists what is available; each entry names a `.js` file in the same
 folder. Tapping "Check for extensions" reads that index and offers whatever is

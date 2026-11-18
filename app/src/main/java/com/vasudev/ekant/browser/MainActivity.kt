@@ -249,7 +249,7 @@ document.open();document.write(h);document.close();
     private var desktop = false
     private var incognito = false
     private val privateTabs = HashSet<WebView>()
-    private val PRIVATE_TAG = "nijatva-private"
+    private val PRIVATE_TAG = "aekant-private"
     private var lastBackAt = 0L
     private val gmCalls = java.util.concurrent.ConcurrentHashMap<String, java.net.HttpURLConnection>()
     private var js = true
@@ -1107,7 +1107,7 @@ document.open();document.write(h);document.close();
     private fun newTab(u: String, select: Boolean = true): WebView {
         val w = AekantWebView(this)
         try { w.addJavascriptInterface(MediaBridge(), "AekantMedia") } catch (_: Exception) { }
-        try { w.addJavascriptInterface(SpeechBridge(w), "NijatvaSpeech") } catch (_: Exception) { }
+        try { w.addJavascriptInterface(SpeechBridge(w), "AekantSpeech") } catch (_: Exception) { }
         try { w.addJavascriptInterface(BlockBridge(), "AekantBlock") } catch (_: Exception) { }
         try { w.addJavascriptInterface(GmBridge(), "AekantGM") } catch (_: Exception) { }
         applyViewZoom(w)

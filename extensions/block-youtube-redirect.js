@@ -7,7 +7,7 @@
 // ==/UserScript==
 
 /*
- * Nijatva extension: a mis-tap on a YouTube ad link does nothing.
+ * Aekant extension: a mis-tap on a YouTube ad link does nothing.
  *
  * Plenty of sites carry a "subscribe to our channel" banner, or an ad slot whose
  * whole job is to send you to YouTube. They are often placed right where a
@@ -33,8 +33,8 @@
  */
 (function () {
   try {
-    if (window.__nijatvaNoYtRedirect) return; // never run twice
-    window.__nijatvaNoYtRedirect = 1;
+    if (window.__aekantNoYtRedirect) return; // never run twice
+    window.__aekantNoYtRedirect = 1;
 
     var YT = /^https?:\/\/([a-z0-9-]+\.)*(youtube\.com|youtu\.be|youtube-nocookie\.com)(\/|$|\?|#)/i;
 
@@ -44,7 +44,7 @@
     var pendingUrl = '';
 
     var CSS =
-      '#nijatva-nyt-bar{' +
+      '#aekant-nyt-bar{' +
       'position:fixed!important;left:50%!important;bottom:18px!important;' +
       'transform:translateX(-50%)!important;z-index:2147483647!important;' +
       'display:none;align-items:center!important;gap:10px!important;' +
@@ -55,22 +55,22 @@
       'font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif!important;' +
       'box-sizing:border-box!important;' +
       '}' +
-      '#nijatva-nyt-bar .nyt-msg{flex:1 1 auto!important}' +
-      '#nijatva-nyt-bar button{' +
+      '#aekant-nyt-bar .nyt-msg{flex:1 1 auto!important}' +
+      '#aekant-nyt-bar button{' +
       'flex:0 0 auto!important;padding:5px 10px!important;border-radius:7px!important;' +
       'border:1px solid rgba(255,255,255,.16)!important;background:transparent!important;' +
       'color:#cfcfd6!important;font:12px/1.2 inherit!important;cursor:pointer!important;' +
       '}' +
-      '#nijatva-nyt-bar button.nyt-open{' +
+      '#aekant-nyt-bar button.nyt-open{' +
       'background:#c4302b!important;border-color:#c4302b!important;color:#fff!important;' +
       '}' +
-      '#nijatva-nyt-bar button:hover{opacity:.88!important}';
+      '#aekant-nyt-bar button:hover{opacity:.88!important}';
 
     function injectCss() {
       try {
-        if (document.getElementById('nijatva-nyt-style')) return;
+        if (document.getElementById('aekant-nyt-style')) return;
         var s = document.createElement('style');
-        s.id = 'nijatva-nyt-style';
+        s.id = 'aekant-nyt-style';
         s.textContent = CSS;
         (document.head || document.documentElement).appendChild(s);
       } catch (e) {}
@@ -87,7 +87,7 @@
       try {
         if (bar && document.documentElement.contains(bar)) return bar;
         bar = el('div');
-        bar.id = 'nijatva-nyt-bar';
+        bar.id = 'aekant-nyt-bar';
 
         bar.appendChild(el('span', 'nyt-msg', 'YouTube link blocked'));
 
@@ -215,7 +215,7 @@
 
         // Ads that call window.open instead of using a link.
         try {
-          if (typeof window.open === 'function' && !window.open.__nijatvaWrapped) {
+          if (typeof window.open === 'function' && !window.open.__aekantWrapped) {
             var orig = window.open;
             nativeOpen = orig;
             var wrapped = function (url) {
@@ -228,7 +228,7 @@
               } catch (e) {}
               return orig.apply(window, arguments);
             };
-            wrapped.__nijatvaWrapped = 1;
+            wrapped.__aekantWrapped = 1;
             window.open = wrapped;
           }
         } catch (e) {}

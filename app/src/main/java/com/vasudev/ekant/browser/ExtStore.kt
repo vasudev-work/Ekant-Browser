@@ -13,7 +13,7 @@ import org.json.JSONObject
 object ExtStore {
 
     /**
-     * The store is a GitHub Pages site now: vasudev-work.github.io/nijatva-web-store
+     * The store is a signed catalogue served from GitHub Pages
      *
      * Pages rebuilds within a minute of a push and serves from a CDN, so a new
      * extension reaches both browsers without a release. The raw branch is kept

@@ -10,7 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import java.util.Locale
 
 /**
- * Choosing how Nijatva speaks, kept simple.
+ * Choosing how Aekant speaks, kept simple.
  *
  * The engine can carry hundreds of voices - 473 on one phone - and a flat list of
  * them is unreadable. So this screen lists languages, one row each, sorted A to Z:

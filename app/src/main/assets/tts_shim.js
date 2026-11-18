@@ -24,11 +24,11 @@
 (function () {
     'use strict';
 
-    var bridge = window.__ttsBridge || window.NijatvaSpeech || window.AekantSpeech;
+    var bridge = window.__ttsBridge || window.AekantSpeech;
     if (!bridge || typeof bridge.speak !== 'function') {
         return; // not running inside the WTRLab shell
     }
-    if (window.__nijatvaTtsShim) {
+    if (window.__aekantTtsShim) {
         return;
     }
 
@@ -323,7 +323,7 @@
     // ------------------------------------------------------------------ boot
 
     parseVoices();
-    window.__nijatvaTtsShim = {
+    window.__aekantTtsShim = {
         version: '1.0.0',
         refreshVoices: parseVoices,
         bridge: bridge

@@ -265,7 +265,7 @@ class DiagnosticsActivity : BaseSettingsActivity() {
     /** A plain text report the user can paste into a bug report. */
     private fun copyReport() {
         val sb = StringBuilder()
-        sb.appendLine("Nijatva diagnostics")
+        sb.appendLine("Aekant diagnostics")
         sb.appendLine("time: " + SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date()))
         sb.appendLine("package: $packageName")
         sb.appendLine("device: ${Build.MANUFACTURER} ${Build.MODEL}")

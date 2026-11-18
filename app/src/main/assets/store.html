@@ -161,7 +161,7 @@
   <div id="cats"></div>
   <hr>
   <a class="legal" href="aekant://settings">Privacy and security</a>
-  <a class="legal" href="aekant://settings">Nijatva Terms of Service</a>
+  <a class="legal" href="aekant://settings">Aekant Terms of Service</a>
   <div class="copy" id="copy">© 2026 Aekant Web Store</div>
   <p class="note" id="src"></p>
   <p class="note">
@@ -186,8 +186,8 @@
   } catch (e) { }
   var COL = ['#1a73e8', '#0c9054', '#e2543a', '#c13584', '#7b4bff', '#00a8a2', '#f5a623'];
   var THEMES = [
-    { key: 'nijatva-dark',  name: 'Aekant Dark',  desc: 'Blue and green on matte black - the default.', cat: 'Appearance' },
-    { key: 'nijatva-light', name: 'Aekant Light', desc: 'The same palette on white, for daylight.', cat: 'Appearance' },
+    { key: 'aekant-dark',  name: 'Aekant Dark',  desc: 'Blue and green on matte black - the default.', cat: 'Appearance' },
+    { key: 'aekant-light', name: 'Aekant Light', desc: 'The same palette on white, for daylight.', cat: 'Appearance' },
     { key: 'quiet-dark',    name: 'Quiet Nature Dark',  desc: 'Forest green and sage, easy on the eye at night.', cat: 'Appearance' },
     { key: 'quiet-light',   name: 'Quiet Nature Light', desc: 'The sage palette on ivory.', cat: 'Appearance' },
     { key: 'amoled',        name: 'AMOLED Black', desc: 'Pure black surfaces for OLED screens.', cat: 'Accessibility' }
@@ -263,7 +263,7 @@
         '&i=' + encodeURIComponent(e.id || '') +
         '&h=' + encodeURIComponent(e.sha256 || '');
     var btn = isOn
-      ? '<a class="add on" href="' + esc('nijatva://remove?id=' + encodeURIComponent(e.id || '')) +
+      ? '<a class="add on" href="' + esc('aekant://remove?id=' + encodeURIComponent(e.id || '')) +
         '" data-remove="' + esc(e.id || '') + '">Installed</a>'
       : '<a class="add" href="' + esc(link) + '">+ Add</a>';
     return '<div class="card" data-id="' + esc(e.id || '') + '" style="animation-delay:' + Math.min(i * 30, 210) + 'ms">' +
@@ -412,7 +412,7 @@
         '&h=' + encodeURIComponent(e.sha256 || '');
     var action = isOn
       ? '<span class="add on">Installed</span>'
-      : '<a class="add" href="' + esc(link) + '">Add to Nijatva</a>';
+      : '<a class="add" href="' + esc(link) + '">Add to Aekant</a>';
     document.getElementById('sheet-body').innerHTML =
       '<div class="s-top">' +
         '<div class="s-ico" style="background:' + colour(nm) + '">' + esc(nm.charAt(0).toUpperCase()) + '</div>' +
@@ -507,7 +507,7 @@
     var rm = ev.target.closest ? ev.target.closest('[data-remove]') : null;
     if (rm) {
       delete installed[rm.getAttribute('data-remove')];
-      try { localStorage.setItem('nijatva.installed', JSON.stringify(installed)); } catch (e) { }
+      try { localStorage.setItem('aekant.installed', JSON.stringify(installed)); } catch (e) { }
       setTimeout(render, 400);
     }
     // a tap on the card opens its details; a tap on Add still installs

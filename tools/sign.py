@@ -2,7 +2,7 @@
 """
 Signs extensions/index.json with the store's private key.
 
-    python3 tools/sign.py /path/to/nijatva-store-signing-key.pem
+    python3 tools/sign.py /path/to/aekant-store-signing-key.pem
 
 Writes extensions/index.json.sig. Run this after ANY change to index.json,
 or the browser will refuse the list. Needs `pip install cryptography`.

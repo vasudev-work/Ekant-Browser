@@ -1,5 +1,5 @@
 /*
- * Nijatva extension: remove the blank boxes that ads leave behind.
+ * Aekant extension: remove the blank boxes that ads leave behind.
  *
  * The browser already blocks the requests, which leaves empty rectangles in the
  * page - a gap where the ad would have been. uBlock does this in the page too,
@@ -9,8 +9,8 @@
  */
 (function () {
   try {
-    if (window.__nijatvaCosmetic) return;
-    window.__nijatvaCosmetic = 1;
+    if (window.__aekantCosmetic) return;
+    window.__aekantCosmetic = 1;
 
     var SEL = [
       '[id^="div-gpt-ad"]', '[id^="google_ads"]', '[data-ad-slot]', '[data-ad-client]',
