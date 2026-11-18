@@ -1,5 +1,14 @@
 # Aekant — Android (merged build)
 
+> **This is not the main project, and it is not maintained.**
+>
+> Nijatva (`nijatva-browser`) is where the browser work happens: it carries every feature
+> this repository has, and anything added from here on lands there first. This build stays
+> published so an installed copy keeps working — the extension catalogue it reads is shared
+> and still served — but expect no further updates. Nothing is lost by that: the two apps
+> have been the same feature set for a while, and keeping two copies in step was the only
+> thing the second one cost.
+
 This project merges two codebases into one Android app:
 
 - **Aekant** — the Kotlin, brand-first Android client (dark UI, orange→green gradient,
